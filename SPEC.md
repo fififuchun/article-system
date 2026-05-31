@@ -80,12 +80,13 @@ thumbnail: art_0.webp
 ![](画像ファイル名.webp)
 ```
 
-| 記法 | 対応するコンポーネント部位 |
-|---|---|
-| `##` | `heading`（大見出し） |
-| `###` | `subheading`（小見出し） |
-| 段落 | `paragraph`（本文） |
-| `![](filename)` | `image`（画像） |
+| 記法 | 対応するコンポーネント部位 | 備考 |
+|---|---|---|
+| `##` | `heading`（大見出し） | カスタムレンダリング |
+| `###` | `subheading`（小見出し） | カスタムレンダリング |
+| 段落 | `paragraph`（本文） | カスタムレンダリング |
+| `![](filename)` | `image`（画像） | カスタムレンダリング |
+| それ以外 | — | react-markdown のデフォルトHTML要素で出力 |
 
 画像のパスは `imageBasePath + filename` に解決される（デフォルト: `/article_imgs/filename`）。
 
@@ -143,6 +144,17 @@ interface Article {
 | `dateLabel` | string | | `最終更新日時` | 最終更新日の前に表示するラベル |
 | `classNames` | `ArticleDetailClassNames` | | `{}` | 各要素に適用するCSSクラス名 |
 
+#### 表示内容の詳細
+
+| 部位 | 表示内容 | 使用フィールド |
+|---|---|---|
+| `dateYear` | `{年}` | `article.date` |
+| `dateDay` | `{月}/{日}` | `article.date` |
+| `title` | タイトル文字列 | `article.title` |
+| `latestUpdate` | `{dateLabel} {年}年{月}月{日}日` | `article.latestUpdate` |
+| `thumbnail` | サムネイル画像 | `article.thumbnail` |
+| `footer` | `担当：{担当者名}` | `article.staff` |
+
 #### `ArticleDetailClassNames`
 
 ```ts
@@ -188,6 +200,14 @@ interface ArticleDetailClassNames {
 | `classNames` | `ArticleListClassNames` | | `{}` | 各要素に適用するCSSクラス名 |
 | `renderLink` | `(url, children, key) => ReactNode` | ✓ | — | リンク要素を返す関数 |
 
+#### 表示内容の詳細
+
+| 部位 | 表示内容 | 使用フィールド |
+|---|---|---|
+| `cardImage` | サムネイル画像 | `article.thumbnail` |
+| `cardTitle` | タイトル文字列 | `article.title` |
+| `cardDate` | `{年}年{月}月{日}日` | `article.latestUpdate` |
+
 #### `ArticleListClassNames`
 
 ```ts
@@ -196,9 +216,23 @@ interface ArticleListClassNames {
   card?: string;      // 各記事カード
   cardImage?: string; // カードのサムネイル画像
   cardTitle?: string; // カードのタイトル
-  cardDate?: string;  // カードの更新日
+  cardDate?: string;  // カードの更新日（latestUpdate を表示）
 }
 ```
+
+---
+
+## デモ
+
+`demo/` ディレクトリにサンプル記事とプレビューアプリが含まれている。
+
+```bash
+cd demo
+npm install
+npm run dev
+```
+
+`demo/src/articles/` にマークダウンファイルを追加すると、自動的に一覧に反映される。
 
 ---
 
