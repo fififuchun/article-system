@@ -29,3 +29,10 @@ export interface ArticleListClassNames {
   cardTitle?: string;
   cardDate?: string;
 }
+
+export interface ArticlePreviewClassNames {
+  wrapper?: string;     // 2カラム全体のラッパー
+  editorPane?: string;  // 左側エディタ領域
+  textarea?: string;    // テキストエリア
+  previewPane?: string; // 右側プレビュー領域
+}
