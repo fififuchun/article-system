@@ -26,6 +26,9 @@ export function ArticleDetail({
     h3: ({ children }) => (
       <div className={classNames.subheading}>{children}</div>
     ),
+    h4: ({ children }) => (
+      <div className={classNames.subsubheading}>{children}</div>
+    ),
     p: ({ children }) => (
       <div className={classNames.paragraph}>
         <p>{children}</p>

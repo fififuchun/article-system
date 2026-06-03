@@ -17,6 +17,7 @@ export interface ArticleDetailClassNames {
   thumbnail?: string;
   heading?: string;
   subheading?: string;
+  subsubheading?: string;
   paragraph?: string;
   image?: string;
   footer?: string;
