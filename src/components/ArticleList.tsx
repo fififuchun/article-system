@@ -1,4 +1,5 @@
 import type { Article, ArticleListClassNames } from "../types";
+import { ClockIcon } from "../icons/ClockIcon";
 
 interface Props {
   articles: Article[];
@@ -32,9 +33,10 @@ export function ArticleList({
               className={classNames.cardImage}
             />
             <p className={classNames.cardTitle}>{article.title}</p>
-            <p className={classNames.cardDate}>
-              {year}年{month}月{day}日
-            </p>
+            <div className={classNames.cardDate}>
+              <ClockIcon className={classNames.cardDateIcon} />
+              <span>{year}年{month}月{day}日</span>
+            </div>
           </div>,
           article.id
         );

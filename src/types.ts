@@ -10,10 +10,13 @@ export interface Article {
 
 export interface ArticleDetailClassNames {
   wrapper?: string;
+  headerWrapper?: string;
+  dateWrapper?: string;
   dateYear?: string;
   dateDay?: string;
   title?: string;
   latestUpdate?: string;
+  dateIcon?: string;
   thumbnail?: string;
   heading?: string;
   subheading?: string;
@@ -29,6 +32,7 @@ export interface ArticleListClassNames {
   cardImage?: string;
   cardTitle?: string;
   cardDate?: string;
+  cardDateIcon?: string;
 }
 
 export interface ArticlePreviewClassNames {

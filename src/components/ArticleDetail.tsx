@@ -1,7 +1,9 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import type { Components } from "react-markdown";
 import type { Article, ArticleDetailClassNames } from "../types";
+import { ClockIcon } from "../icons/ClockIcon";
 
 interface Props {
   article: Article;
@@ -43,19 +45,18 @@ export function ArticleDetail({
 
   return (
     <div className={classNames.wrapper}>
-      <div>
-        <div>
+      <div className={classNames.headerWrapper}>
+        <div className={classNames.dateWrapper}>
           <p className={classNames.dateYear}>{year}</p>
-          <p className={classNames.dateDay}>
-            {month}/{day}
-          </p>
+          <p className={classNames.dateDay}>{month}/{day}</p>
         </div>
         <p className={classNames.title}>{article.title}</p>
       </div>
 
-      <p className={classNames.latestUpdate}>
-        {dateLabel}&nbsp;{ly}年{lm}月{ld}日
-      </p>
+      <div className={classNames.latestUpdate}>
+        <ClockIcon className={classNames.dateIcon} />
+        <span>{dateLabel}&nbsp;{ly}年{lm}月{ld}日</span>
+      </div>
 
       <img
         src={`${imageBasePath}${article.thumbnail}`}
@@ -63,7 +64,7 @@ export function ArticleDetail({
         className={classNames.thumbnail}
       />
 
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={mdComponents}>
         {article.content}
       </ReactMarkdown>
 
