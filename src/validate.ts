@@ -41,7 +41,20 @@ export function validateArticle(
   raw: string,
   _context: ValidateContext = {}
 ): Issue[] {
-  const { data } = parseFrontmatter(raw);
+  const { data, content } = parseFrontmatter(raw);
+
+  // パースに失敗すると content には raw がそのまま返る（spec §3）。
+  // --- で始まっているのに失敗しているなら、閉じ忘れが原因。
+  if (content === raw && raw.startsWith("---")) {
+    return [
+      {
+        level: "error",
+        message:
+          "フロントマターが --- で閉じられていません。閉じないと全文が本文として扱われます。",
+      },
+    ];
+  }
+
   const issues: Issue[] = [];
 
   for (const field of REQUIRED_FIELDS) {

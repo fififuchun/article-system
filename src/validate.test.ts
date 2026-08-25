@@ -159,3 +159,50 @@ describe("validateArticle — 引用符", () => {
     expect(issues[0]).toMatchObject({ level: "error", field: "tags" });
   });
 });
+
+describe("validateArticle — フロントマターの閉じ忘れ", () => {
+  const unclosed = ["---", "title: 記事", "date: 2026-08-23", "", "本文"].join("\n");
+
+  it("閉じの --- が無ければ error を返す", () => {
+    const issues = validateArticle(unclosed);
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].level).toBe("error");
+  });
+
+  it("閉じ忘れに必須項目の欠落を重ねて出さない", () => {
+    expect(validateArticle(unclosed)).toHaveLength(1);
+  });
+
+  it("message で --- が閉じられていないことを伝える", () => {
+    const [issue] = validateArticle(unclosed);
+
+    expect(issue.message).toContain("---");
+  });
+
+  it("CRLF 改行の閉じ忘れも検出する", () => {
+    const raw = ["---", "title: 記事", "", "本文"].join("\r\n");
+
+    expect(validateArticle(raw)).toHaveLength(1);
+  });
+
+  it("--- で始まらなければ閉じ忘れとは見なさず必須5項目の欠落を返す", () => {
+    const issues = validateArticle("## 見出し\n\n本文...");
+
+    expect(issues.map((issue) => issue.field)).toEqual([...REQUIRED]);
+  });
+
+  it("空のフロントマターでも閉じてあれば必須5項目の欠落を返す", () => {
+    const issues = validateArticle(["---", "", "---", "", "本文"].join("\n"));
+
+    expect(issues.map((issue) => issue.field)).toEqual([...REQUIRED]);
+  });
+
+  it("正しく閉じていれば error にしない", () => {
+    expect(validateArticle(md(complete))).toEqual([]);
+  });
+
+  it("本文中に --- があっても誤検出しない", () => {
+    expect(validateArticle(md(complete, "本文\n\n---\n\n続き"))).toEqual([]);
+  });
+});
