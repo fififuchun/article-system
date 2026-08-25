@@ -32,6 +32,7 @@
 - [x] `latestUpdate` が `date` より前の論理矛盾を検出する（テスト → 実装 → グリーン）
 - [x] 既知フィールド名との編集距離を求める関数を書き、単体テストを付ける（テスト → 実装 → グリーン）
 - [x] 未知キーを既知フィールドと照合し「`latestUpdate` の誤りでは」と提案する typo 検出を実装する（テスト → 実装 → グリーン）
+- [ ] `Article` 型に `filename: string` を追加し、`Object.values()` を `Object.entries()` に変えてパスから拡張子付きファイル名を取り出す（spec §3）。`it.todo`「Article に filename を含める」を `it` に変えて通す
 - [ ] `context.articles` と `context.filename` からファイル名衝突を検出する（テスト → 実装 → グリーン）
 - [ ] `src/index.ts` から `validateArticle` と `Issue` 型を export する
 
@@ -39,9 +40,8 @@
 
 ### フェーズ2: createArticles の改修（spec §4 §5 / 実装順序 2）
 
-`src/createArticles.test.ts` の `it.todo` 4件がここで解消される。
+`src/createArticles.test.ts` の `it.todo` 残り3件がここで解消される（`filename` の1件はフェーズ1で対応済み）。
 
-- [ ] `Article` 型に `filename: string` を追加し、`Object.values()` を `Object.entries()` に変えてパスから拡張子付きファイル名を取り出す（spec §3）。`it.todo`「Article に filename を含める」を `it` に変えて通す
 - [ ] `_` 始まりのファイル名を検出したら spec §4 のメッセージで例外を投げる。`it.todo`「`_` 始まりのファイルを受け取ったら例外を投げる」を `it` に変えて通す
 - [ ] ソートを `new Date()` 比較から**文字列比較**に変更する（spec §5。不正な日付で順序が壊れるバグの修正）。`it.todo`「不正な date が混ざってもソート順が壊れない」を `it` に変えて通す
 - [ ] 各記事に `validateArticle` を掛け、問題があれば `console.warn` で報告する。`it.todo`「検証で問題が見つかったら console.warn で報告する」を `it` に変えて通す
@@ -131,5 +131,5 @@
 - **ベースラインは `72bca59`**（vitest 導入とテスト追加）。ここまで戻れば必ずグリーンな状態に復帰できる
 - フェーズ1と2はテストが書ける純粋関数。**テストを先に書いて落とし、同じ周回で実装して通す**。テストだけを書いて終わる周回を作らない（ゲートが赤いままコミットできないため）
 - フェーズ3以降はコンポーネントのため、テストではなく `demo/` での目視確認が主な検証手段になる。DOM テストを入れるなら jsdom と testing-library の導入が別途必要
-- フェーズ2で `Article` に `filename` を足すと `createArticles` の戻り値の形が変わる。フェーズ6の Studio が `Article` を組み立てるときも `filename` が要る
+- `Article` に `filename` を足すと `createArticles` の戻り値の形が変わる。フェーズ6の Studio が `Article` を組み立てるときも `filename` が要る
 - フェーズ6で `ArticlePreview` を削除するのは**破壊的変更**。利用側プロジェクトの差し替えが必要になる
