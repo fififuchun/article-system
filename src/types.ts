@@ -1,5 +1,7 @@
 export interface Article {
   id: number;
+  /** 拡張子付きファイル名。衝突検出と既存記事の編集に使う。URL には使わない（spec §3） */
+  filename: string;
   title: string;
   date: string;
   latestUpdate: string;

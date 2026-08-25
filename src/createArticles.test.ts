@@ -41,6 +41,7 @@ describe("createArticles", () => {
 
     expect(article).toEqual({
       id: 0,
+      filename: "2026-08-23-a.md",
       title: "記事タイトル",
       date: "2026-08-23",
       latestUpdate: "2026-08-24",
@@ -96,10 +97,39 @@ describe("createArticles", () => {
   });
 });
 
+describe("createArticles — filename", () => {
+  it("拡張子付きのファイル名を filename に入れる — spec §3", () => {
+    const [article] = createArticles({
+      "../articles/2026-08-23-夏の更新.md": md({ title: "記事", date: "2026-08-23" }),
+    });
+
+    expect(article.filename).toBe("2026-08-23-夏の更新.md");
+  });
+
+  it("ディレクトリ部分を落としてファイル名だけを取る", () => {
+    const [article] = createArticles({
+      "/src/content/blog/2026-08-23-a.md": md({ title: "記事", date: "2026-08-23" }),
+    });
+
+    expect(article.filename).toBe("2026-08-23-a.md");
+  });
+
+  it("記事ごとに対応するファイル名が入る（ソート後も対応が崩れない）", () => {
+    const articles = createArticles({
+      "../articles/2026-08-20-b.md": md({ title: "B", date: "2026-08-20" }),
+      "../articles/2026-03-15-a.md": md({ title: "A", date: "2026-03-15" }),
+    });
+
+    expect(articles.map((article) => [article.title, article.filename])).toEqual([
+      ["A", "2026-03-15-a.md"],
+      ["B", "2026-08-20-b.md"],
+    ]);
+  });
+});
+
 // 現在の実装が spec を満たしていない箇所。実装したら it.todo を it に変えて有効化する
 describe("未実装（spec §14 の実装順序で対応する）", () => {
   it.todo("_ 始まりのファイルを受け取ったら例外を投げる — spec §4");
   it.todo("不正な date が混ざってもソート順が壊れない（文字列比較にする） — spec §5");
-  it.todo("Article に filename（拡張子付きファイル名）を含める — spec §3");
   it.todo("検証で問題が見つかったら console.warn で報告する — spec §5");
 });

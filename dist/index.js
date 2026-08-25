@@ -15,9 +15,10 @@ function parseFrontmatter(raw) {
 
 // src/createArticles.ts
 function createArticles(rawFiles) {
-  return Object.values(rawFiles).map((raw) => {
+  return Object.entries(rawFiles).map(([path, raw]) => {
     const { data, content } = parseFrontmatter(raw);
     return {
+      filename: path.split("/").pop() ?? path,
       title: data.title ?? "",
       date: data.date ?? "",
       latestUpdate: data.latestUpdate ?? "",
@@ -160,6 +161,8 @@ function ArticlePreview({
   const { data, content } = parseFrontmatter(raw);
   const article = {
     id: 0,
+    // 執筆中でまだファイルになっていないため空にする
+    filename: "",
     title: data.title ?? "",
     date: data.date ?? "",
     latestUpdate: data.latestUpdate ?? "",

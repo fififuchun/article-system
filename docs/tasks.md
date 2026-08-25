@@ -32,7 +32,7 @@
 - [x] `latestUpdate` が `date` より前の論理矛盾を検出する（テスト → 実装 → グリーン）
 - [x] 既知フィールド名との編集距離を求める関数を書き、単体テストを付ける（テスト → 実装 → グリーン）
 - [x] 未知キーを既知フィールドと照合し「`latestUpdate` の誤りでは」と提案する typo 検出を実装する（テスト → 実装 → グリーン）
-- [ ] `Article` 型に `filename: string` を追加し、`Object.values()` を `Object.entries()` に変えてパスから拡張子付きファイル名を取り出す（spec §3）。`it.todo`「Article に filename を含める」を `it` に変えて通す
+- [x] `Article` 型に `filename: string` を追加し、`Object.values()` を `Object.entries()` に変えてパスから拡張子付きファイル名を取り出す（spec §3）。`it.todo`「Article に filename を含める」を `it` に変えて通す
 - [ ] `context.articles` と `context.filename` からファイル名衝突を検出する（テスト → 実装 → グリーン）
 - [ ] `src/index.ts` から `validateArticle` と `Issue` 型を export する
 

@@ -23,6 +23,8 @@ export function ArticlePreview({
   const { data, content } = parseFrontmatter(raw);
   const article = {
     id: 0,
+    // 執筆中でまだファイルになっていないため空にする
+    filename: "",
     title: data.title ?? "",
     date: data.date ?? "",
     latestUpdate: data.latestUpdate ?? "",
