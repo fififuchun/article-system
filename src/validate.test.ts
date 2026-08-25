@@ -75,3 +75,49 @@ describe("validateArticle — 必須項目", () => {
     expect(validateArticle(md({ ...complete, tags: "旅行" }))).toEqual([]);
   });
 });
+
+describe("validateArticle — 日付の形式", () => {
+  it.each(["date", "latestUpdate"] as const)(
+    "%s がスラッシュ区切りなら error を返す",
+    (field) => {
+      const issues = validateArticle(md({ ...complete, [field]: "2026/08/23" }));
+
+      expect(issues).toHaveLength(1);
+      expect(issues[0]).toMatchObject({ level: "error", field });
+    }
+  );
+
+  it("月日が2桁でなければ error を返す", () => {
+    const issues = validateArticle(md({ ...complete, date: "2026-8-23" }));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ level: "error", field: "date" });
+  });
+
+  it("日付として読めない文字列なら error を返す", () => {
+    const issues = validateArticle(md({ ...complete, date: "明日" }));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ level: "error", field: "date" });
+  });
+
+  it("未来日は error にしない（spec §3 で許可している）", () => {
+    expect(validateArticle(md({ ...complete, date: "2099-01-01", latestUpdate: "2099-01-01" }))).toEqual([]);
+  });
+
+  it("欠落している日付に形式エラーを重ねて出さない", () => {
+    const front = { ...complete };
+    delete front.date;
+
+    const issues = validateArticle(md(front));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].message).toContain("入力されていません");
+  });
+
+  it("message に正しい形式の例を含める", () => {
+    const [issue] = validateArticle(md({ ...complete, date: "2026/08/23" }));
+
+    expect(issue.message).toContain("YYYY-MM-DD");
+  });
+});
