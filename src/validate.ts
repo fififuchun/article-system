@@ -47,7 +47,7 @@ function isQuoted(value: string): boolean {
  */
 export function validateArticle(
   raw: string,
-  _context: ValidateContext = {}
+  context: ValidateContext = {}
 ): Issue[] {
   const { data, content } = parseFrontmatter(raw);
 
@@ -138,6 +138,16 @@ export function validateArticle(
       level: "error",
       field: "latestUpdate",
       message: `latestUpdate (${latestUpdate}) が date (${date}) より前になっています。最終編集日は公開日以降にしてください。`,
+    });
+  }
+
+  // 同名のファイルを書き出すと既存記事が上書きされて消える（spec §6）
+  const { articles, filename } = context;
+
+  if (filename && articles?.some((article) => article.filename === filename)) {
+    issues.push({
+      level: "error",
+      message: `ファイル名 ${filename} は既存の記事と重複しています。このまま保存すると既存の記事が上書きされて消えます。`,
     });
   }
 

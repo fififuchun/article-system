@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateArticle } from "./validate";
+import type { Article } from "./types";
 
 const REQUIRED = ["title", "date", "latestUpdate", "staff", "thumbnail"] as const;
 
@@ -309,5 +310,84 @@ describe("validateArticle — キー名の typo", () => {
 
   it("編集距離が3以上離れた未知キーには提案しない", () => {
     expect(validateArticle(md({ ...complete, tags: "旅行" }))).toEqual([]);
+  });
+});
+
+describe("validateArticle — ファイル名の衝突", () => {
+  const existing = (filename: string): Article => ({
+    id: 0,
+    filename,
+    title: "既存記事",
+    date: "2026-08-01",
+    latestUpdate: "2026-08-01",
+    staff: "田中 花子",
+    thumbnail: "art_0.webp",
+    content: "本文",
+  });
+
+  it("既存記事と同じファイル名なら error を返す", () => {
+    const issues = validateArticle(md(complete), {
+      articles: [existing("2026-08-23-夏の更新.md")],
+      filename: "2026-08-23-夏の更新.md",
+    });
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].level).toBe("error");
+  });
+
+  it("message に衝突したファイル名を含める", () => {
+    const [issue] = validateArticle(md(complete), {
+      articles: [existing("2026-08-23-夏の更新.md")],
+      filename: "2026-08-23-夏の更新.md",
+    });
+
+    expect(issue.message).toContain("2026-08-23-夏の更新.md");
+  });
+
+  it("既存記事と別のファイル名なら error にしない", () => {
+    expect(
+      validateArticle(md(complete), {
+        articles: [existing("2026-08-01-春の更新.md")],
+        filename: "2026-08-23-夏の更新.md",
+      })
+    ).toEqual([]);
+  });
+
+  it("context を渡さなければ衝突を検査しない", () => {
+    expect(validateArticle(md(complete))).toEqual([]);
+  });
+
+  it("articles が空なら error にしない", () => {
+    expect(
+      validateArticle(md(complete), { articles: [], filename: "2026-08-23-夏の更新.md" })
+    ).toEqual([]);
+  });
+
+  it("filename が無ければ衝突を検査しない", () => {
+    expect(
+      validateArticle(md(complete), { articles: [existing("2026-08-23-夏の更新.md")] })
+    ).toEqual([]);
+  });
+
+  it("複数の既存記事から衝突を見つける", () => {
+    const issues = validateArticle(md(complete), {
+      articles: [existing("a.md"), existing("b.md"), existing("c.md")],
+      filename: "b.md",
+    });
+
+    expect(issues).toHaveLength(1);
+  });
+
+  it("フロントマターの問題と衝突を両方返す", () => {
+    const front = { ...complete };
+    delete front.staff;
+
+    const issues = validateArticle(md(front), {
+      articles: [existing("b.md")],
+      filename: "b.md",
+    });
+
+    expect(issues).toHaveLength(2);
+    expect(issues[0].field).toBe("staff");
   });
 });
