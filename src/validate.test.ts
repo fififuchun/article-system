@@ -206,3 +206,63 @@ describe("validateArticle — フロントマターの閉じ忘れ", () => {
     expect(validateArticle(md(complete, "本文\n\n---\n\n続き"))).toEqual([]);
   });
 });
+
+describe("validateArticle — 更新日と投稿日の前後関係", () => {
+  it("latestUpdate が date より前なら error を返す", () => {
+    const issues = validateArticle(
+      md({ ...complete, date: "2026-08-23", latestUpdate: "2026-08-22" })
+    );
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ level: "error", field: "latestUpdate" });
+  });
+
+  it("latestUpdate と date が同じ日なら error にしない", () => {
+    expect(
+      validateArticle(md({ ...complete, date: "2026-08-23", latestUpdate: "2026-08-23" }))
+    ).toEqual([]);
+  });
+
+  it("latestUpdate が date より後なら error にしない", () => {
+    expect(
+      validateArticle(md({ ...complete, date: "2026-08-23", latestUpdate: "2026-09-01" }))
+    ).toEqual([]);
+  });
+
+  it("年をまたぐ前後関係も正しく判定する", () => {
+    const issues = validateArticle(
+      md({ ...complete, date: "2026-01-01", latestUpdate: "2025-12-31" })
+    );
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ field: "latestUpdate" });
+  });
+
+  it("message に両方の日付を含める", () => {
+    const [issue] = validateArticle(
+      md({ ...complete, date: "2026-08-23", latestUpdate: "2026-08-22" })
+    );
+
+    expect(issue.message).toContain("2026-08-22");
+    expect(issue.message).toContain("2026-08-23");
+  });
+
+  it("date が形式違反なら前後関係を判定しない", () => {
+    const issues = validateArticle(
+      md({ ...complete, date: "2026/08/23", latestUpdate: "2020-01-01" })
+    );
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].message).toContain("YYYY-MM-DD");
+  });
+
+  it("latestUpdate が欠けていれば前後関係を判定しない", () => {
+    const front = { ...complete };
+    delete front.latestUpdate;
+
+    const issues = validateArticle(md(front));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].message).toContain("入力されていません");
+  });
+});

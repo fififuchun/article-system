@@ -92,5 +92,22 @@ export function validateArticle(
     }
   }
 
+  // 形式が正しい日付が2つ揃ったときだけ前後関係を見る。
+  // YYYY-MM-DD は辞書順と時系列順が一致するため文字列比較でよい（spec §5）
+  const date = (data.date ?? "").trim();
+  const latestUpdate = (data.latestUpdate ?? "").trim();
+
+  if (
+    DATE_PATTERN.test(date) &&
+    DATE_PATTERN.test(latestUpdate) &&
+    latestUpdate < date
+  ) {
+    issues.push({
+      level: "error",
+      field: "latestUpdate",
+      message: `latestUpdate (${latestUpdate}) が date (${date}) より前になっています。最終編集日は公開日以降にしてください。`,
+    });
+  }
+
   return issues;
 }
