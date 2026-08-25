@@ -25,7 +25,7 @@
 `ArticleStudio` と `createArticles` の両方が依存するため最初に作る。
 
 - [x] `src/validate.ts` を作り、`Issue` 型と `validateArticle(raw, context?)` の骨組み（常に空配列を返す）を定義する
-- [ ] `src/validate.test.ts` を作り、必須5項目（`title` / `date` / `latestUpdate` / `staff` / `thumbnail`）の欠落・空文字を検出する（テスト → 実装 → グリーン）
+- [x] `src/validate.test.ts` を作り、必須5項目（`title` / `date` / `latestUpdate` / `staff` / `thumbnail`）の欠落・空文字を検出する（テスト → 実装 → グリーン）
 - [ ] `date` / `latestUpdate` が `YYYY-MM-DD` 形式でない場合を検出する（テスト → 実装 → グリーン）
 - [ ] 値が引用符で囲まれている場合（`title: "記事"`）を検出する（テスト → 実装 → グリーン）
 - [ ] フロントマターの閉じ忘れを検出する（`parseFrontmatter` が `data: {}` を返すことを利用。テスト → 実装 → グリーン）
