@@ -43,6 +43,23 @@ interface ArticlePreviewClassNames {
     previewPane?: string;
 }
 
+interface Issue {
+    level: "error";
+    field?: string;
+    message: string;
+}
+interface ValidateContext {
+    /** ファイル名衝突の検出に使う既存記事 */
+    articles?: Article[];
+    /** 検証対象のファイル名 */
+    filename?: string;
+}
+/**
+ * md の文字列を検証して問題の一覧を返す。
+ * 問題が無ければ空配列を返す。例外は投げない。
+ */
+declare function validateArticle(raw: string, context?: ValidateContext): Issue[];
+
 declare function createArticles(rawFiles: Record<string, string>): Article[];
 
 interface Props$2 {
@@ -75,4 +92,4 @@ declare function ClockIcon({ className }: {
     className?: string;
 }): react_jsx_runtime.JSX.Element;
 
-export { type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticlePreview, type ArticlePreviewClassNames, ClockIcon, createArticles };
+export { type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticlePreview, type ArticlePreviewClassNames, ClockIcon, type Issue, createArticles, validateArticle };

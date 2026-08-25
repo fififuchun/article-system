@@ -29,6 +29,116 @@ function createArticles(rawFiles) {
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((article, index) => ({ ...article, id: index }));
 }
 
+// src/levenshtein.ts
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const substitution = a[i - 1] === b[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        current[j - 1] + 1,
+        previous[j] + 1,
+        previous[j - 1] + substitution
+      );
+    }
+    previous = current;
+  }
+  return previous[b.length];
+}
+
+// src/validate.ts
+var REQUIRED_FIELDS = ["title", "date", "latestUpdate", "staff", "thumbnail"];
+var TYPO_MAX_DISTANCE = 2;
+var DATE_FIELDS = ["date", "latestUpdate"];
+var DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+function isQuoted(value) {
+  if (value.length < 2) return false;
+  const head = value[0];
+  const tail = value[value.length - 1];
+  return (head === '"' || head === "'") && head === tail;
+}
+function validateArticle(raw, context = {}) {
+  const { data, content } = parseFrontmatter(raw);
+  if (content === raw && raw.startsWith("---")) {
+    return [
+      {
+        level: "error",
+        message: "\u30D5\u30ED\u30F3\u30C8\u30DE\u30BF\u30FC\u304C --- \u3067\u9589\u3058\u3089\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u9589\u3058\u306A\u3044\u3068\u5168\u6587\u304C\u672C\u6587\u3068\u3057\u3066\u6271\u308F\u308C\u307E\u3059\u3002"
+      }
+    ];
+  }
+  const issues = [];
+  for (const field of REQUIRED_FIELDS) {
+    if ((data[field] ?? "").trim() === "") {
+      issues.push({
+        level: "error",
+        field,
+        message: `${field} \u304C\u5165\u529B\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002`
+      });
+    }
+  }
+  for (const [field, value] of Object.entries(data)) {
+    if (isQuoted(value)) {
+      issues.push({
+        level: "error",
+        field,
+        message: `${field} \u306E\u5024\u304C\u5F15\u7528\u7B26\u3067\u56F2\u307E\u308C\u3066\u3044\u307E\u3059\u3002\u5F15\u7528\u7B26\u306F\u5024\u306E\u4E00\u90E8\u3068\u3057\u3066\u6271\u308F\u308C\u308B\u305F\u3081\u5916\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u73FE\u5728\u306E\u5024: ${value}`
+      });
+    }
+  }
+  for (const field of DATE_FIELDS) {
+    const value = (data[field] ?? "").trim();
+    if (value === "" || isQuoted(value)) continue;
+    if (!DATE_PATTERN.test(value)) {
+      issues.push({
+        level: "error",
+        field,
+        message: `${field} \u306F YYYY-MM-DD \u306E\u5F62\u5F0F\u3067\u66F8\u3044\u3066\u304F\u3060\u3055\u3044\uFF08\u4F8B: 2026-08-23\uFF09\u3002\u73FE\u5728\u306E\u5024: ${value}`
+      });
+    }
+  }
+  for (const field of Object.keys(data)) {
+    if (REQUIRED_FIELDS.includes(field)) continue;
+    let nearest = "";
+    let nearestDistance = Infinity;
+    for (const known of REQUIRED_FIELDS) {
+      const distance = levenshtein(field, known);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = known;
+      }
+    }
+    if (nearestDistance <= TYPO_MAX_DISTANCE) {
+      issues.push({
+        level: "error",
+        field,
+        message: `${field} \u306F\u65E2\u77E5\u306E\u9805\u76EE\u306B\u3042\u308A\u307E\u305B\u3093\u3002${nearest} \u306E\u8AA4\u308A\u3067\u306F\u3042\u308A\u307E\u305B\u3093\u304B\u3002`
+      });
+    }
+  }
+  const date = (data.date ?? "").trim();
+  const latestUpdate = (data.latestUpdate ?? "").trim();
+  if (DATE_PATTERN.test(date) && DATE_PATTERN.test(latestUpdate) && latestUpdate < date) {
+    issues.push({
+      level: "error",
+      field: "latestUpdate",
+      message: `latestUpdate (${latestUpdate}) \u304C date (${date}) \u3088\u308A\u524D\u306B\u306A\u3063\u3066\u3044\u307E\u3059\u3002\u6700\u7D42\u7DE8\u96C6\u65E5\u306F\u516C\u958B\u65E5\u4EE5\u964D\u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
+    });
+  }
+  const { articles, filename } = context;
+  if (filename && articles?.some((article) => article.filename === filename)) {
+    issues.push({
+      level: "error",
+      message: `\u30D5\u30A1\u30A4\u30EB\u540D ${filename} \u306F\u65E2\u5B58\u306E\u8A18\u4E8B\u3068\u91CD\u8907\u3057\u3066\u3044\u307E\u3059\u3002\u3053\u306E\u307E\u307E\u4FDD\u5B58\u3059\u308B\u3068\u65E2\u5B58\u306E\u8A18\u4E8B\u304C\u4E0A\u66F8\u304D\u3055\u308C\u3066\u6D88\u3048\u307E\u3059\u3002`
+    });
+  }
+  return issues;
+}
+
 // src/components/ArticleDetail.tsx
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -196,5 +306,6 @@ export {
   ArticleList,
   ArticlePreview,
   ClockIcon,
-  createArticles
+  createArticles,
+  validateArticle
 };
