@@ -266,3 +266,48 @@ describe("validateArticle — 更新日と投稿日の前後関係", () => {
     expect(issues[0].message).toContain("入力されていません");
   });
 });
+
+describe("validateArticle — キー名の typo", () => {
+  it("lastUpdate と書いたら latestUpdate の誤りだと提案する", () => {
+    const front = { ...complete, lastUpdate: "2026-08-24" };
+    delete front.latestUpdate;
+
+    const issues = validateArticle(md(front));
+    const suggestion = issues.find((issue) => issue.field === "lastUpdate");
+
+    expect(suggestion).toBeDefined();
+    expect(suggestion?.message).toContain("latestUpdate");
+  });
+
+  it("typo の提案と欠落の報告を両方返す", () => {
+    const front = { ...complete, lastUpdate: "2026-08-24" };
+    delete front.latestUpdate;
+
+    const issues = validateArticle(md(front));
+
+    expect(issues.map((issue) => issue.field)).toEqual(["latestUpdate", "lastUpdate"]);
+  });
+
+  it.each([
+    ["titel", "title"],
+    ["stuff", "staff"],
+    ["thumbnai", "thumbnail"],
+  ])("%s は %s の誤りだと提案する", (typo, expected) => {
+    const issues = validateArticle(md({ ...complete, [typo]: "値" }));
+    const suggestion = issues.find((issue) => issue.field === typo);
+
+    expect(suggestion?.message).toContain(expected);
+  });
+
+  it("既知のキーだけなら提案しない", () => {
+    expect(validateArticle(md(complete))).toEqual([]);
+  });
+
+  it("どの既知フィールドにも似ていない未知キーには提案しない", () => {
+    expect(validateArticle(md({ ...complete, author: "田中 花子" }))).toEqual([]);
+  });
+
+  it("編集距離が3以上離れた未知キーには提案しない", () => {
+    expect(validateArticle(md({ ...complete, tags: "旅行" }))).toEqual([]);
+  });
+});

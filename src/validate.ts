@@ -1,3 +1,4 @@
+import { levenshtein } from "./levenshtein";
 import { parseFrontmatter } from "./parser";
 import type { Article } from "./types";
 
@@ -16,6 +17,13 @@ export interface ValidateContext {
 
 /** フロントマターに必ず必要な項目（spec §3） */
 const REQUIRED_FIELDS = ["title", "date", "latestUpdate", "staff", "thumbnail"] as const;
+
+/**
+ * typo と見なす編集距離の上限。
+ * spec §6 が例に挙げる lastUpdate → latestUpdate がちょうど 2 のため、
+ * この例を拾える最小値として 2 を採用する。
+ */
+const TYPO_MAX_DISTANCE = 2;
 
 /** YYYY-MM-DD で書かれていなければならない項目（spec §3） */
 const DATE_FIELDS = ["date", "latestUpdate"] as const;
@@ -88,6 +96,30 @@ export function validateArticle(
         level: "error",
         field,
         message: `${field} は YYYY-MM-DD の形式で書いてください（例: 2026-08-23）。現在の値: ${value}`,
+      });
+    }
+  }
+
+  for (const field of Object.keys(data)) {
+    if ((REQUIRED_FIELDS as readonly string[]).includes(field)) continue;
+
+    let nearest = "";
+    let nearestDistance = Infinity;
+
+    for (const known of REQUIRED_FIELDS) {
+      const distance = levenshtein(field, known);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = known;
+      }
+    }
+
+    // 遠いキーは利用側が独自に足したものとして黙って通す
+    if (nearestDistance <= TYPO_MAX_DISTANCE) {
+      issues.push({
+        level: "error",
+        field,
+        message: `${field} は既知の項目にありません。${nearest} の誤りではありませんか。`,
       });
     }
   }
