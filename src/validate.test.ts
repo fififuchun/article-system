@@ -121,3 +121,41 @@ describe("validateArticle — 日付の形式", () => {
     expect(issue.message).toContain("YYYY-MM-DD");
   });
 });
+
+describe("validateArticle — 引用符", () => {
+  it.each(REQUIRED)("%s が二重引用符で囲まれていれば error を返す", (field) => {
+    const issues = validateArticle(md({ ...complete, [field]: '"値"' }));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ level: "error", field });
+  });
+
+  it("一重引用符で囲まれていても error を返す", () => {
+    const issues = validateArticle(md({ ...complete, title: "'記事'" }));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ level: "error", field: "title" });
+  });
+
+  it("値の途中に引用符があるだけなら error にしない", () => {
+    expect(validateArticle(md({ ...complete, title: '彼は"こう"言った' }))).toEqual([]);
+  });
+
+  it("片側にしか引用符が無ければ囲まれているとは見なさない", () => {
+    expect(validateArticle(md({ ...complete, title: '"記事' }))).toEqual([]);
+  });
+
+  it("引用符付きの日付に形式エラーを重ねて出さない", () => {
+    const issues = validateArticle(md({ ...complete, date: '"2026/08/23"' }));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].message).toContain("引用符");
+  });
+
+  it("未知のキーの値が引用符で囲まれていても error を返す", () => {
+    const issues = validateArticle(md({ ...complete, tags: '"旅行"' }));
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ level: "error", field: "tags" });
+  });
+});

@@ -23,6 +23,17 @@ const DATE_FIELDS = ["date", "latestUpdate"] as const;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * 値が引用符で囲まれているか。
+ * YAML ではないため引用符は外されず、そのまま値に入ってしまう（spec §3）。
+ */
+function isQuoted(value: string): boolean {
+  if (value.length < 2) return false;
+  const head = value[0];
+  const tail = value[value.length - 1];
+  return (head === '"' || head === "'") && head === tail;
+}
+
+/**
  * md の文字列を検証して問題の一覧を返す。
  * 問題が無ければ空配列を返す。例外は投げない。
  */
@@ -44,10 +55,20 @@ export function validateArticle(
     }
   }
 
+  for (const [field, value] of Object.entries(data)) {
+    if (isQuoted(value)) {
+      issues.push({
+        level: "error",
+        field,
+        message: `${field} の値が引用符で囲まれています。引用符は値の一部として扱われるため外してください。現在の値: ${value}`,
+      });
+    }
+  }
+
   for (const field of DATE_FIELDS) {
     const value = (data[field] ?? "").trim();
-    // 欠落は上で報告済み。同じ問題を二重に出さない
-    if (value === "") continue;
+    // 欠落・引用符は上で報告済み。同じ問題を二重に出さない
+    if (value === "" || isQuoted(value)) continue;
 
     if (!DATE_PATTERN.test(value)) {
       issues.push({
