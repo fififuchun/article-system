@@ -23,7 +23,7 @@
 
 `ArticleStudio` と `createArticles` の両方が依存するため最初に作る。
 
-- [ ] `src/validate.ts` を作り、`Issue` 型と `validateArticle(raw, context?)` の骨組み（常に空配列を返す）を定義する
+- [x] `src/validate.ts` を作り、`Issue` 型と `validateArticle(raw, context?)` の骨組み（常に空配列を返す）を定義する
 - [ ] `src/validate.test.ts` を作り、必須5項目（`title` / `date` / `latestUpdate` / `staff` / `thumbnail`）の欠落を検出するテストを書く（この時点では落ちる）
 - [ ] 必須5項目の欠落・空文字を検出する処理を実装してテストを通す
 - [ ] `date` / `latestUpdate` が `YYYY-MM-DD` 形式でない場合を検出する（テスト → 実装）
