@@ -178,8 +178,54 @@ describe("createArticles — 下書きの混入", () => {
   });
 });
 
+describe("createArticles — 不正な date が混ざったときのソート", () => {
+  it("不正な date が混ざってもソート順が壊れない（文字列比較にする） — spec §5", () => {
+    const articles = createArticles({
+      "../articles/x.md": md({ title: "X", date: "x" }),
+      "../articles/2026.md": md({ title: "2026", date: "2026-01-01" }),
+      "../articles/2025.md": md({ title: "2025", date: "2025-01-01" }),
+    });
+
+    // 正しい日付同士の相対順が保たれることが本質。
+    // 文字列比較では "x" > "2..." のため不正な値は末尾に寄る
+    expect(articles.map((article) => article.title)).toEqual(["2025", "2026", "X"]);
+  });
+
+  it("不正な date があっても正しい日付同士の前後関係は保たれる", () => {
+    const articles = createArticles({
+      "../articles/x.md": md({ title: "X", date: "2026/03/01" }),
+      "../articles/c.md": md({ title: "C", date: "2026-08-23" }),
+      "../articles/a.md": md({ title: "A", date: "2026-03-15" }),
+      "../articles/b.md": md({ title: "B", date: "2026-08-20" }),
+    });
+
+    const titles = articles.map((article) => article.title);
+
+    expect(titles.indexOf("A")).toBeLessThan(titles.indexOf("B"));
+    expect(titles.indexOf("B")).toBeLessThan(titles.indexOf("C"));
+  });
+
+  it("date が空の記事は先頭に来る", () => {
+    const articles = createArticles({
+      "../articles/a.md": md({ title: "A", date: "2026-03-15" }),
+      "../articles/empty.md": md({ title: "空", date: "" }),
+    });
+
+    expect(articles.map((article) => article.title)).toEqual(["空", "A"]);
+  });
+
+  it("不正な date が混ざっても id は 0 始まりの連番になる", () => {
+    const articles = createArticles({
+      "../articles/x.md": md({ title: "X", date: "x" }),
+      "../articles/a.md": md({ title: "A", date: "2026-03-15" }),
+      "../articles/b.md": md({ title: "B", date: "2026-08-20" }),
+    });
+
+    expect(articles.map((article) => article.id)).toEqual([0, 1, 2]);
+  });
+});
+
 // 現在の実装が spec を満たしていない箇所。実装したら it.todo を it に変えて有効化する
 describe("未実装（spec §14 の実装順序で対応する）", () => {
-  it.todo("不正な date が混ざってもソート順が壊れない（文字列比較にする） — spec §5");
   it.todo("検証で問題が見つかったら console.warn で報告する — spec §5");
 });

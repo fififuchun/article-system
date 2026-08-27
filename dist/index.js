@@ -35,7 +35,7 @@ function createArticles(rawFiles) {
       thumbnail: data.thumbnail ?? "",
       content
     };
-  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((article, index) => ({ ...article, id: index }));
+  }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0).map((article, index) => ({ ...article, id: index }));
 }
 
 // src/levenshtein.ts
