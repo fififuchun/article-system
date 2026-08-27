@@ -1,5 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createArticles } from "./createArticles";
+
+// createArticles は問題のある記事を console.warn で報告する（spec §5）。
+// 既存のテストは必須項目を省いた md を使うため、出力を抑えつつ呼び出しを検査できるようにする
+const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+beforeEach(() => {
+  warn.mockClear();
+});
 
 /** import.meta.glob が返すのと同じ形の生データを組み立てる */
 function md(front: Record<string, string>, body = "本文"): string {
@@ -225,7 +233,61 @@ describe("createArticles — 不正な date が混ざったときのソート", 
   });
 });
 
-// 現在の実装が spec を満たしていない箇所。実装したら it.todo を it に変えて有効化する
-describe("未実装（spec §14 の実装順序で対応する）", () => {
-  it.todo("検証で問題が見つかったら console.warn で報告する — spec §5");
+describe("createArticles — 検証結果の報告", () => {
+  const complete = {
+    title: "記事タイトル",
+    date: "2026-08-23",
+    latestUpdate: "2026-08-24",
+    staff: "田中 花子",
+    thumbnail: "art_0.webp",
+  };
+
+  it("検証で問題が見つかったら console.warn で報告する — spec §5", () => {
+    createArticles({
+      "../articles/2026-08-23-a.md": md({ title: "記事", date: "2026-08-23" }),
+    });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("問題が無ければ console.warn を呼ばない", () => {
+    createArticles({ "../articles/2026-08-23-a.md": md(complete) });
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("報告にファイル名を含める", () => {
+    createArticles({
+      "../articles/2026-08-23-a.md": md({ title: "記事", date: "2026-08-23" }),
+    });
+
+    expect(warn.mock.calls[0][0]).toContain("2026-08-23-a.md");
+  });
+
+  it("報告に問題の内容を含める", () => {
+    createArticles({
+      "../articles/2026-08-23-a.md": md({ title: "記事", date: "2026-08-23" }),
+    });
+
+    expect(warn.mock.calls[0][0]).toContain("staff");
+  });
+
+  it("問題のある記事ごとに報告する", () => {
+    createArticles({
+      "../articles/a.md": md({ title: "A", date: "2026-03-15" }),
+      "../articles/b.md": md({ title: "B", date: "2026-08-20" }),
+      "../articles/c.md": md({ ...complete, date: "2026-08-23" }),
+    });
+
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("問題があっても例外は投げず記事を返す", () => {
+    const articles = createArticles({
+      "../articles/2026-08-23-a.md": md({ title: "記事", date: "2026-08-23" }),
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].title).toBe("記事");
+  });
 });

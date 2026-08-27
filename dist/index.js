@@ -13,31 +13,6 @@ function parseFrontmatter(raw) {
   return { data, content: match[2] };
 }
 
-// src/createArticles.ts
-function createArticles(rawFiles) {
-  return Object.entries(rawFiles).map(([path, raw]) => {
-    const filename = path.split("/").pop() ?? path;
-    if (filename.startsWith("_")) {
-      throw new Error(
-        `[article-system] \u4E0B\u66F8\u304D\u30D5\u30A1\u30A4\u30EB "${filename}" \u304C\u30D0\u30F3\u30C9\u30EB\u306B\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002
-\u672C\u6587\u304C\u516C\u958B\u3055\u308C\u3066\u3044\u307E\u3059\u3002import.meta.glob \u306E\u30D1\u30BF\u30FC\u30F3\u3092
-  "../articles/[!_]*.md"
-\u306B\u5909\u66F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
-      );
-    }
-    const { data, content } = parseFrontmatter(raw);
-    return {
-      filename,
-      title: data.title ?? "",
-      date: data.date ?? "",
-      latestUpdate: data.latestUpdate ?? "",
-      staff: data.staff ?? "",
-      thumbnail: data.thumbnail ?? "",
-      content
-    };
-  }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0).map((article, index) => ({ ...article, id: index }));
-}
-
 // src/levenshtein.ts
 function levenshtein(a, b) {
   if (a === b) return 0;
@@ -146,6 +121,38 @@ function validateArticle(raw, context = {}) {
     });
   }
   return issues;
+}
+
+// src/createArticles.ts
+function createArticles(rawFiles) {
+  return Object.entries(rawFiles).map(([path, raw]) => {
+    const filename = path.split("/").pop() ?? path;
+    if (filename.startsWith("_")) {
+      throw new Error(
+        `[article-system] \u4E0B\u66F8\u304D\u30D5\u30A1\u30A4\u30EB "${filename}" \u304C\u30D0\u30F3\u30C9\u30EB\u306B\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002
+\u672C\u6587\u304C\u516C\u958B\u3055\u308C\u3066\u3044\u307E\u3059\u3002import.meta.glob \u306E\u30D1\u30BF\u30FC\u30F3\u3092
+  "../articles/[!_]*.md"
+\u306B\u5909\u66F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
+      );
+    }
+    const issues = validateArticle(raw);
+    if (issues.length > 0) {
+      console.warn(
+        `[article-system] ${filename} \u306B\u554F\u984C\u304C\u3042\u308A\u307E\u3059:
+` + issues.map((issue) => `  - ${issue.message}`).join("\n")
+      );
+    }
+    const { data, content } = parseFrontmatter(raw);
+    return {
+      filename,
+      title: data.title ?? "",
+      date: data.date ?? "",
+      latestUpdate: data.latestUpdate ?? "",
+      staff: data.staff ?? "",
+      thumbnail: data.thumbnail ?? "",
+      content
+    };
+  }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0).map((article, index) => ({ ...article, id: index }));
 }
 
 // src/components/ArticleDetail.tsx
