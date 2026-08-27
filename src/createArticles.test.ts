@@ -127,9 +127,59 @@ describe("createArticles — filename", () => {
   });
 });
 
+describe("createArticles — 下書きの混入", () => {
+  it("_ 始まりのファイルを受け取ったら例外を投げる — spec §4", () => {
+    expect(() =>
+      createArticles({
+        "../articles/_2026-08-23-書きかけ.md": md({ title: "書きかけ", date: "2026-08-23" }),
+      })
+    ).toThrow();
+  });
+
+  it("公開ファイルに1件でも混ざっていれば例外を投げる", () => {
+    expect(() =>
+      createArticles({
+        "../articles/2026-08-20-b.md": md({ title: "B", date: "2026-08-20" }),
+        "../articles/_2026-08-23-書きかけ.md": md({ title: "書きかけ", date: "2026-08-23" }),
+      })
+    ).toThrow();
+  });
+
+  it("例外のメッセージに混入したファイル名を含める", () => {
+    expect(() =>
+      createArticles({
+        "../articles/_2026-08-23-書きかけ.md": md({ title: "書きかけ", date: "2026-08-23" }),
+      })
+    ).toThrow("_2026-08-23-書きかけ.md");
+  });
+
+  it("例外のメッセージに直し方（[!_]*.md）を含める", () => {
+    expect(() =>
+      createArticles({
+        "../articles/_下書き.md": md({ title: "書きかけ", date: "2026-08-23" }),
+      })
+    ).toThrow("[!_]*.md");
+  });
+
+  it("公開ファイルだけなら例外を投げない", () => {
+    expect(() =>
+      createArticles({
+        "../articles/2026-08-23-a.md": md({ title: "A", date: "2026-08-23" }),
+      })
+    ).not.toThrow();
+  });
+
+  it("ディレクトリ名の _ では例外を投げない（見るのはファイル名だけ）", () => {
+    expect(() =>
+      createArticles({
+        "/src/_drafts/2026-08-23-a.md": md({ title: "A", date: "2026-08-23" }),
+      })
+    ).not.toThrow();
+  });
+});
+
 // 現在の実装が spec を満たしていない箇所。実装したら it.todo を it に変えて有効化する
 describe("未実装（spec §14 の実装順序で対応する）", () => {
-  it.todo("_ 始まりのファイルを受け取ったら例外を投げる — spec §4");
   it.todo("不正な date が混ざってもソート順が壊れない（文字列比較にする） — spec §5");
   it.todo("検証で問題が見つかったら console.warn で報告する — spec §5");
 });
