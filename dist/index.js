@@ -259,22 +259,22 @@ function ArticleList({
   classNames = {},
   renderLink
 }) {
-  return /* @__PURE__ */ jsx3("div", { className: classNames.grid, children: articles.map((article) => {
+  return /* @__PURE__ */ jsx3("div", { className: cx("as-grid", classNames.grid), children: articles.map((article) => {
     const [year, month, day] = article.latestUpdate.split("-").map(Number);
     return renderLink(
       getArticleUrl(article),
-      /* @__PURE__ */ jsxs2("div", { className: classNames.card, children: [
+      /* @__PURE__ */ jsxs2("div", { className: cx("as-card", classNames.card), children: [
         /* @__PURE__ */ jsx3(
           "img",
           {
             src: `${imageBasePath}${article.thumbnail}`,
             alt: article.title,
-            className: classNames.cardImage
+            className: cx("as-card-image", classNames.cardImage)
           }
         ),
-        /* @__PURE__ */ jsx3("p", { className: classNames.cardTitle, children: article.title }),
-        /* @__PURE__ */ jsxs2("div", { className: classNames.cardDate, children: [
-          /* @__PURE__ */ jsx3(ClockIcon, { className: classNames.cardDateIcon }),
+        /* @__PURE__ */ jsx3("p", { className: cx("as-card-title", classNames.cardTitle), children: article.title }),
+        /* @__PURE__ */ jsxs2("div", { className: cx("as-card-date", classNames.cardDate), children: [
+          /* @__PURE__ */ jsx3(ClockIcon, { className: cx("as-card-date-icon", classNames.cardDateIcon) }),
           /* @__PURE__ */ jsxs2("span", { children: [
             year,
             "\u5E74",
