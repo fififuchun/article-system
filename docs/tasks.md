@@ -52,13 +52,13 @@
 
 - [ ] `src/cx.ts` に `cx(...classes)` ヘルパー（falsy を除いて空白連結）を作り、テストを付ける
 - [ ] `src/formatDate.ts` に `YYYY-MM-DD` を年・月・日に分解するヘルパーを作り、テストを付ける（不正な日付の扱いを含む）
-- [ ] `ArticleDetail` の `h2` / `h3` / `h4` を `<div>` から**正しい見出しタグ**に変える（spec §7-1）
-- [ ] `ArticleDetail` の段落ラッパーを1段にし、画像を `<p>` でラップしないよう `p` / `img` のマッピングを直す（spec §7-2）
-- [ ] `ArticleDetail` の全要素に `cx("as-*", classNames.*)` でデフォルトクラスを常時付与する（spec §7 の DOM 構造どおり）
-- [ ] `thumbnail` が空のときサムネイル `<img>` を描画しないようにする（spec §7-3）
-- [ ] 画像 `src` が絶対URL（`http://` `https://` `//` 始まり）なら `imageBasePath` を前置せず素通しする（spec §7-3）
-- [ ] `ArticleList` の全要素に `as-` クラスを常時付与する（spec §8 の DOM 構造どおり）
-- [ ] `ArticleDetail` / `ArticleList` を `formatDate` ヘルパーに置き換えて日付整形を一本化する
+- [ ] `ArticleDetail` の `h2` / `h3` / `h4` を `<div>` から**正しい見出しタグ**に変える（spec §7-1。テスト → 実装 → グリーン）
+- [ ] `ArticleDetail` の段落ラッパーを1段にし、画像を `<p>` でラップしないよう `p` / `img` のマッピングを直す（spec §7-2。テスト → 実装 → グリーン。`validateDOMNesting` 警告が出ないことも検査する）
+- [ ] `ArticleDetail` の全要素に `cx("as-*", classNames.*)` でデフォルトクラスを常時付与する（spec §7 の DOM 構造どおり。テスト → 実装 → グリーン）
+- [ ] `thumbnail` が空のときサムネイル `<img>` を描画しないようにする（spec §7-3。テスト → 実装 → グリーン）
+- [ ] 画像 `src` が絶対URL（`http://` `https://` `//` 始まり）なら `imageBasePath` を前置せず素通しする（spec §7-3。テスト → 実装 → グリーン）
+- [ ] `ArticleList` の全要素に `as-` クラスを常時付与する（spec §8 の DOM 構造どおり。テスト → 実装 → グリーン）
+- [ ] `ArticleDetail` / `ArticleList` を `formatDate` ヘルパーに置き換えて日付整形を一本化する（テスト → 実装 → グリーン）
 
 ### フェーズ4: styles.css の作成（spec §10 / 実装順序 4）
 
@@ -130,6 +130,6 @@
 
 - **ベースラインは `72bca59`**（vitest 導入とテスト追加）。ここまで戻れば必ずグリーンな状態に復帰できる
 - フェーズ1と2はテストが書ける純粋関数。**テストを先に書いて落とし、同じ周回で実装して通す**。テストだけを書いて終わる周回を作らない（ゲートが赤いままコミットできないため）
-- フェーズ3以降はコンポーネントのため、テストではなく `demo/` での目視確認が主な検証手段になる。DOM テストを入れるなら jsdom と testing-library の導入が別途必要
+- コンポーネントは **DOM テストで構造のみ**を検証する（spec §14）。テストファイルの先頭に `// @vitest-environment jsdom` を書く。**見た目は検証しない** — スタイルの確認は `demo/` での目視
 - `Article` に `filename` を足すと `createArticles` の戻り値の形が変わる。フェーズ6の Studio が `Article` を組み立てるときも `filename` が要る
 - フェーズ6で `ArticlePreview` を削除するのは**破壊的変更**。利用側プロジェクトの差し替えが必要になる
