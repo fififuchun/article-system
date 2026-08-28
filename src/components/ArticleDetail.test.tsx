@@ -183,3 +183,46 @@ describe("ArticleDetail — as- クラスの常時付与", () => {
     expect(container.querySelector(".as-article")?.className).toBe("as-article");
   });
 });
+
+describe("ArticleDetail — サムネイル", () => {
+  it("thumbnail が空ならサムネイルを描画しない", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, thumbnail: "" }} />
+    );
+
+    expect(container.querySelector(".as-thumbnail")).toBeNull();
+  });
+
+  it("thumbnail があれば imageBasePath を前置して描画する", () => {
+    const { container } = render(
+      <ArticleDetail article={article} imageBasePath="/imgs/" />
+    );
+
+    const thumbnail = container.querySelector(".as-thumbnail");
+
+    expect(thumbnail?.getAttribute("src")).toBe("/imgs/art_0.webp");
+  });
+
+  it("サムネイルの alt に記事タイトルを使う", () => {
+    const { container } = render(<ArticleDetail article={article} />);
+
+    expect(container.querySelector(".as-thumbnail")?.getAttribute("alt")).toBe("記事タイトル");
+  });
+
+  it("thumbnail が空でも本文中の画像は描画する", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, thumbnail: "", content: "![](art_1.webp)" }} />
+    );
+
+    expect(container.querySelector(".as-image img")).not.toBeNull();
+  });
+
+  it("thumbnail が空でも他の要素は描画する", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, thumbnail: "" }} />
+    );
+
+    expect(container.querySelector(".as-title")).not.toBeNull();
+    expect(container.querySelector(".as-footer")).not.toBeNull();
+  });
+});

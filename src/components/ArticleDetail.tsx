@@ -64,11 +64,13 @@ export function ArticleDetail({
         <span>{dateLabel}&nbsp;{ly}年{lm}月{ld}日</span>
       </div>
 
-      <img
-        src={`${imageBasePath}${article.thumbnail}`}
-        alt={article.title}
-        className={cx("as-thumbnail", classNames.thumbnail)}
-      />
+      {article.thumbnail && (
+        <img
+          src={`${imageBasePath}${article.thumbnail}`}
+          alt={article.title}
+          className={cx("as-thumbnail", classNames.thumbnail)}
+        />
+      )}
 
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={mdComponents}>
         {article.content}

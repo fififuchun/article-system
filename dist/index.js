@@ -230,7 +230,7 @@ function ArticleDetail({
         "\u65E5"
       ] })
     ] }),
-    /* @__PURE__ */ jsx2(
+    article.thumbnail && /* @__PURE__ */ jsx2(
       "img",
       {
         src: `${imageBasePath}${article.thumbnail}`,
