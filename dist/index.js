@@ -176,7 +176,7 @@ function ClockIcon({ className }) {
 }
 
 // src/components/ArticleDetail.tsx
-import { jsx as jsx2, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx as jsx2, jsxs } from "react/jsx-runtime";
 function ArticleDetail({
   article,
   imageBasePath = "/article_imgs/",
@@ -189,7 +189,15 @@ function ArticleDetail({
     h2: ({ children }) => /* @__PURE__ */ jsx2("h2", { className: classNames.heading, children }),
     h3: ({ children }) => /* @__PURE__ */ jsx2("h3", { className: classNames.subheading, children }),
     h4: ({ children }) => /* @__PURE__ */ jsx2("h4", { className: classNames.subsubheading, children }),
-    p: ({ children }) => /* @__PURE__ */ jsx2("div", { className: classNames.paragraph, children: /* @__PURE__ */ jsx2("p", { children }) }),
+    // 画像だけの行も markdown では段落になる。p でラップすると
+    // <p><div> の不正な入れ子になり、SSR でハイドレーションエラーを起こす（spec §7-2）
+    p: ({ children, node }) => {
+      const onlyChild = node?.children.length === 1 ? node.children[0] : void 0;
+      if (onlyChild?.type === "element" && onlyChild.tagName === "img") {
+        return /* @__PURE__ */ jsx2(Fragment, { children });
+      }
+      return /* @__PURE__ */ jsx2("p", { className: classNames.paragraph, children });
+    },
     img: ({ src, alt }) => /* @__PURE__ */ jsx2("div", { className: classNames.image, children: /* @__PURE__ */ jsx2("img", { src: `${imageBasePath}${src}`, alt: alt ?? "" }) })
   };
   return /* @__PURE__ */ jsxs("div", { className: classNames.wrapper, children: [

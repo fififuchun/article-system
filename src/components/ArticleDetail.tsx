@@ -31,11 +31,16 @@ export function ArticleDetail({
     h4: ({ children }) => (
       <h4 className={classNames.subsubheading}>{children}</h4>
     ),
-    p: ({ children }) => (
-      <div className={classNames.paragraph}>
-        <p>{children}</p>
-      </div>
-    ),
+    // 画像だけの行も markdown では段落になる。p でラップすると
+    // <p><div> の不正な入れ子になり、SSR でハイドレーションエラーを起こす（spec §7-2）
+    p: ({ children, node }) => {
+      const onlyChild = node?.children.length === 1 ? node.children[0] : undefined;
+      if (onlyChild?.type === "element" && onlyChild.tagName === "img") {
+        return <>{children}</>;
+      }
+
+      return <p className={classNames.paragraph}>{children}</p>;
+    },
     img: ({ src, alt }) => (
       <div className={classNames.image}>
         <img src={`${imageBasePath}${src}`} alt={alt ?? ""} />

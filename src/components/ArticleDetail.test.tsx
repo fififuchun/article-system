@@ -66,3 +66,74 @@ describe("ArticleDetail — 見出しのタグ", () => {
     expect(container.querySelector("h1")).toBeNull();
   });
 });
+
+describe("ArticleDetail — 段落と画像の入れ子", () => {
+  it("段落を p 1段で描画する", () => {
+    render(<ArticleDetail article={{ ...article, content: "本文テキスト" }} />);
+
+    expect(screen.getByText("本文テキスト").tagName).toBe("P");
+  });
+
+  it("段落の classNames は p 自身に付く", () => {
+    render(
+      <ArticleDetail
+        article={{ ...article, content: "本文テキスト" }}
+        classNames={{ paragraph: "my-paragraph" }}
+      />
+    );
+
+    expect(screen.getByText("本文テキスト").className).toContain("my-paragraph");
+  });
+
+  it("画像だけの行を p でラップしない", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "![](art_1.webp)" }} />
+    );
+
+    const bodyImage = Array.from(container.querySelectorAll("img")).find((image) =>
+      image.getAttribute("src")?.includes("art_1")
+    );
+
+    expect(bodyImage).toBeDefined();
+    expect(bodyImage?.closest("p")).toBeNull();
+  });
+
+  it("画像は classNames.image のラッパーに包まれる", () => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, content: "![](art_1.webp)" }}
+        classNames={{ image: "my-image" }}
+      />
+    );
+
+    const bodyImage = Array.from(container.querySelectorAll("img")).find((image) =>
+      image.getAttribute("src")?.includes("art_1")
+    );
+
+    expect(bodyImage?.parentElement?.className).toContain("my-image");
+  });
+
+  // spec §7-2: SSR ではブラウザが p を自動で閉じ、ハイドレーションエラーになる。
+  // React の入れ子警告は同じパターンにつき一度しか出ないため、
+  // console.error を覗く検査は実行順に依存する。構造そのものを見る
+  it("p の中に div を入れない", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "![](art_1.webp)" }} />
+    );
+
+    expect(container.querySelector("p div")).toBeNull();
+  });
+
+  it("テキストの段落と画像の行が混在しても両方描画される", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "本文テキスト\n\n![](art_1.webp)" }} />
+    );
+
+    expect(screen.getByText("本文テキスト").tagName).toBe("P");
+    expect(
+      Array.from(container.querySelectorAll("img")).some((image) =>
+        image.getAttribute("src")?.includes("art_1")
+      )
+    ).toBe(true);
+  });
+});
