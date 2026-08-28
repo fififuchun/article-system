@@ -810,7 +810,11 @@ npm i github:fififuchun/article-system
 6. **`ArticleStudio`** — 上記すべてに依存する
 7. **配布まわり** — `exports` 追加、`sideEffects` 追加、pre-commit フック、README 改訂
 
-テストは `parseFrontmatter` / `createArticles` / `validateArticle` に置きます。いずれも入出力が明確な純粋関数で、コストが低く、エッジケースの回帰を防げます。現在テスト・Lint・CI は一切ありません。
+テストは `parseFrontmatter` / `createArticles` / `validateArticle` に置きます。いずれも入出力が明確な純粋関数で、コストが低く、エッジケースの回帰を防げます。
+
+**コンポーネントには DOM テストを置きます。** 検証するのは**構造だけ**です — 見出しのタグ、`<p>` の入れ子、`as-` クラスの付与、`thumbnail` 未指定時の非描画、絶対URLの素通し、そして `ArticleStudio` の状態遷移（下書き復帰、タブ切替、検証のタイミング）。**見た目は検証しません**。スタイルの確認は `demo/` での目視で行います。
+
+jsdom は純粋関数のテストより桁違いに遅いため、環境はファイル単位で指定します（`// @vitest-environment jsdom`）。純粋関数のテストは Node 環境のまま高速に保ちます。
 
 ---
 
