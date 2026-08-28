@@ -54,7 +54,7 @@
 - [x] `src/formatDate.ts` に `YYYY-MM-DD` を年・月・日に分解するヘルパーを作り、テストを付ける（不正な日付の扱いを含む）
 - [x] `ArticleDetail` の `h2` / `h3` / `h4` を `<div>` から**正しい見出しタグ**に変える（spec §7-1。テスト → 実装 → グリーン）
 - [x] `ArticleDetail` の段落ラッパーを1段にし、画像を `<p>` でラップしないよう `p` / `img` のマッピングを直す（spec §7-2。テスト → 実装 → グリーン。`validateDOMNesting` 警告が出ないことも検査する）
-- [ ] `ArticleDetail` の全要素に `cx("as-*", classNames.*)` でデフォルトクラスを常時付与する（spec §7 の DOM 構造どおり。テスト → 実装 → グリーン）
+- [x] `ArticleDetail` の全要素に `cx("as-*", classNames.*)` でデフォルトクラスを常時付与する（spec §7 の DOM 構造どおり。テスト → 実装 → グリーン）
 - [ ] `thumbnail` が空のときサムネイル `<img>` を描画しないようにする（spec §7-3。テスト → 実装 → グリーン）
 - [ ] 画像 `src` が絶対URL（`http://` `https://` `//` 始まり）なら `imageBasePath` を前置せず素通しする（spec §7-3。テスト → 実装 → グリーン）
 - [ ] `ArticleList` の全要素に `as-` クラスを常時付与する（spec §8 の DOM 構造どおり。テスト → 実装 → グリーン）

@@ -160,6 +160,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 
+// src/cx.ts
+function cx(...classes) {
+  return classes.filter((className) => Boolean(className)).join(" ");
+}
+
 // src/icons/ClockIcon.tsx
 import { jsx } from "react/jsx-runtime";
 function ClockIcon({ className }) {
@@ -186,9 +191,9 @@ function ArticleDetail({
   const [year, month, day] = article.date.split("-").map(Number);
   const [ly, lm, ld] = article.latestUpdate.split("-").map(Number);
   const mdComponents = {
-    h2: ({ children }) => /* @__PURE__ */ jsx2("h2", { className: classNames.heading, children }),
-    h3: ({ children }) => /* @__PURE__ */ jsx2("h3", { className: classNames.subheading, children }),
-    h4: ({ children }) => /* @__PURE__ */ jsx2("h4", { className: classNames.subsubheading, children }),
+    h2: ({ children }) => /* @__PURE__ */ jsx2("h2", { className: cx("as-heading", classNames.heading), children }),
+    h3: ({ children }) => /* @__PURE__ */ jsx2("h3", { className: cx("as-subheading", classNames.subheading), children }),
+    h4: ({ children }) => /* @__PURE__ */ jsx2("h4", { className: cx("as-subsubheading", classNames.subsubheading), children }),
     // 画像だけの行も markdown では段落になる。p でラップすると
     // <p><div> の不正な入れ子になり、SSR でハイドレーションエラーを起こす（spec §7-2）
     p: ({ children, node }) => {
@@ -196,24 +201,24 @@ function ArticleDetail({
       if (onlyChild?.type === "element" && onlyChild.tagName === "img") {
         return /* @__PURE__ */ jsx2(Fragment, { children });
       }
-      return /* @__PURE__ */ jsx2("p", { className: classNames.paragraph, children });
+      return /* @__PURE__ */ jsx2("p", { className: cx("as-paragraph", classNames.paragraph), children });
     },
-    img: ({ src, alt }) => /* @__PURE__ */ jsx2("div", { className: classNames.image, children: /* @__PURE__ */ jsx2("img", { src: `${imageBasePath}${src}`, alt: alt ?? "" }) })
+    img: ({ src, alt }) => /* @__PURE__ */ jsx2("div", { className: cx("as-image", classNames.image), children: /* @__PURE__ */ jsx2("img", { src: `${imageBasePath}${src}`, alt: alt ?? "" }) })
   };
-  return /* @__PURE__ */ jsxs("div", { className: classNames.wrapper, children: [
-    /* @__PURE__ */ jsxs("div", { className: classNames.headerWrapper, children: [
-      /* @__PURE__ */ jsxs("div", { className: classNames.dateWrapper, children: [
-        /* @__PURE__ */ jsx2("p", { className: classNames.dateYear, children: year }),
-        /* @__PURE__ */ jsxs("p", { className: classNames.dateDay, children: [
+  return /* @__PURE__ */ jsxs("div", { className: cx("as-article", classNames.wrapper), children: [
+    /* @__PURE__ */ jsxs("div", { className: cx("as-header", classNames.headerWrapper), children: [
+      /* @__PURE__ */ jsxs("div", { className: cx("as-date", classNames.dateWrapper), children: [
+        /* @__PURE__ */ jsx2("p", { className: cx("as-date-year", classNames.dateYear), children: year }),
+        /* @__PURE__ */ jsxs("p", { className: cx("as-date-day", classNames.dateDay), children: [
           month,
           "/",
           day
         ] })
       ] }),
-      /* @__PURE__ */ jsx2("p", { className: classNames.title, children: article.title })
+      /* @__PURE__ */ jsx2("p", { className: cx("as-title", classNames.title), children: article.title })
     ] }),
-    /* @__PURE__ */ jsxs("div", { className: classNames.latestUpdate, children: [
-      /* @__PURE__ */ jsx2(ClockIcon, { className: classNames.dateIcon }),
+    /* @__PURE__ */ jsxs("div", { className: cx("as-latest-update", classNames.latestUpdate), children: [
+      /* @__PURE__ */ jsx2(ClockIcon, { className: cx("as-date-icon", classNames.dateIcon) }),
       /* @__PURE__ */ jsxs("span", { children: [
         dateLabel,
         "\xA0",
@@ -230,11 +235,11 @@ function ArticleDetail({
       {
         src: `${imageBasePath}${article.thumbnail}`,
         alt: article.title,
-        className: classNames.thumbnail
+        className: cx("as-thumbnail", classNames.thumbnail)
       }
     ),
     /* @__PURE__ */ jsx2(ReactMarkdown, { remarkPlugins: [remarkGfm, remarkBreaks], components: mdComponents, children: article.content }),
-    /* @__PURE__ */ jsxs("p", { className: classNames.footer, children: [
+    /* @__PURE__ */ jsxs("p", { className: cx("as-footer", classNames.footer), children: [
       "\u62C5\u5F53\uFF1A",
       article.staff
     ] })

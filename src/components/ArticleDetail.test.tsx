@@ -137,3 +137,49 @@ describe("ArticleDetail — 段落と画像の入れ子", () => {
     ).toBe(true);
   });
 });
+
+describe("ArticleDetail — as- クラスの常時付与", () => {
+  const content = "## 見出し\n\n### 小見出し\n\n#### 小小見出し\n\n本文...\n\n![](art_1.webp)";
+
+  // spec §7 の DOM 構造
+  it.each([
+    "as-article",
+    "as-header",
+    "as-date",
+    "as-date-year",
+    "as-date-day",
+    "as-title",
+    "as-latest-update",
+    "as-date-icon",
+    "as-thumbnail",
+    "as-heading",
+    "as-subheading",
+    "as-subsubheading",
+    "as-paragraph",
+    "as-image",
+    "as-footer",
+  ])("classNames 未指定でも %s が付く", (className) => {
+    const { container } = render(<ArticleDetail article={{ ...article, content }} />);
+
+    expect(container.querySelector(`.${className}`)).not.toBeNull();
+  });
+
+  it("classNames を渡すと as- クラスに追記される", () => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, content }}
+        classNames={{ wrapper: "my-article", heading: "my-heading", footer: "my-footer" }}
+      />
+    );
+
+    expect(container.querySelector(".as-article")?.className).toBe("as-article my-article");
+    expect(container.querySelector(".as-heading")?.className).toBe("as-heading my-heading");
+    expect(container.querySelector(".as-footer")?.className).toBe("as-footer my-footer");
+  });
+
+  it("classNames 未指定なら余分な空白が入らない", () => {
+    const { container } = render(<ArticleDetail article={{ ...article, content }} />);
+
+    expect(container.querySelector(".as-article")?.className).toBe("as-article");
+  });
+});
