@@ -281,3 +281,36 @@ describe("ArticleDetail — 絶対URLの画像", () => {
     expect(bodyImageSrc(container)).toBe("/imgs/my-http-image.webp");
   });
 });
+
+describe("ArticleDetail — 日付の表示", () => {
+  it("date を年と 月/日 に分けて表示する", () => {
+    const { container } = render(<ArticleDetail article={article} />);
+
+    expect(container.querySelector(".as-date-year")?.textContent).toBe("2026");
+    expect(container.querySelector(".as-date-day")?.textContent).toBe("8/23");
+  });
+
+  it("latestUpdate をラベル付きで表示する", () => {
+    const { container } = render(<ArticleDetail article={article} />);
+
+    expect(container.querySelector(".as-latest-update")?.textContent).toContain(
+      "2026年8月24日"
+    );
+  });
+
+  it("dateLabel を差し替えられる", () => {
+    const { container } = render(<ArticleDetail article={article} dateLabel="更新" />);
+
+    expect(container.querySelector(".as-latest-update")?.textContent).toContain("更新");
+  });
+
+  // spec §9: 形式違反はプレビューが壊れて見えることで気づく仕組みになっている
+  it("不正な date は整形せず壊れた表示のままにする", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, date: "2026/08/23" }} />
+    );
+
+    expect(container.querySelector(".as-date-year")?.textContent).toBe("NaN");
+    expect(container.querySelector(".as-date-day")?.textContent).toBe("/");
+  });
+});

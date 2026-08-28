@@ -4,6 +4,7 @@ import remarkBreaks from "remark-breaks";
 import type { Components } from "react-markdown";
 import type { Article, ArticleDetailClassNames } from "../types";
 import { cx } from "../cx";
+import { formatDate } from "../formatDate";
 
 /** http:// https:// とプロトコル相対の // */
 const ABSOLUTE_URL = /^(?:https?:)?\/\//;
@@ -27,8 +28,8 @@ export function ArticleDetail({
   classNames = {},
   dateLabel = "最終更新日時",
 }: Props) {
-  const [year, month, day] = article.date.split("-").map(Number);
-  const [ly, lm, ld] = article.latestUpdate.split("-").map(Number);
+  const { year, month, day } = formatDate(article.date);
+  const latest = formatDate(article.latestUpdate);
 
   const mdComponents: Components = {
     h2: ({ children }) => (
@@ -69,7 +70,7 @@ export function ArticleDetail({
 
       <div className={cx("as-latest-update", classNames.latestUpdate)}>
         <ClockIcon className={cx("as-date-icon", classNames.dateIcon)} />
-        <span>{dateLabel}&nbsp;{ly}年{lm}月{ld}日</span>
+        <span>{dateLabel}&nbsp;{latest.year}年{latest.month}月{latest.day}日</span>
       </div>
 
       {article.thumbnail && (

@@ -77,3 +77,11 @@ describe("ArticleList — 描画内容", () => {
     expect(container.querySelector(".as-card-date")?.textContent).toContain("2026年8月24日");
   });
 });
+
+describe("ArticleList — 日付の表示", () => {
+  it("latestUpdate を 年月日 で表示する", () => {
+    const { container } = renderList();
+
+    expect(container.querySelector(".as-card-date")?.textContent).toBe("2026年8月24日");
+  });
+});

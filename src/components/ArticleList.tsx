@@ -1,6 +1,7 @@
 import type { Article, ArticleListClassNames } from "../types";
 import { ClockIcon } from "../icons/ClockIcon";
 import { cx } from "../cx";
+import { formatDate } from "../formatDate";
 
 interface Props {
   articles: Article[];
@@ -24,7 +25,7 @@ export function ArticleList({
   return (
     <div className={cx("as-grid", classNames.grid)}>
       {articles.map((article) => {
-        const [year, month, day] = article.latestUpdate.split("-").map(Number);
+        const { year, month, day } = formatDate(article.latestUpdate);
         return renderLink(
           getArticleUrl(article),
           <div className={cx("as-card", classNames.card)}>

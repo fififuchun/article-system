@@ -165,6 +165,12 @@ function cx(...classes) {
   return classes.filter((className) => Boolean(className)).join(" ");
 }
 
+// src/formatDate.ts
+function formatDate(date) {
+  const [year, month, day] = date.split("-").map(Number);
+  return { year, month, day };
+}
+
 // src/icons/ClockIcon.tsx
 import { jsx } from "react/jsx-runtime";
 function ClockIcon({ className }) {
@@ -192,8 +198,8 @@ function ArticleDetail({
   classNames = {},
   dateLabel = "\u6700\u7D42\u66F4\u65B0\u65E5\u6642"
 }) {
-  const [year, month, day] = article.date.split("-").map(Number);
-  const [ly, lm, ld] = article.latestUpdate.split("-").map(Number);
+  const { year, month, day } = formatDate(article.date);
+  const latest = formatDate(article.latestUpdate);
   const mdComponents = {
     h2: ({ children }) => /* @__PURE__ */ jsx2("h2", { className: cx("as-heading", classNames.heading), children }),
     h3: ({ children }) => /* @__PURE__ */ jsx2("h3", { className: cx("as-subheading", classNames.subheading), children }),
@@ -226,11 +232,11 @@ function ArticleDetail({
       /* @__PURE__ */ jsxs("span", { children: [
         dateLabel,
         "\xA0",
-        ly,
+        latest.year,
         "\u5E74",
-        lm,
+        latest.month,
         "\u6708",
-        ld,
+        latest.day,
         "\u65E5"
       ] })
     ] }),
@@ -260,7 +266,7 @@ function ArticleList({
   renderLink
 }) {
   return /* @__PURE__ */ jsx3("div", { className: cx("as-grid", classNames.grid), children: articles.map((article) => {
-    const [year, month, day] = article.latestUpdate.split("-").map(Number);
+    const { year, month, day } = formatDate(article.latestUpdate);
     return renderLink(
       getArticleUrl(article),
       /* @__PURE__ */ jsxs2("div", { className: cx("as-card", classNames.card), children: [
