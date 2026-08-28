@@ -186,9 +186,9 @@ function ArticleDetail({
   const [year, month, day] = article.date.split("-").map(Number);
   const [ly, lm, ld] = article.latestUpdate.split("-").map(Number);
   const mdComponents = {
-    h2: ({ children }) => /* @__PURE__ */ jsx2("div", { className: classNames.heading, children }),
-    h3: ({ children }) => /* @__PURE__ */ jsx2("div", { className: classNames.subheading, children }),
-    h4: ({ children }) => /* @__PURE__ */ jsx2("div", { className: classNames.subsubheading, children }),
+    h2: ({ children }) => /* @__PURE__ */ jsx2("h2", { className: classNames.heading, children }),
+    h3: ({ children }) => /* @__PURE__ */ jsx2("h3", { className: classNames.subheading, children }),
+    h4: ({ children }) => /* @__PURE__ */ jsx2("h4", { className: classNames.subsubheading, children }),
     p: ({ children }) => /* @__PURE__ */ jsx2("div", { className: classNames.paragraph, children: /* @__PURE__ */ jsx2("p", { children }) }),
     img: ({ src, alt }) => /* @__PURE__ */ jsx2("div", { className: classNames.image, children: /* @__PURE__ */ jsx2("img", { src: `${imageBasePath}${src}`, alt: alt ?? "" }) })
   };

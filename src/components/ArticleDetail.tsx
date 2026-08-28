@@ -23,13 +23,13 @@ export function ArticleDetail({
 
   const mdComponents: Components = {
     h2: ({ children }) => (
-      <div className={classNames.heading}>{children}</div>
+      <h2 className={classNames.heading}>{children}</h2>
     ),
     h3: ({ children }) => (
-      <div className={classNames.subheading}>{children}</div>
+      <h3 className={classNames.subheading}>{children}</h3>
     ),
     h4: ({ children }) => (
-      <div className={classNames.subsubheading}>{children}</div>
+      <h4 className={classNames.subsubheading}>{children}</h4>
     ),
     p: ({ children }) => (
       <div className={classNames.paragraph}>
