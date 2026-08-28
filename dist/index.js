@@ -182,6 +182,10 @@ function ClockIcon({ className }) {
 
 // src/components/ArticleDetail.tsx
 import { Fragment, jsx as jsx2, jsxs } from "react/jsx-runtime";
+var ABSOLUTE_URL = /^(?:https?:)?\/\//;
+function resolveImageSrc(src, imageBasePath) {
+  return ABSOLUTE_URL.test(src) ? src : `${imageBasePath}${src}`;
+}
 function ArticleDetail({
   article,
   imageBasePath = "/article_imgs/",
@@ -203,7 +207,7 @@ function ArticleDetail({
       }
       return /* @__PURE__ */ jsx2("p", { className: cx("as-paragraph", classNames.paragraph), children });
     },
-    img: ({ src, alt }) => /* @__PURE__ */ jsx2("div", { className: cx("as-image", classNames.image), children: /* @__PURE__ */ jsx2("img", { src: `${imageBasePath}${src}`, alt: alt ?? "" }) })
+    img: ({ src, alt }) => /* @__PURE__ */ jsx2("div", { className: cx("as-image", classNames.image), children: /* @__PURE__ */ jsx2("img", { src: resolveImageSrc(src ?? "", imageBasePath), alt: alt ?? "" }) })
   };
   return /* @__PURE__ */ jsxs("div", { className: cx("as-article", classNames.wrapper), children: [
     /* @__PURE__ */ jsxs("div", { className: cx("as-header", classNames.headerWrapper), children: [
@@ -233,7 +237,7 @@ function ArticleDetail({
     article.thumbnail && /* @__PURE__ */ jsx2(
       "img",
       {
-        src: `${imageBasePath}${article.thumbnail}`,
+        src: resolveImageSrc(article.thumbnail, imageBasePath),
         alt: article.title,
         className: cx("as-thumbnail", classNames.thumbnail)
       }

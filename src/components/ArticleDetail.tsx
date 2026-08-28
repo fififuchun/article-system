@@ -4,6 +4,14 @@ import remarkBreaks from "remark-breaks";
 import type { Components } from "react-markdown";
 import type { Article, ArticleDetailClassNames } from "../types";
 import { cx } from "../cx";
+
+/** http:// https:// とプロトコル相対の // */
+const ABSOLUTE_URL = /^(?:https?:)?\/\//;
+
+/** 絶対URLはそのまま、相対パスには imageBasePath を前置する（spec §7-3） */
+function resolveImageSrc(src: string, imageBasePath: string): string {
+  return ABSOLUTE_URL.test(src) ? src : `${imageBasePath}${src}`;
+}
 import { ClockIcon } from "../icons/ClockIcon";
 
 interface Props {
@@ -44,7 +52,7 @@ export function ArticleDetail({
     },
     img: ({ src, alt }) => (
       <div className={cx("as-image", classNames.image)}>
-        <img src={`${imageBasePath}${src}`} alt={alt ?? ""} />
+        <img src={resolveImageSrc(src ?? "", imageBasePath)} alt={alt ?? ""} />
       </div>
     ),
   };
@@ -66,7 +74,7 @@ export function ArticleDetail({
 
       {article.thumbnail && (
         <img
-          src={`${imageBasePath}${article.thumbnail}`}
+          src={resolveImageSrc(article.thumbnail, imageBasePath)}
           alt={article.title}
           className={cx("as-thumbnail", classNames.thumbnail)}
         />

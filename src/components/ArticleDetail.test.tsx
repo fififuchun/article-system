@@ -226,3 +226,58 @@ describe("ArticleDetail — サムネイル", () => {
     expect(container.querySelector(".as-footer")).not.toBeNull();
   });
 });
+
+describe("ArticleDetail — 絶対URLの画像", () => {
+  const bodyImageSrc = (container: HTMLElement) =>
+    container.querySelector(".as-image img")?.getAttribute("src");
+
+  it.each([
+    "http://example.com/a.webp",
+    "https://example.com/a.webp",
+    "//example.com/a.webp",
+  ])("本文の %s は imageBasePath を前置せず素通しする", (src) => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, content: `![](${src})` }}
+        imageBasePath="/imgs/"
+      />
+    );
+
+    expect(bodyImageSrc(container)).toBe(src);
+  });
+
+  it("本文の相対パスには imageBasePath を前置する", () => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, content: "![](art_1.webp)" }}
+        imageBasePath="/imgs/"
+      />
+    );
+
+    expect(bodyImageSrc(container)).toBe("/imgs/art_1.webp");
+  });
+
+  it("サムネイルが絶対URLなら素通しする", () => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, thumbnail: "https://example.com/thumb.webp" }}
+        imageBasePath="/imgs/"
+      />
+    );
+
+    expect(container.querySelector(".as-thumbnail")?.getAttribute("src")).toBe(
+      "https://example.com/thumb.webp"
+    );
+  });
+
+  it("パスの途中に http を含むだけの相対パスは素通ししない", () => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, content: "![](my-http-image.webp)" }}
+        imageBasePath="/imgs/"
+      />
+    );
+
+    expect(bodyImageSrc(container)).toBe("/imgs/my-http-image.webp");
+  });
+});
