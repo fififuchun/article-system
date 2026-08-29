@@ -66,7 +66,7 @@
 
 **最初から `:where()` で書く。** 後から書き換えると詳細度の問題を取りこぼす（spec §10）。
 
-- [ ] `src/styles.css` を作り、CSS変数（色・余白・フォントサイズ階層）を `:where(:root)` に定義する
+- [x] `src/styles.css` を作り、CSS変数（色・余白・フォントサイズ階層）を `:where(:root)` に定義する
 - [ ] 記事のタイポグラフィ（`as-title` / `as-heading` / `as-subheading` / `as-subsubheading` / `as-paragraph`）を書く。ブラウザ標準の見出しスタイルのリセットを含む
 - [ ] 記事ヘッダー（`as-header` / `as-date` / `as-latest-update` / `as-thumbnail` / `as-footer`）を書く
 - [ ] 本文中のリスト・表・引用・コードブロックを子孫セレクタで書く（remark-gfm の出力。spec §7）

@@ -1,0 +1,56 @@
+/*
+ * @fififuchun/article-system デフォルトスタイル
+ *
+ * すべてのセレクタを :where() で包み、詳細度を 0 にしています（spec §10）。
+ * クラスセレクタは詳細度が同点のため、同点だと CSS の定義順で勝敗が決まり、
+ * Vite のコード分割や HMR で順序が変わりえます。:where() なら読み込み順に
+ * 関係なく利用側の上書きが常に効きます。
+ *
+ * 色やサイズは下の変数を再定義するだけで差し替えられます。
+ */
+
+:where(:root) {
+  /* 色 */
+  --as-color-text: #333;
+  --as-color-heading: #222;
+  --as-color-muted: #888;
+  --as-color-subtle: #aaa;
+  --as-color-accent: #4a90e2;
+  --as-color-border: #eee;
+  --as-color-surface: #fff;
+  --as-color-surface-muted: #f6f7f9;
+  --as-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+  /* 書体 */
+  --as-font-body: system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP", Meiryo, sans-serif;
+  --as-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Noto Sans Mono", monospace;
+
+  /* 文字サイズ — タイトル > h2 > h3 > h4 の段差をここで作る */
+  --as-text-title: 1.5rem;
+  --as-text-heading: 1.25rem;
+  --as-text-subheading: 1rem;
+  --as-text-subsubheading: 0.9375rem;
+  --as-text-body: 0.9375rem;
+  --as-text-small: 0.8125rem;
+  --as-text-meta: 0.75rem;
+  --as-text-date-year: 1.75rem;
+  --as-text-date-day: 1rem;
+
+  /* 行間 */
+  --as-leading-body: 1.8;
+  --as-leading-heading: 1.4;
+
+  /* 余白 */
+  --as-space-xs: 0.25rem;
+  --as-space-sm: 0.5rem;
+  --as-space-md: 0.75rem;
+  --as-space-lg: 1.25rem;
+  --as-space-xl: 2rem;
+
+  /* レイアウト */
+  --as-article-width: 45rem;
+  --as-radius: 8px;
+  --as-radius-sm: 6px;
+}
