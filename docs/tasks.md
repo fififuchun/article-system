@@ -70,7 +70,7 @@
 - [x] 記事のタイポグラフィ（`as-title` / `as-heading` / `as-subheading` / `as-subsubheading` / `as-paragraph`）を書く。ブラウザ標準の見出しスタイルのリセットを含む
 - [x] 記事の外枠と周辺（`as-article` / `as-header` / `as-date` / `as-date-year` / `as-date-day` / `as-date-icon` / `as-latest-update` / `as-thumbnail` / `as-image` / `as-footer`）を書く
 - [x] 本文中のリスト・表・引用・コードブロックを子孫セレクタで書く（remark-gfm の出力。spec §7）
-- [ ] 一覧のグリッド（`as-grid` / `as-card` 系）を書く
+- [x] 一覧のグリッド（`as-grid` / `as-card` 系）を書く
 - [ ] レスポンシブのブレークポイントを定義し、記事と一覧を1カラムに落とす
 - [ ] tsup の設定に CSS を `dist/styles.css` として出力する処理を追加し、ビルドを確認する
 - [ ] `package.json` の `exports` に `"./styles.css": "./dist/styles.css"` を追加する（`types` を先頭に置く順序に注意。spec §12）

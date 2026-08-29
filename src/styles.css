@@ -20,6 +20,7 @@
   --as-color-surface: #fff;
   --as-color-surface-muted: #f6f7f9;
   --as-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --as-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   /* 書体 */
   --as-font-body: system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
@@ -275,4 +276,69 @@
   background: none;
   padding: 0;
   border-radius: 0;
+}
+
+/* 一覧のグリッド
+ *
+ * renderLink が返す要素（多くは <a>）が as-grid と as-card のあいだに入ります。
+ * グリッドの直接の子はそのリンクなので、リンク側にレイアウトを当てます（spec §8）。
+ */
+
+:where(.as-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--as-space-lg);
+  font-family: var(--as-font-body);
+}
+
+/* リンクの既定の下線と色を打ち消し、カードを高さいっぱいに広げる */
+:where(.as-grid > *) {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+:where(.as-card) {
+  height: 100%;
+  background: var(--as-color-surface);
+  border-radius: var(--as-radius);
+  box-shadow: var(--as-shadow-card);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+:where(.as-card:hover) {
+  box-shadow: var(--as-shadow-card-hover);
+}
+
+:where(.as-card-image) {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  object-fit: cover;
+}
+
+:where(.as-card-title) {
+  font-size: var(--as-text-body);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  margin: 0;
+  padding: var(--as-space-md) var(--as-space-md) var(--as-space-xs);
+}
+
+:where(.as-card-date) {
+  display: flex;
+  align-items: center;
+  gap: var(--as-space-xs);
+  font-size: var(--as-text-meta);
+  color: var(--as-color-muted);
+  padding: 0 var(--as-space-md) var(--as-space-md);
+}
+
+:where(.as-card-date-icon) {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
 }
