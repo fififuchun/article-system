@@ -3,6 +3,7 @@ import { ArticleDetail, ArticleList, type Article } from "@fififuchun/article-sy
 import { articles } from "./lib/articles";
 import PreviewPage from "./pages/PreviewPage";
 import "./styles.css";
+import "@fififuchun/article-system/styles.css";
 
 type Route = "list" | "detail" | "preview";
 
@@ -67,19 +68,6 @@ export default function App() {
               article={selectedArticle}
               imageBasePath="https://placehold.co/800x400/e8e8e8/999999?text="
               dateLabel="最終更新日時"
-              classNames={{
-                wrapper: "article-wrapper",
-                dateYear: "article-date-year",
-                dateDay: "article-date-day",
-                title: "article-title",
-                latestUpdate: "article-latest-update",
-                thumbnail: "article-thumbnail",
-                heading: "article-heading",
-                subheading: "article-subheading",
-                paragraph: "article-paragraph",
-                image: "article-image",
-                footer: "article-footer",
-              }}
             />
           </>
         )}
@@ -89,19 +77,8 @@ export default function App() {
             articles={articles}
             imageBasePath="https://placehold.co/400x240/e8e8e8/999999?text="
             getArticleUrl={(article) => `#/article/${article.id}`}
-            classNames={{
-              grid: "grid",
-              card: "card",
-              cardImage: "card-image",
-              cardTitle: "card-title",
-              cardDate: "card-date",
-            }}
             renderLink={(url, children, key) => (
-              <a
-                key={key}
-                href={url}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
+              <a key={key} href={url}>
                 {children}
               </a>
             )}
