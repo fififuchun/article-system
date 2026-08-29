@@ -72,7 +72,7 @@
 - [x] 本文中のリスト・表・引用・コードブロックを子孫セレクタで書く（remark-gfm の出力。spec §7）
 - [x] 一覧のグリッド（`as-grid` / `as-card` 系）を書く
 - [x] レスポンシブのブレークポイントを定義し、記事と一覧を1カラムに落とす
-- [ ] tsup の設定に CSS を `dist/styles.css` として出力する処理を追加し、ビルドを確認する
+- [x] tsup の設定に CSS を `dist/styles.css` として出力する処理を追加し、ビルドを確認する
 - [ ] `package.json` の `exports` に `"./styles.css": "./dist/styles.css"` を追加する（`types` を先頭に置く順序に注意。spec §12）
 - [ ] `demo/` で `styles.css` を読み込み、既定を「デフォルトCSSのみ（`classNames` を渡さない）」にする
 - [ ] `demo/` に「デフォルト / カスタム」の切り替えを付け、カスタム時だけ `classNames` を渡す。demo 独自CSSは削らず、クラスが付かなければ当たらない状態にする
