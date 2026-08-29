@@ -188,3 +188,91 @@
   padding-top: var(--as-space-md);
   border-top: 1px solid var(--as-color-border);
 }
+
+/* 本文中の素の要素（remark-gfm の出力）
+ *
+ * リスト・表・引用・コードブロックには as- クラスが付かないため、
+ * 記事の外枠からの子孫セレクタで当てます（spec §7）。
+ */
+
+:where(.as-article ul, .as-article ol) {
+  font-size: var(--as-text-body);
+  line-height: var(--as-leading-body);
+  color: var(--as-color-text);
+  margin: var(--as-space-md) 0;
+  padding-left: 1.5em;
+}
+
+:where(.as-article li) {
+  margin: var(--as-space-xs) 0;
+}
+
+:where(.as-article li > ul, .as-article li > ol) {
+  margin: var(--as-space-xs) 0;
+}
+
+/* タスクリスト。マーカーを消してチェックボックスと行頭を揃える */
+:where(.as-article li:has(> input[type="checkbox"])) {
+  list-style: none;
+  margin-left: -1.5em;
+}
+
+:where(.as-article input[type="checkbox"]) {
+  margin-right: var(--as-space-xs);
+}
+
+:where(.as-article table) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--as-text-small);
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-text);
+  margin: var(--as-space-lg) 0;
+}
+
+:where(.as-article th, .as-article td) {
+  border: 1px solid var(--as-color-border);
+  padding: var(--as-space-sm) var(--as-space-md);
+  text-align: left;
+}
+
+:where(.as-article th) {
+  background: var(--as-color-surface-muted);
+  font-weight: bold;
+}
+
+:where(.as-article blockquote) {
+  font-size: var(--as-text-body);
+  line-height: var(--as-leading-body);
+  color: var(--as-color-muted);
+  border-left: 4px solid var(--as-color-border);
+  margin: var(--as-space-lg) 0;
+  padding: var(--as-space-sm) var(--as-space-lg);
+}
+
+:where(.as-article code) {
+  font-family: var(--as-font-mono);
+  font-size: 0.9em;
+  background: var(--as-color-surface-muted);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+:where(.as-article pre) {
+  font-family: var(--as-font-mono);
+  font-size: var(--as-text-small);
+  line-height: 1.6;
+  background: var(--as-color-surface-muted);
+  margin: var(--as-space-lg) 0;
+  padding: var(--as-space-md);
+  border-radius: var(--as-radius-sm);
+  overflow-x: auto;
+}
+
+/* コードブロック内の code は pre 側の見た目に任せる */
+:where(.as-article pre code) {
+  font-size: inherit;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}

@@ -69,7 +69,7 @@
 - [x] `src/styles.css` を作り、CSS変数（色・余白・フォントサイズ階層）を `:where(:root)` に定義する
 - [x] 記事のタイポグラフィ（`as-title` / `as-heading` / `as-subheading` / `as-subsubheading` / `as-paragraph`）を書く。ブラウザ標準の見出しスタイルのリセットを含む
 - [x] 記事の外枠と周辺（`as-article` / `as-header` / `as-date` / `as-date-year` / `as-date-day` / `as-date-icon` / `as-latest-update` / `as-thumbnail` / `as-image` / `as-footer`）を書く
-- [ ] 本文中のリスト・表・引用・コードブロックを子孫セレクタで書く（remark-gfm の出力。spec §7）
+- [x] 本文中のリスト・表・引用・コードブロックを子孫セレクタで書く（remark-gfm の出力。spec §7）
 - [ ] 一覧のグリッド（`as-grid` / `as-card` 系）を書く
 - [ ] レスポンシブのブレークポイントを定義し、記事と一覧を1カラムに落とす
 - [ ] tsup の設定に CSS を `dist/styles.css` として出力する処理を追加し、ビルドを確認する
