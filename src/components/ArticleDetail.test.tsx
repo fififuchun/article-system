@@ -314,3 +314,51 @@ describe("ArticleDetail — 日付の表示", () => {
     expect(container.querySelector(".as-date-day")?.textContent).toBe("/");
   });
 });
+
+describe("ArticleDetail — 文中の画像（GitHub 準拠）", () => {
+  const bodyImage = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll("img")).find((image) =>
+      image.getAttribute("src")?.includes("art_1")
+    );
+
+  it("テキストと混在する画像は p の中に置く", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "本文テキスト ![](art_1.webp)" }} />
+    );
+
+    expect(bodyImage(container)?.closest("p")).not.toBeNull();
+  });
+
+  it("テキストと混在する画像を as-image で包まない", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "本文テキスト ![](art_1.webp)" }} />
+    );
+
+    expect(bodyImage(container)?.parentElement?.className).not.toContain("as-image");
+  });
+
+  it("混在した段落にも as-paragraph が付く", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "本文テキスト ![](art_1.webp)" }} />
+    );
+
+    expect(bodyImage(container)?.closest("p")?.className).toContain("as-paragraph");
+  });
+
+  it("混在した段落でも p の中に div を入れない", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "本文テキスト ![](art_1.webp)" }} />
+    );
+
+    expect(container.querySelector("p div")).toBeNull();
+  });
+
+  it("画像だけの行は従来どおり as-image のブロックにする", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "![](art_1.webp)" }} />
+    );
+
+    expect(bodyImage(container)?.parentElement?.className).toContain("as-image");
+    expect(bodyImage(container)?.closest("p")).toBeNull();
+  });
+});

@@ -41,20 +41,19 @@ export function ArticleDetail({
     h4: ({ children }) => (
       <h4 className={cx("as-subsubheading", classNames.subsubheading)}>{children}</h4>
     ),
-    // 画像だけの行も markdown では段落になる。p でラップすると
-    // <p><div> の不正な入れ子になり、SSR でハイドレーションエラーを起こす（spec §7-2）
+    // 画像だけの行も markdown では段落になる。ブロックとして扱い、p では包まない。
+    // p の中に div を入れると SSR でハイドレーションエラーになる（spec §7-2）
     p: ({ children, node }) => {
       const onlyChild = node?.children.length === 1 ? node.children[0] : undefined;
       if (onlyChild?.type === "element" && onlyChild.tagName === "img") {
-        return <>{children}</>;
+        return <div className={cx("as-image", classNames.image)}>{children}</div>;
       }
 
+      // テキストと混在する画像はインラインのまま p の中に置く（GitHub 準拠。spec §7）
       return <p className={cx("as-paragraph", classNames.paragraph)}>{children}</p>;
     },
     img: ({ src, alt }) => (
-      <div className={cx("as-image", classNames.image)}>
-        <img src={resolveImageSrc(src ?? "", imageBasePath)} alt={alt ?? ""} />
-      </div>
+      <img src={resolveImageSrc(src ?? "", imageBasePath)} alt={alt ?? ""} />
     ),
   };
 

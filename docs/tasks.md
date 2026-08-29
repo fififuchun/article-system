@@ -59,7 +59,7 @@
 - [x] 画像 `src` が絶対URL（`http://` `https://` `//` 始まり）なら `imageBasePath` を前置せず素通しする（spec §7-3。テスト → 実装 → グリーン）
 - [x] `ArticleList` の全要素に `as-` クラスを常時付与する（spec §8 の DOM 構造どおり。テスト → 実装 → グリーン）
 - [x] `ArticleDetail` / `ArticleList` を `formatDate` ヘルパーに置き換えて日付整形を一本化する（テスト → 実装 → グリーン）
-- [ ] テキストと画像が混在する段落では、画像を `as-image` で包まずインラインの `<img>` として `<p>` の中に置く（spec §7。GitHub のマークダウンに準拠。テスト → 実装 → グリーン）
+- [x] テキストと画像が混在する段落では、画像を `as-image` で包まずインラインの `<img>` として `<p>` の中に置く（spec §7。GitHub のマークダウンに準拠。テスト → 実装 → グリーン）
 - [ ] `resolveImageSrc` を `src/resolveImageSrc.ts` に切り出してテストを付け、`ArticleList` のカード画像にも適用する（spec §7-3。テスト → 実装 → グリーン）
 
 ### フェーズ4: styles.css の作成（spec §10 / 実装順序 4）
