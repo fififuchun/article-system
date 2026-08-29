@@ -85,3 +85,42 @@ describe("ArticleList — 日付の表示", () => {
     expect(container.querySelector(".as-card-date")?.textContent).toBe("2026年8月24日");
   });
 });
+
+describe("ArticleList — 画像のパス", () => {
+  const cardImageSrc = (container: HTMLElement) =>
+    container.querySelector(".as-card-image")?.getAttribute("src");
+
+  it("相対パスの thumbnail には imageBasePath を前置する", () => {
+    const { container } = render(
+      <ArticleList
+        articles={articles}
+        imageBasePath="/imgs/"
+        getArticleUrl={(a) => `/blog/${a.id}`}
+        renderLink={(url, children, key) => (
+          <a key={key} href={url}>
+            {children}
+          </a>
+        )}
+      />
+    );
+
+    expect(cardImageSrc(container)).toBe("/imgs/art_0.webp");
+  });
+
+  it("絶対URLの thumbnail は素通しする", () => {
+    const { container } = render(
+      <ArticleList
+        articles={[{ ...articles[0], thumbnail: "https://example.com/thumb.webp" }]}
+        imageBasePath="/imgs/"
+        getArticleUrl={(a) => `/blog/${a.id}`}
+        renderLink={(url, children, key) => (
+          <a key={key} href={url}>
+            {children}
+          </a>
+        )}
+      />
+    );
+
+    expect(cardImageSrc(container)).toBe("https://example.com/thumb.webp");
+  });
+});

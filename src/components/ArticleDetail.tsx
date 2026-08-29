@@ -5,14 +5,8 @@ import type { Components } from "react-markdown";
 import type { Article, ArticleDetailClassNames } from "../types";
 import { cx } from "../cx";
 import { formatDate } from "../formatDate";
+import { resolveImageSrc } from "../resolveImageSrc";
 
-/** http:// https:// とプロトコル相対の // */
-const ABSOLUTE_URL = /^(?:https?:)?\/\//;
-
-/** 絶対URLはそのまま、相対パスには imageBasePath を前置する（spec §7-3） */
-function resolveImageSrc(src: string, imageBasePath: string): string {
-  return ABSOLUTE_URL.test(src) ? src : `${imageBasePath}${src}`;
-}
 import { ClockIcon } from "../icons/ClockIcon";
 
 interface Props {

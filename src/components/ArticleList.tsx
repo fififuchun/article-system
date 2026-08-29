@@ -2,6 +2,7 @@ import type { Article, ArticleListClassNames } from "../types";
 import { ClockIcon } from "../icons/ClockIcon";
 import { cx } from "../cx";
 import { formatDate } from "../formatDate";
+import { resolveImageSrc } from "../resolveImageSrc";
 
 interface Props {
   articles: Article[];
@@ -30,7 +31,7 @@ export function ArticleList({
           getArticleUrl(article),
           <div className={cx("as-card", classNames.card)}>
             <img
-              src={`${imageBasePath}${article.thumbnail}`}
+              src={resolveImageSrc(article.thumbnail, imageBasePath)}
               alt={article.title}
               className={cx("as-card-image", classNames.cardImage)}
             />

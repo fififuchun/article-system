@@ -171,6 +171,12 @@ function formatDate(date) {
   return { year, month, day };
 }
 
+// src/resolveImageSrc.ts
+var ABSOLUTE_URL = /^(?:https?:)?\/\//;
+function resolveImageSrc(src, imageBasePath) {
+  return ABSOLUTE_URL.test(src) ? src : `${imageBasePath}${src}`;
+}
+
 // src/icons/ClockIcon.tsx
 import { jsx } from "react/jsx-runtime";
 function ClockIcon({ className }) {
@@ -188,10 +194,6 @@ function ClockIcon({ className }) {
 
 // src/components/ArticleDetail.tsx
 import { jsx as jsx2, jsxs } from "react/jsx-runtime";
-var ABSOLUTE_URL = /^(?:https?:)?\/\//;
-function resolveImageSrc(src, imageBasePath) {
-  return ABSOLUTE_URL.test(src) ? src : `${imageBasePath}${src}`;
-}
 function ArticleDetail({
   article,
   imageBasePath = "/article_imgs/",
@@ -273,7 +275,7 @@ function ArticleList({
         /* @__PURE__ */ jsx3(
           "img",
           {
-            src: `${imageBasePath}${article.thumbnail}`,
+            src: resolveImageSrc(article.thumbnail, imageBasePath),
             alt: article.title,
             className: cx("as-card-image", classNames.cardImage)
           }
