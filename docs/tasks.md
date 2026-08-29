@@ -67,8 +67,8 @@
 **最初から `:where()` で書く。** 後から書き換えると詳細度の問題を取りこぼす（spec §10）。
 
 - [x] `src/styles.css` を作り、CSS変数（色・余白・フォントサイズ階層）を `:where(:root)` に定義する
-- [ ] 記事のタイポグラフィ（`as-title` / `as-heading` / `as-subheading` / `as-subsubheading` / `as-paragraph`）を書く。ブラウザ標準の見出しスタイルのリセットを含む
-- [ ] 記事ヘッダー（`as-header` / `as-date` / `as-latest-update` / `as-thumbnail` / `as-footer`）を書く
+- [x] 記事のタイポグラフィ（`as-title` / `as-heading` / `as-subheading` / `as-subsubheading` / `as-paragraph`）を書く。ブラウザ標準の見出しスタイルのリセットを含む
+- [ ] 記事の外枠と周辺（`as-article` / `as-header` / `as-date` / `as-date-year` / `as-date-day` / `as-date-icon` / `as-latest-update` / `as-thumbnail` / `as-image` / `as-footer`）を書く
 - [ ] 本文中のリスト・表・引用・コードブロックを子孫セレクタで書く（remark-gfm の出力。spec §7）
 - [ ] 一覧のグリッド（`as-grid` / `as-card` 系）を書く
 - [ ] レスポンシブのブレークポイントを定義し、記事と一覧を1カラムに落とす

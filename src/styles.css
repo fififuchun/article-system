@@ -54,3 +54,51 @@
   --as-radius: 8px;
   --as-radius-sm: 6px;
 }
+
+/* 記事のタイポグラフィ
+ *
+ * 見出しは h2 / h3 / h4 で出力されるため、ブラウザ標準の文字サイズと
+ * 余白をここで打ち消します。author 側の宣言は詳細度に関係なく
+ * ブラウザ標準に優先するため、:where() のままリセットが効きます。
+ */
+
+:where(.as-title) {
+  font-size: var(--as-text-title);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  margin: 0 0 var(--as-space-sm);
+}
+
+:where(.as-heading) {
+  font-size: var(--as-text-heading);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  border-left: 4px solid var(--as-color-accent);
+  padding-left: var(--as-space-md);
+  margin: var(--as-space-xl) 0 var(--as-space-md);
+}
+
+:where(.as-subheading) {
+  font-size: var(--as-text-subheading);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  margin: var(--as-space-lg) 0 var(--as-space-sm);
+}
+
+:where(.as-subsubheading) {
+  font-size: var(--as-text-subsubheading);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-text);
+  margin: var(--as-space-lg) 0 var(--as-space-xs);
+}
+
+:where(.as-paragraph) {
+  font-size: var(--as-text-body);
+  line-height: var(--as-leading-body);
+  color: var(--as-color-text);
+  margin: var(--as-space-md) 0;
+}
