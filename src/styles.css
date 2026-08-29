@@ -342,3 +342,34 @@
   height: 1.2em;
   flex: none;
 }
+
+/* レスポンシブ
+ *
+ * メディアクエリの条件には CSS 変数を使えないため、ここだけリテラルで書きます。
+ * 40rem = 640px。
+ */
+
+@media (max-width: 40rem) {
+  :where(.as-article) {
+    padding: var(--as-space-lg);
+  }
+
+  :where(.as-grid) {
+    grid-template-columns: 1fr;
+    gap: var(--as-space-md);
+  }
+
+  :where(.as-heading) {
+    margin-top: var(--as-space-lg);
+  }
+
+  :where(.as-thumbnail) {
+    margin-bottom: var(--as-space-lg);
+  }
+
+  /* 表だけは縮められないので横スクロールに逃がす */
+  :where(.as-article table) {
+    display: block;
+    overflow-x: auto;
+  }
+}
