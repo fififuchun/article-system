@@ -82,7 +82,7 @@
 
 フェーズ4と並行可能。
 
-- [ ] 既存の `ClockIcon` を、`className` を受け取り `fill="currentColor"` を使う共通の書き方に揃える
+- [x] 既存の `ClockIcon` を、`className` を受け取り `fill="currentColor"` を使う共通の書き方に揃える
 - [ ] 記事系アイコン（人、タグ）を `src/icons/` に追加する
 - [ ] Studio 系アイコン（ダウンロード、画像、警告、閉じる）を追加する
 - [ ] 汎用アイコン（矢印、外部リンク、コピー）を追加する

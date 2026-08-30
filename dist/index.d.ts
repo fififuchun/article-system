@@ -88,8 +88,16 @@ interface Props {
 }
 declare function ArticlePreview({ imageBasePath, dateLabel, classNames, articleClassNames, defaultValue, }: Props): react_jsx_runtime.JSX.Element;
 
-declare function ClockIcon({ className }: {
+/**
+ * アイコン共通の props（spec §11）。
+ *
+ * サイズは CSS で指定するため width / height は受け取りません。
+ * 色は `fill="currentColor"` により CSS の `color` で変わります。
+ */
+interface IconProps {
     className?: string;
-}): react_jsx_runtime.JSX.Element;
+}
+
+declare function ClockIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
 
 export { type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticlePreview, type ArticlePreviewClassNames, ClockIcon, type Issue, createArticles, validateArticle };
