@@ -2,10 +2,16 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import { ClockIcon } from "./ClockIcon";
+import { PersonIcon } from "./PersonIcon";
+import { TagIcon } from "./TagIcon";
 
 afterEach(cleanup);
 
-const icons = [["ClockIcon", ClockIcon]] as const;
+const icons = [
+  ["ClockIcon", ClockIcon],
+  ["PersonIcon", PersonIcon],
+  ["TagIcon", TagIcon],
+] as const;
 
 describe("アイコンの共通仕様（spec §11）", () => {
   it.each(icons)("%s は className を svg に付ける", (_name, Icon) => {
