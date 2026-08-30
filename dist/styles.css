@@ -115,7 +115,6 @@
 }
 :where(.as-date-day) {
   font-size: var(--as-text-date-day);
-  font-weight: bold;
   line-height: 1.2;
   color: var(--as-color-muted);
   margin: 0;
