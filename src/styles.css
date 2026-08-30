@@ -36,8 +36,8 @@
   --as-text-body: 0.9375rem;
   --as-text-small: 0.8125rem;
   --as-text-meta: 0.75rem;
-  --as-text-date-year: 1.75rem;
-  --as-text-date-day: 1rem;
+  --as-text-date-year: 0.875rem;
+  --as-text-date-day: 1.75rem;
 
   /* 行間 */
   --as-leading-body: 1.8;
@@ -64,11 +64,13 @@
  */
 
 :where(.as-title) {
+  flex: 1;
+  align-self: center;
   font-size: var(--as-text-title);
   font-weight: bold;
   line-height: var(--as-leading-heading);
   color: var(--as-color-heading);
-  margin: 0 0 var(--as-space-sm);
+  margin: 0;
 }
 
 :where(.as-heading) {
@@ -118,26 +120,36 @@
 }
 
 :where(.as-header) {
-  margin-bottom: var(--as-space-sm);
+  display: flex;
+  align-items: stretch;
+  gap: var(--as-space-lg);
+  margin-bottom: var(--as-space-md);
 }
 
+/* 日付ブロック。右の罫線がタイトルとの仕切りになる */
 :where(.as-date) {
-  margin-bottom: var(--as-space-md);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  padding-right: var(--as-space-lg);
+  border-right: 1px solid var(--as-color-border);
 }
 
 :where(.as-date-year) {
   font-size: var(--as-text-date-year);
-  font-weight: bold;
-  line-height: 1;
+  line-height: 1.2;
   color: var(--as-color-muted);
   margin: 0;
 }
 
 :where(.as-date-day) {
   font-size: var(--as-text-date-day);
-  line-height: 1;
+  font-weight: bold;
+  line-height: 1.2;
   color: var(--as-color-muted);
-  margin: var(--as-space-xs) 0 0;
+  margin: 0;
 }
 
 :where(.as-latest-update) {
