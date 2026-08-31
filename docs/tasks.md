@@ -104,7 +104,7 @@
 
 - [x] `ArticleStudioClassNames` 型を `src/types.ts` に追加する（spec §10）
 - [x] `src/studio/buildTemplate.ts` に今日の日付で雛形 md を生成する関数を作り、テストを付ける（**プレースホルダの値を入れない**こと。spec §9）
-- [ ] `src/components/ArticleStudio.tsx` の骨組みを作る（props 受け取り、md 文字列の state、textarea 1枚）
+- [x] `src/components/ArticleStudio.tsx` の骨組みを作る（props 受け取り、md 文字列の state、textarea 1枚）
 - [ ] `storageKey` 付きの localStorage キー（`as-studio-draft:{key}`）で入力のたびに自動保存する
 - [ ] 起動時に localStorage を読み、**復帰する下書きがあればテンプレートを出さない**分岐を実装する（spec §9）
 - [ ] 編集中の md を `parseFrontmatter` で `Article` に組み立てるヘルパーを作り、テストを付ける
