@@ -86,7 +86,7 @@
 - [x] 記事系アイコン（人、タグ）を `src/icons/` に追加する
 - [x] Studio 系アイコン（ダウンロード、画像、警告、閉じる）を追加する
 - [x] 汎用アイコン（矢印、外部リンク、コピー）を追加する
-- [ ] 全アイコンを `src/index.ts` から named export し、`package.json` に `"sideEffects": false` を追加する（spec §11）。**`styles.css` が tree-shaking で落ちないか確認する** — 落ちるなら `["*.css"]` にする必要がある
+- [x] 全アイコンを `src/index.ts` から named export し、`package.json` に `"sideEffects": false` を追加する（spec §11）。**`styles.css` が tree-shaking で落ちないか確認する** — 落ちるなら `["*.css"]` にする必要がある
 
 ### フェーズ6: ArticleStudio（spec §9 / 実装順序 6）
 

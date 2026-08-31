@@ -98,6 +98,25 @@ interface IconProps {
     className?: string;
 }
 
+/** 右向き。他の向きは CSS の transform: rotate() で作る */
+declare function ArrowIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
 declare function ClockIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
 
-export { type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticlePreview, type ArticlePreviewClassNames, ClockIcon, type Issue, createArticles, validateArticle };
+declare function CloseIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function CopyIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function DownloadIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function ExternalLinkIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function ImageIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function PersonIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function TagIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function WarningIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticlePreview, type ArticlePreviewClassNames, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };
