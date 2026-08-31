@@ -103,7 +103,7 @@
 | 「直前の記事に戻す」の消える条件 | **本文を1文字でも編集したら消す**。リロードでも消える |
 
 - [x] `ArticleStudioClassNames` 型を `src/types.ts` に追加する（spec §10）
-- [ ] `src/studio/buildTemplate.ts` に今日の日付で雛形 md を生成する関数を作り、テストを付ける（**プレースホルダの値を入れない**こと。spec §9）
+- [x] `src/studio/buildTemplate.ts` に今日の日付で雛形 md を生成する関数を作り、テストを付ける（**プレースホルダの値を入れない**こと。spec §9）
 - [ ] `src/components/ArticleStudio.tsx` の骨組みを作る（props 受け取り、md 文字列の state、textarea 1枚）
 - [ ] `storageKey` 付きの localStorage キー（`as-studio-draft:{key}`）で入力のたびに自動保存する
 - [ ] 起動時に localStorage を読み、**復帰する下書きがあればテンプレートを出さない**分岐を実装する（spec §9）
