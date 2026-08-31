@@ -92,6 +92,16 @@
 
 上記すべてに依存する。**v1 は新規作成専用だが、内部状態は「編集中の記事」としてモデル化する**（spec §9）。
 
+着手前に決めた方針（spec に記述が無い部分）:
+
+| 項目 | 決定 |
+| --- | --- |
+| テストの守備範囲 | Blob ダウンロード・画像 D&D・画像の `onError` 存在確認の**3件はテストを書かず目視のみ**。他は DOM テストで検証する |
+| バージョン | `ArticlePreview` 削除は破壊的変更だが **`0.1.0` のまま据え置く**（利用者がまだいないため） |
+| ファイル名の切り詰め | タイトル部分を **50文字**まで |
+| `storageKey` の既定値 | `as-studio-draft:default` |
+| 「直前の記事に戻す」の消える条件 | **本文を1文字でも編集したら消す**。リロードでも消える |
+
 - [ ] `ArticleStudioClassNames` 型を `src/types.ts` に追加する（spec §10）
 - [ ] `src/studio/buildTemplate.ts` に今日の日付で雛形 md を生成する関数を作り、テストを付ける（**プレースホルダの値を入れない**こと。spec §9）
 - [ ] `src/components/ArticleStudio.tsx` の骨組みを作る（props 受け取り、md 文字列の state、textarea 1枚）
