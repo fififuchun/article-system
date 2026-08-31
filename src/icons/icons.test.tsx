@@ -8,6 +8,9 @@ import { DownloadIcon } from "./DownloadIcon";
 import { ImageIcon } from "./ImageIcon";
 import { WarningIcon } from "./WarningIcon";
 import { CloseIcon } from "./CloseIcon";
+import { ArrowIcon } from "./ArrowIcon";
+import { ExternalLinkIcon } from "./ExternalLinkIcon";
+import { CopyIcon } from "./CopyIcon";
 
 afterEach(cleanup);
 
@@ -19,6 +22,9 @@ const icons = [
   ["ImageIcon", ImageIcon],
   ["WarningIcon", WarningIcon],
   ["CloseIcon", CloseIcon],
+  ["ArrowIcon", ArrowIcon],
+  ["ExternalLinkIcon", ExternalLinkIcon],
+  ["CopyIcon", CopyIcon],
 ] as const;
 
 describe("アイコンの共通仕様（spec §11）", () => {
