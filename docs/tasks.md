@@ -102,7 +102,7 @@
 | `storageKey` の既定値 | `as-studio-draft:default` |
 | 「直前の記事に戻す」の消える条件 | **本文を1文字でも編集したら消す**。リロードでも消える |
 
-- [ ] `ArticleStudioClassNames` 型を `src/types.ts` に追加する（spec §10）
+- [x] `ArticleStudioClassNames` 型を `src/types.ts` に追加する（spec §10）
 - [ ] `src/studio/buildTemplate.ts` に今日の日付で雛形 md を生成する関数を作り、テストを付ける（**プレースホルダの値を入れない**こと。spec §9）
 - [ ] `src/components/ArticleStudio.tsx` の骨組みを作る（props 受け取り、md 文字列の state、textarea 1枚）
 - [ ] `storageKey` 付きの localStorage キー（`as-studio-draft:{key}`）で入力のたびに自動保存する
@@ -123,7 +123,7 @@
 - [ ] 手書きのファイル名の画像を `<img>` の `onError` で存在確認する（**ステータスコードで判定しない**。blob 画像は対象外。spec §6）
 - [ ] 本番ダウンロード時に「配置してください」画像一覧を提示する
 - [ ] PC 左右2ペイン / スマホ上下2ペインのレイアウトを `styles.css` に追加する（spec §9）
-- [ ] `ArticleStudio` を `src/index.ts` から export し、`ArticlePreview` と `ArticlePreviewClassNames` を削除する
+- [ ] `ArticleStudio` と `ArticleStudioClassNames` を `src/index.ts` から export し、`ArticlePreview` と `ArticlePreviewClassNames` を削除する
 - [ ] `demo/` を `ArticlePreview` から `ArticleStudio` に差し替えて動作確認する
 
 ### フェーズ7: 配布まわり（spec §12 §13 / 実装順序 7）
