@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   Article,
   ArticleDetailClassNames,
@@ -6,6 +6,7 @@ import type {
 } from "../types";
 import { cx } from "../cx";
 import { buildTemplate } from "../studio/buildTemplate";
+import { saveDraft } from "../studio/draftStorage";
 
 interface Props {
   /** 衝突検出と一覧プレビューに使う既存記事 */
@@ -18,10 +19,15 @@ interface Props {
   articleClassNames?: ArticleDetailClassNames;
 }
 
-export function ArticleStudio({ classNames = {} }: Props) {
+export function ArticleStudio({ storageKey, classNames = {} }: Props) {
   // 生の md を1枚の textarea で編集する。フォーム化しないことで
   // エディタとのコピーペーストが自由に行き来できる（spec §9）
   const [raw, setRaw] = useState(buildTemplate);
+
+  // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
+  useEffect(() => {
+    saveDraft(storageKey, raw);
+  }, [storageKey, raw]);
 
   return (
     <div className={cx("as-studio", classNames.wrapper)}>
