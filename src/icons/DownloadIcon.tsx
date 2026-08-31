@@ -1,0 +1,16 @@
+import type { IconProps } from "./types";
+
+export function DownloadIcon({ className }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M11 3h2v9.17l3.59-3.58L18 10l-6 6-6-6 1.41-1.41L11 12.17V3z" />
+      <path d="M4 18h16v2H4z" />
+    </svg>
+  );
+}

@@ -4,6 +4,10 @@ import { render, cleanup } from "@testing-library/react";
 import { ClockIcon } from "./ClockIcon";
 import { PersonIcon } from "./PersonIcon";
 import { TagIcon } from "./TagIcon";
+import { DownloadIcon } from "./DownloadIcon";
+import { ImageIcon } from "./ImageIcon";
+import { WarningIcon } from "./WarningIcon";
+import { CloseIcon } from "./CloseIcon";
 
 afterEach(cleanup);
 
@@ -11,6 +15,10 @@ const icons = [
   ["ClockIcon", ClockIcon],
   ["PersonIcon", PersonIcon],
   ["TagIcon", TagIcon],
+  ["DownloadIcon", DownloadIcon],
+  ["ImageIcon", ImageIcon],
+  ["WarningIcon", WarningIcon],
+  ["CloseIcon", CloseIcon],
 ] as const;
 
 describe("アイコンの共通仕様（spec §11）", () => {
