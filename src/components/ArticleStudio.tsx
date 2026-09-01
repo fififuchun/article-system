@@ -15,6 +15,8 @@ import { buildFilename } from "../studio/buildFilename";
 import { buildTemplate } from "../studio/buildTemplate";
 import { downloadBlob, downloadMarkdown } from "../studio/downloadFile";
 import { renameImageInMarkdown } from "../studio/renameImage";
+import { collectImageNames } from "../studio/collectImageNames";
+import { resolveImageSrc } from "../resolveImageSrc";
 import { loadDraft, loadPublished, savePublished, saveDraft } from "../studio/draftStorage";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
@@ -58,6 +60,7 @@ export function ArticleStudio({
   // テンプレートに戻った直後だけ true。編集すると降りる（リロードでも残らない）
   const [justPublished, setJustPublished] = useState(false);
   const [images, setImages] = useState<DroppedImage[]>([]);
+  const [missingImages, setMissingImages] = useState<Record<string, boolean>>({});
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -73,6 +76,12 @@ export function ArticleStudio({
   };
 
   const draft = buildDraftArticle(raw, articles);
+
+  // 手書きのファイル名だけ実在を確かめる。ドロップした画像はサーバーに無くて当然（spec §6）
+  const basePath = imageBasePath ?? "/article_imgs/";
+  const probeNames = collectImageNames(draft.content, draft.thumbnail).filter(
+    (name) => !images.some((image) => image.name === name)
+  );
 
   // 仮登録した画像は md にファイル名で書かれる。プレビューだけ blob URL に差し替える
   const toPreviewSrc = (value: string) =>
@@ -129,7 +138,13 @@ export function ArticleStudio({
   // 本番は検証必須。エラーがゼロでないと出せない（spec §9）
   const downloadForPublish = () => {
     const filename = buildFilename(draft.date, draft.title);
-    const found = validateArticle(raw, { articles, filename });
+    const missing = probeNames
+      .filter((name) => missingImages[name])
+      .map((name) => ({
+        level: "error" as const,
+        message: `画像 ${name} が ${basePath} に見つかりません。名前を確かめてください。`,
+      }));
+    const found = [...validateArticle(raw, { articles, filename }), ...missing];
     setIssues(found);
 
     if (found.length > 0) return;
@@ -208,6 +223,20 @@ export function ArticleStudio({
             </button>
           )}
         </div>
+      </div>
+
+      {/* 実在確認のためだけに読み込む。SPA では 404 でも index.html が 200 で
+          返りうるため、ステータスではなく onError で判定する（spec §6） */}
+      <div hidden>
+        {probeNames.map((name) => (
+          <img
+            key={name}
+            src={resolveImageSrc(name, basePath)}
+            alt=""
+            onError={() => setMissingImages((current) => ({ ...current, [name]: true }))}
+            onLoad={() => setMissingImages((current) => ({ ...current, [name]: false }))}
+          />
+        ))}
       </div>
 
       <div className={cx("as-studio-preview", classNames.previewPane)}>

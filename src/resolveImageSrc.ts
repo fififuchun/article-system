@@ -4,10 +4,15 @@
  */
 const ABSOLUTE_URL = /^(?:(?:https?:)?\/\/|blob:|data:)/;
 
+/** ブラウザがそのまま解決できる src か（絶対URL・blob・data） */
+export function isAbsoluteImageSrc(src: string): boolean {
+  return ABSOLUTE_URL.test(src);
+}
+
 /**
  * 絶対URLはそのまま、相対パスには imageBasePath を前置する（spec §7-3）。
  * ArticleDetail と ArticleList の両方が同じ判定を使う。
  */
 export function resolveImageSrc(src: string, imageBasePath: string): string {
-  return ABSOLUTE_URL.test(src) ? src : `${imageBasePath}${src}`;
+  return isAbsoluteImageSrc(src) ? src : `${imageBasePath}${src}`;
 }

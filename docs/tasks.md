@@ -124,7 +124,7 @@
 - [x] 画像のドラッグ&ドロップを受け、blob URL で仮登録して md にファイル名を挿入する
 - [x] 仮登録した画像の名前を Studio 上でリネームできる UI を作る（スマホの `IMG_1234.jpg` 対策。spec §9）
 - [x] リネーム後の名前で画像をダウンロードできるようにする
-- [ ] 手書きのファイル名の画像を `<img>` の `onError` で存在確認する（**ステータスコードで判定しない**。blob 画像は対象外。spec §6）
+- [x] 手書きのファイル名の画像を `<img>` の `onError` で存在確認する（**ステータスコードで判定しない**。blob 画像は対象外。spec §6）
 - [ ] 本番ダウンロード時に「配置してください」画像一覧を提示する
 - [ ] PC 左右2ペイン / スマホ上下2ペインのレイアウトを `styles.css` に追加する（spec §9）
 - [ ] `ArticleStudio` と `ArticleStudioClassNames` を `src/index.ts` から export し、`ArticlePreview` と `ArticlePreviewClassNames` を削除する
