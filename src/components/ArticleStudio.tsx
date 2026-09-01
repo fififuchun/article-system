@@ -5,6 +5,8 @@ import type {
   ArticleStudioClassNames,
 } from "../types";
 import { cx } from "../cx";
+import { ArticleDetail } from "./ArticleDetail";
+import { buildDraftArticle } from "../studio/buildDraftArticle";
 import { buildTemplate } from "../studio/buildTemplate";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
 
@@ -19,7 +21,14 @@ interface Props {
   articleClassNames?: ArticleDetailClassNames;
 }
 
-export function ArticleStudio({ storageKey, classNames = {} }: Props) {
+export function ArticleStudio({
+  articles,
+  storageKey,
+  imageBasePath,
+  dateLabel,
+  classNames = {},
+  articleClassNames,
+}: Props) {
   // 生の md を1枚の textarea で編集する。フォーム化しないことで
   // エディタとのコピーペーストが自由に行き来できる（spec §9）
   // 復帰する下書きがあればテンプレートを出さない。出すと保存内容を上書きしてしまう。
@@ -31,6 +40,10 @@ export function ArticleStudio({ storageKey, classNames = {} }: Props) {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
 
+  // ArticleDetail をそのまま使うことで、プレビューと本番の一致が
+  // 構造的に保証される（spec §9）
+  const draft = buildDraftArticle(raw, articles);
+
   return (
     <div className={cx("as-studio", classNames.wrapper)}>
       <div className={cx("as-studio-editor", classNames.editorPane)}>
@@ -39,6 +52,15 @@ export function ArticleStudio({ storageKey, classNames = {} }: Props) {
           value={raw}
           onChange={(event) => setRaw(event.target.value)}
           spellCheck={false}
+        />
+      </div>
+
+      <div className={cx("as-studio-preview", classNames.previewPane)}>
+        <ArticleDetail
+          article={draft}
+          imageBasePath={imageBasePath}
+          dateLabel={dateLabel}
+          classNames={articleClassNames}
         />
       </div>
     </div>

@@ -150,3 +150,88 @@ describe("ArticleStudio — 下書きの復帰", () => {
     getItem.mockRestore();
   });
 });
+
+const sampleMd = [
+  "---",
+  "title: 夏の更新",
+  "date: 2026-08-23",
+  "latestUpdate: 2026-08-24",
+  "staff: 田中 花子",
+  "thumbnail: art_0.webp",
+  "---",
+  "",
+  "## 見出しテキスト",
+  "",
+  "本文テキスト",
+].join("\n");
+
+describe("ArticleStudio — 詳細プレビュー", () => {
+  it("プレビュー領域に as-studio-preview が付く", () => {
+    const { container } = render(<ArticleStudio />);
+
+    expect(container.querySelector(".as-studio-preview")).not.toBeNull();
+  });
+
+  // spec §9: ArticleDetail をそのまま使うことで本番との一致を構造的に保証する
+  it("ArticleDetail をそのまま描画する", () => {
+    const { container } = render(<ArticleStudio />);
+
+    expect(container.querySelector(".as-studio-preview .as-article")).not.toBeNull();
+  });
+
+  it("編集内容がプレビューに反映される", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+
+    expect(container.querySelector(".as-title")?.textContent).toBe("夏の更新");
+    expect(container.querySelector(".as-heading")?.textContent).toBe("見出しテキスト");
+  });
+
+  it("入力を変えるとプレビューも変わる", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.change(textarea(), {
+      target: { value: sampleMd.replace("夏の更新", "冬の更新") },
+    });
+
+    expect(container.querySelector(".as-title")?.textContent).toBe("冬の更新");
+  });
+
+  it("imageBasePath をプレビューに渡す", () => {
+    const { container } = render(<ArticleStudio imageBasePath="/imgs/" />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+
+    expect(container.querySelector(".as-thumbnail")?.getAttribute("src")).toBe(
+      "/imgs/art_0.webp"
+    );
+  });
+
+  it("dateLabel をプレビューに渡す", () => {
+    const { container } = render(<ArticleStudio dateLabel="更新" />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+
+    expect(container.querySelector(".as-latest-update")?.textContent).toContain("更新");
+  });
+
+  it("articleClassNames をプレビューの記事に渡す", () => {
+    const { container } = render(
+      <ArticleStudio articleClassNames={{ title: "my-title" }} />
+    );
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+
+    expect(container.querySelector(".as-title")?.className).toBe("as-title my-title");
+  });
+
+  it("classNames.previewPane が as- クラスに追記される", () => {
+    const { container } = render(<ArticleStudio classNames={{ previewPane: "my-preview" }} />);
+
+    expect(container.querySelector(".as-studio-preview")?.className).toBe(
+      "as-studio-preview my-preview"
+    );
+  });
+});
