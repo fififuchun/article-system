@@ -128,7 +128,7 @@
 - [x] 本番ダウンロード時に「配置してください」画像一覧を提示する
 - [x] PC 左右2ペイン / スマホ上下2ペインのレイアウトを `styles.css` に追加する（spec §9）
 - [x] `ArticleStudio` と `ArticleStudioClassNames` を `src/index.ts` から export し、`ArticlePreview` と `ArticlePreviewClassNames` を削除する
-- [ ] `demo/` を `ArticlePreview` から `ArticleStudio` に差し替えて動作確認する
+- [x] `demo/` を `ArticlePreview` から `ArticleStudio` に差し替えて動作確認する
 
 ### フェーズ7: 配布まわり（spec §12 §13 / 実装順序 7）
 
