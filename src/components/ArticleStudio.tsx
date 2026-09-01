@@ -6,6 +6,7 @@ import type {
 } from "../types";
 import { cx } from "../cx";
 import { ArticleDetail } from "./ArticleDetail";
+import { ArticleList } from "./ArticleList";
 import { buildDraftArticle } from "../studio/buildDraftArticle";
 import { buildTemplate } from "../studio/buildTemplate";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
@@ -34,6 +35,7 @@ export function ArticleStudio({
   // 復帰する下書きがあればテンプレートを出さない。出すと保存内容を上書きしてしまう。
   // ?? を使うのは空文字を「下書きなし」と扱わないため（spec §9）
   const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
+  const [tab, setTab] = useState<"detail" | "list">("detail");
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -56,12 +58,31 @@ export function ArticleStudio({
       </div>
 
       <div className={cx("as-studio-preview", classNames.previewPane)}>
-        <ArticleDetail
-          article={draft}
-          imageBasePath={imageBasePath}
-          dateLabel={dateLabel}
-          classNames={articleClassNames}
-        />
+        <div className={cx("as-studio-tabs", classNames.tabs)} role="tablist">
+          <button type="button" role="tab" aria-selected={tab === "detail"} onClick={() => setTab("detail")}>
+            詳細
+          </button>
+          <button type="button" role="tab" aria-selected={tab === "list"} onClick={() => setTab("list")}>
+            一覧
+          </button>
+        </div>
+
+        {tab === "detail" ? (
+          <ArticleDetail
+            article={draft}
+            imageBasePath={imageBasePath}
+            dateLabel={dateLabel}
+            classNames={articleClassNames}
+          />
+        ) : (
+          <ArticleList
+            articles={[draft]}
+            imageBasePath={imageBasePath}
+            getArticleUrl={() => "#"}
+            // プレビューなので遷移させない。リンクにせず div で包む
+            renderLink={(_url, children, key) => <div key={key}>{children}</div>}
+          />
+        )}
       </div>
     </div>
   );

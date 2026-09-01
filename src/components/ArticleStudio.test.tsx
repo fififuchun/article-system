@@ -235,3 +235,77 @@ describe("ArticleStudio — 詳細プレビュー", () => {
     );
   });
 });
+
+describe("ArticleStudio — プレビューのタブ", () => {
+  const tab = (name: string) => screen.getByRole("tab", { name });
+
+  it("詳細と一覧のタブがある", () => {
+    render(<ArticleStudio />);
+
+    expect(tab("詳細")).toBeDefined();
+    expect(tab("一覧")).toBeDefined();
+  });
+
+  it("既定では詳細を選ぶ", () => {
+    const { container } = render(<ArticleStudio />);
+
+    expect(tab("詳細").getAttribute("aria-selected")).toBe("true");
+    expect(tab("一覧").getAttribute("aria-selected")).toBe("false");
+    expect(container.querySelector(".as-article")).not.toBeNull();
+    expect(container.querySelector(".as-grid")).toBeNull();
+  });
+
+  it("一覧タブを押すと一覧に切り替わる", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.click(tab("一覧"));
+
+    expect(container.querySelector(".as-grid")).not.toBeNull();
+    expect(container.querySelector(".as-article")).toBeNull();
+  });
+
+  it("詳細タブに戻せる", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.click(tab("一覧"));
+    fireEvent.click(tab("詳細"));
+
+    expect(container.querySelector(".as-article")).not.toBeNull();
+    expect(container.querySelector(".as-grid")).toBeNull();
+  });
+
+  it("選択状態が aria-selected に出る", () => {
+    render(<ArticleStudio />);
+
+    fireEvent.click(tab("一覧"));
+
+    expect(tab("一覧").getAttribute("aria-selected")).toBe("true");
+    expect(tab("詳細").getAttribute("aria-selected")).toBe("false");
+  });
+
+  it("タブを切り替えても編集内容は保たれる", () => {
+    render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(tab("一覧"));
+    fireEvent.click(tab("詳細"));
+
+    expect(textarea().value).toBe(sampleMd);
+  });
+
+  it("classNames.tabs が as- クラスに追記される", () => {
+    const { container } = render(<ArticleStudio classNames={{ tabs: "my-tabs" }} />);
+
+    expect(container.querySelector(".as-studio-tabs")?.className).toBe(
+      "as-studio-tabs my-tabs"
+    );
+  });
+
+  it("一覧プレビューは遷移させない", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.click(tab("一覧"));
+
+    expect(container.querySelector(".as-grid a")).toBeNull();
+  });
+});
