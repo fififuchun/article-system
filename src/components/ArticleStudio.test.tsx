@@ -521,3 +521,87 @@ describe("ArticleStudio — 本番ダウンロード", () => {
     expect(textarea().value).toBe(sampleMd);
   });
 });
+
+describe("ArticleStudio — 検証結果の表示", () => {
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const publish = () => fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+  const broken = sampleMd.replace("staff: 田中 花子", "staff:");
+
+  // spec §9: 起動直後から必須項目の欠落が出続けると本当の間違いを見落とす
+  it("起動直後は検証結果を出さない", () => {
+    const { container } = render(<ArticleStudio />);
+
+    expect(container.querySelector(".as-studio-issues")).toBeNull();
+  });
+
+  it("執筆中は検証結果を出さない", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+
+    expect(container.querySelector(".as-studio-issues")).toBeNull();
+  });
+
+  it("本番ダウンロードを押すと問題を一覧で出す", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+    publish();
+
+    expect(container.querySelector(".as-studio-issues")).not.toBeNull();
+  });
+
+  it("問題の内容を文言で出す", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+    publish();
+
+    expect(container.querySelector(".as-studio-issues")?.textContent).toContain("staff");
+  });
+
+  it("問題の数だけ項目を出す", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: "---\ntitle:\n---\n\n本文" } });
+    publish();
+
+    expect(container.querySelectorAll(".as-studio-issues li").length).toBeGreaterThan(1);
+  });
+
+  it("問題が解消して押し直すと消える", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+    publish();
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    publish();
+
+    expect(container.querySelector(".as-studio-issues")).toBeNull();
+  });
+
+  // spec §9: 下書きは検証しない
+  it("下書きダウンロードでは検証結果を出さない", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+    fireEvent.click(screen.getByRole("button", { name: /下書き/ }));
+
+    expect(container.querySelector(".as-studio-issues")).toBeNull();
+  });
+
+  it("classNames.issues が as- クラスに追記される", () => {
+    const { container } = render(<ArticleStudio classNames={{ issues: "my-issues" }} />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+    publish();
+
+    expect(container.querySelector(".as-studio-issues")?.className).toBe(
+      "as-studio-issues my-issues"
+    );
+  });
+});

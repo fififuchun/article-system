@@ -8,6 +8,7 @@ import { cx } from "../cx";
 import { validateArticle, type Issue } from "../validate";
 import { ArticleDetail } from "./ArticleDetail";
 import { ArticleList } from "./ArticleList";
+import { WarningIcon } from "../icons/WarningIcon";
 import { buildDraftArticle } from "../studio/buildDraftArticle";
 import { buildFilename } from "../studio/buildFilename";
 import { buildTemplate } from "../studio/buildTemplate";
@@ -86,6 +87,19 @@ export function ArticleStudio({
           onChange={(event) => setRaw(event.target.value)}
           spellCheck={false}
         />
+
+        {issues.length > 0 && (
+          <div className={cx("as-studio-issues", classNames.issues)} role="alert">
+            <ul>
+              {issues.map((issue, index) => (
+                <li key={index}>
+                  <WarningIcon className="as-studio-issue-icon" />
+                  <span>{issue.message}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className={cx("as-studio-actions", classNames.actions)}>
           <button type="button" onClick={downloadForPublish}>
