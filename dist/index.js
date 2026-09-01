@@ -172,9 +172,12 @@ function formatDate(date) {
 }
 
 // src/resolveImageSrc.ts
-var ABSOLUTE_URL = /^(?:https?:)?\/\//;
+var ABSOLUTE_URL = /^(?:(?:https?:)?\/\/|blob:|data:)/;
+function isAbsoluteImageSrc(src) {
+  return ABSOLUTE_URL.test(src);
+}
 function resolveImageSrc(src, imageBasePath) {
-  return ABSOLUTE_URL.test(src) ? src : `${imageBasePath}${src}`;
+  return isAbsoluteImageSrc(src) ? src : `${imageBasePath}${src}`;
 }
 
 // src/icons/ClockIcon.tsx
@@ -299,87 +302,13 @@ function ArticleList({
   }) });
 }
 
-// src/components/ArticlePreview.tsx
-import { useState } from "react";
+// src/components/ArticleStudio.tsx
+import { useEffect, useState } from "react";
+
+// src/icons/DownloadIcon.tsx
 import { jsx as jsx4, jsxs as jsxs3 } from "react/jsx-runtime";
-function ArticlePreview({
-  imageBasePath = "/article_imgs/",
-  dateLabel = "\u6700\u7D42\u66F4\u65B0\u65E5\u6642",
-  classNames = {},
-  articleClassNames = {},
-  defaultValue = ""
-}) {
-  const [raw, setRaw] = useState(defaultValue);
-  const { data, content } = parseFrontmatter(raw);
-  const article = {
-    id: 0,
-    // 執筆中でまだファイルになっていないため空にする
-    filename: "",
-    title: data.title ?? "",
-    date: data.date ?? "",
-    latestUpdate: data.latestUpdate ?? "",
-    staff: data.staff ?? "",
-    thumbnail: data.thumbnail ?? "",
-    content
-  };
-  return /* @__PURE__ */ jsxs3("div", { className: classNames.wrapper, children: [
-    /* @__PURE__ */ jsx4("div", { className: classNames.editorPane, children: /* @__PURE__ */ jsx4(
-      "textarea",
-      {
-        className: classNames.textarea,
-        value: raw,
-        onChange: (e) => setRaw(e.target.value),
-        spellCheck: false
-      }
-    ) }),
-    /* @__PURE__ */ jsx4("div", { className: classNames.previewPane, children: /* @__PURE__ */ jsx4(
-      ArticleDetail,
-      {
-        article,
-        imageBasePath,
-        dateLabel,
-        classNames: articleClassNames
-      }
-    ) })
-  ] });
-}
-
-// src/icons/ArrowIcon.tsx
-import { jsx as jsx5 } from "react/jsx-runtime";
-function ArrowIcon({ className }) {
-  return /* @__PURE__ */ jsx5(
-    "svg",
-    {
-      xmlns: "http://www.w3.org/2000/svg",
-      viewBox: "0 0 24 24",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      className,
-      children: /* @__PURE__ */ jsx5("path", { d: "M4 11h12.17l-3.58-3.59L14 6l6 6-6 6-1.41-1.41L16.17 13H4z" })
-    }
-  );
-}
-
-// src/icons/CloseIcon.tsx
-import { jsx as jsx6 } from "react/jsx-runtime";
-function CloseIcon({ className }) {
-  return /* @__PURE__ */ jsx6(
-    "svg",
-    {
-      xmlns: "http://www.w3.org/2000/svg",
-      viewBox: "0 0 24 24",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      className,
-      children: /* @__PURE__ */ jsx6("path", { d: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" })
-    }
-  );
-}
-
-// src/icons/CopyIcon.tsx
-import { jsx as jsx7, jsxs as jsxs4 } from "react/jsx-runtime";
-function CopyIcon({ className }) {
-  return /* @__PURE__ */ jsxs4(
+function DownloadIcon({ className }) {
+  return /* @__PURE__ */ jsxs3(
     "svg",
     {
       xmlns: "http://www.w3.org/2000/svg",
@@ -388,16 +317,363 @@ function CopyIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx7("path", { d: "M8 2h10a2 2 0 012 2v10h-2V4H8z" }),
-        /* @__PURE__ */ jsx7("path", { fillRule: "evenodd", d: "M4 6h12v14H4V6zm2 2v10h8V8z" })
+        /* @__PURE__ */ jsx4("path", { d: "M11 3h2v9.17l3.59-3.58L18 10l-6 6-6-6 1.41-1.41L11 12.17V3z" }),
+        /* @__PURE__ */ jsx4("path", { d: "M4 18h16v2H4z" })
       ]
     }
   );
 }
 
-// src/icons/DownloadIcon.tsx
-import { jsx as jsx8, jsxs as jsxs5 } from "react/jsx-runtime";
-function DownloadIcon({ className }) {
+// src/icons/WarningIcon.tsx
+import { jsx as jsx5 } from "react/jsx-runtime";
+function WarningIcon({ className }) {
+  return /* @__PURE__ */ jsx5(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: "0 0 24 24",
+      fill: "currentColor",
+      "aria-hidden": "true",
+      className,
+      children: /* @__PURE__ */ jsx5(
+        "path",
+        {
+          fillRule: "evenodd",
+          d: "M12 2l11 19H1L12 2zm-1 7v6h2V9h-2zm0 8v2h2v-2h-2z"
+        }
+      )
+    }
+  );
+}
+
+// src/studio/buildFilename.ts
+var FORBIDDEN = /[/\\:*?"<>|]/g;
+var MAX_TITLE_LENGTH = 50;
+function sanitizeTitle(title) {
+  return title.replace(FORBIDDEN, "").trim().replace(/\s+/g, "-").slice(0, MAX_TITLE_LENGTH).replace(/-+$/, "");
+}
+function buildFilename(date, title, options = {}) {
+  const safeTitle = sanitizeTitle(title);
+  const base = safeTitle ? `${date}-${safeTitle}` : date;
+  return `${options.draft ? "_" : ""}${base}.md`;
+}
+
+// src/studio/buildDraftArticle.ts
+function buildDraftArticle(raw, articles = []) {
+  const { data, content } = parseFrontmatter(raw);
+  const date = data.date ?? "";
+  const title = data.title ?? "";
+  return {
+    // date 昇順に並べたとき何番目に入るか。同じ日付の記事より後ろに付く
+    id: articles.filter((article) => article.date <= date).length,
+    filename: buildFilename(date, title),
+    title,
+    date,
+    latestUpdate: data.latestUpdate ?? "",
+    staff: data.staff ?? "",
+    thumbnail: data.thumbnail ?? "",
+    content
+  };
+}
+
+// src/studio/buildTemplate.ts
+function toDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+function buildTemplate(today = /* @__PURE__ */ new Date()) {
+  const date = toDateString(today);
+  return [
+    "---",
+    "title:",
+    `date: ${date}`,
+    `latestUpdate: ${date}`,
+    "staff:",
+    "thumbnail:",
+    "---",
+    "",
+    "## \u898B\u51FA\u3057",
+    "",
+    "\u672C\u6587\u3092\u3053\u3053\u306B\u66F8\u304D\u307E\u3059\u3002",
+    ""
+  ].join("\n");
+}
+
+// src/studio/downloadFile.ts
+function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+function downloadMarkdown(filename, markdown) {
+  downloadBlob(filename, new Blob([markdown], { type: "text/markdown;charset=utf-8" }));
+}
+
+// src/studio/renameImage.ts
+function renameImageInMarkdown(markdown, from, to) {
+  return markdown.split(`](${from})`).join(`](${to})`);
+}
+
+// src/studio/collectImageNames.ts
+var IMAGE_SYNTAX = /!\[[^\]]*\]\(([^)]*)\)/g;
+function collectImageNames(markdown, thumbnail) {
+  const names = [...markdown.matchAll(IMAGE_SYNTAX)].map((match) => match[1]);
+  return [.../* @__PURE__ */ new Set([...names, thumbnail])].filter(
+    (name) => name !== "" && !isAbsoluteImageSrc(name)
+  );
+}
+
+// src/studio/draftStorage.ts
+var PREFIX = "as-studio-draft";
+function draftKey(storageKey = "default") {
+  return `${PREFIX}:${storageKey}`;
+}
+function saveDraft(storageKey, raw) {
+  try {
+    localStorage.setItem(draftKey(storageKey), raw);
+  } catch {
+  }
+}
+function loadDraft(storageKey) {
+  try {
+    return localStorage.getItem(draftKey(storageKey));
+  } catch {
+    return null;
+  }
+}
+var PUBLISHED_PREFIX = "as-studio-published";
+function publishedKey(storageKey = "default") {
+  return `${PUBLISHED_PREFIX}:${storageKey}`;
+}
+function savePublished(storageKey, raw) {
+  try {
+    localStorage.setItem(publishedKey(storageKey), raw);
+  } catch {
+  }
+}
+function loadPublished(storageKey) {
+  try {
+    return localStorage.getItem(publishedKey(storageKey));
+  } catch {
+    return null;
+  }
+}
+
+// src/components/ArticleStudio.tsx
+import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+var LIST_PREVIEW_COUNT = 6;
+function ArticleStudio({
+  articles,
+  storageKey,
+  imageBasePath,
+  dateLabel,
+  classNames = {},
+  articleClassNames
+}) {
+  const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
+  const [tab, setTab] = useState("detail");
+  const [issues, setIssues] = useState([]);
+  const [justPublished, setJustPublished] = useState(false);
+  const [images, setImages] = useState([]);
+  const [missingImages, setMissingImages] = useState({});
+  const [placementPending, setPlacementPending] = useState(false);
+  useEffect(() => {
+    saveDraft(storageKey, raw);
+  }, [storageKey, raw]);
+  const editRaw = (value) => {
+    setRaw(value);
+    setJustPublished(false);
+  };
+  const draft = buildDraftArticle(raw, articles);
+  const basePath = imageBasePath ?? "/article_imgs/";
+  const probeNames = collectImageNames(draft.content, draft.thumbnail).filter(
+    (name) => !images.some((image) => image.name === name)
+  );
+  const toPreviewSrc = (value) => images.reduce((text, image) => text.split(image.name).join(image.url), value);
+  const previewArticle = {
+    ...draft,
+    thumbnail: toPreviewSrc(draft.thumbnail),
+    content: toPreviewSrc(draft.content)
+  };
+  const downloadImage = (image) => {
+    downloadBlob(image.name, image.file);
+  };
+  const renameImage = (index, nextName) => {
+    const target = images[index];
+    setImages(images.map((image, i) => i === index ? { ...image, name: nextName } : image));
+    editRaw(renameImageInMarkdown(raw, target.name, nextName));
+  };
+  const handleDrop = (event) => {
+    const dropped = Array.from(event.dataTransfer?.files ?? []).filter(
+      (file) => file.type.startsWith("image/")
+    );
+    if (dropped.length === 0) return;
+    event.preventDefault();
+    const added = dropped.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+      file
+    }));
+    setImages((current) => [...current, ...added]);
+    setPlacementPending(false);
+    const markdown = added.map((image) => `![](${image.name})`).join("\n\n");
+    editRaw(`${raw}
+
+${markdown}
+`);
+  };
+  const listPreview = [...articles ?? [], draft].sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0).slice(0, LIST_PREVIEW_COUNT);
+  const downloadDraft = () => {
+    downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
+  };
+  const downloadForPublish = () => {
+    const filename = buildFilename(draft.date, draft.title);
+    const missing = probeNames.filter((name) => missingImages[name]).map((name) => ({
+      level: "error",
+      message: `\u753B\u50CF ${name} \u304C ${basePath} \u306B\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u540D\u524D\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002`
+    }));
+    const found = [...validateArticle(raw, { articles, filename }), ...missing];
+    setIssues(found);
+    if (found.length > 0) return;
+    downloadMarkdown(filename, raw);
+    savePublished(storageKey, raw);
+    setRaw(buildTemplate());
+    setJustPublished(true);
+    setPlacementPending(images.length > 0);
+  };
+  const restorePublished = () => {
+    const published = loadPublished(storageKey);
+    if (published !== null) setRaw(published);
+    setJustPublished(false);
+  };
+  return /* @__PURE__ */ jsxs4("div", { className: cx("as-studio", classNames.wrapper), children: [
+    /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-editor", classNames.editorPane), children: [
+      /* @__PURE__ */ jsx6(
+        "textarea",
+        {
+          className: cx("as-studio-textarea", classNames.textarea),
+          value: raw,
+          onChange: (event) => editRaw(event.target.value),
+          spellCheck: false
+        }
+      ),
+      images.length > 0 && /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-images", classNames.imagePane), children: [
+        placementPending && /* @__PURE__ */ jsxs4("p", { className: "as-studio-images-note", children: [
+          "\u4EE5\u4E0B\u306E\u753B\u50CF\u3092 ",
+          basePath,
+          " \u306B\u914D\u7F6E\u3057\u3066\u304F\u3060\u3055\u3044\u3002md \u3060\u3051\u3067\u306F\u8868\u793A\u3055\u308C\u307E\u305B\u3093\u3002"
+        ] }),
+        /* @__PURE__ */ jsx6("ul", { children: images.map((image, index) => /* @__PURE__ */ jsxs4("li", { children: [
+          /* @__PURE__ */ jsx6("img", { src: image.url, alt: "" }),
+          /* @__PURE__ */ jsx6(
+            "input",
+            {
+              type: "text",
+              "aria-label": "\u753B\u50CF\u306E\u540D\u524D",
+              value: image.name,
+              onChange: (event) => renameImage(index, event.target.value)
+            }
+          ),
+          /* @__PURE__ */ jsx6(
+            "button",
+            {
+              type: "button",
+              "aria-label": `${image.name} \u3092\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9`,
+              onClick: () => downloadImage(image),
+              children: /* @__PURE__ */ jsx6(DownloadIcon, { className: "as-studio-image-download-icon" })
+            }
+          ),
+          placementPending && /* @__PURE__ */ jsx6("span", { className: "as-studio-image-pending", children: "\u672A\u914D\u7F6E" })
+        ] }, image.url)) })
+      ] }),
+      issues.length > 0 && /* @__PURE__ */ jsx6("div", { className: cx("as-studio-issues", classNames.issues), role: "alert", children: /* @__PURE__ */ jsx6("ul", { children: issues.map((issue, index) => /* @__PURE__ */ jsxs4("li", { children: [
+        /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
+        /* @__PURE__ */ jsx6("span", { children: issue.message })
+      ] }, index)) }) }),
+      /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
+        /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
+        /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
+        justPublished && /* @__PURE__ */ jsx6("button", { type: "button", onClick: restorePublished, children: "\u76F4\u524D\u306E\u8A18\u4E8B\u306B\u623B\u3059" })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsx6("div", { hidden: true, children: probeNames.map((name) => /* @__PURE__ */ jsx6(
+      "img",
+      {
+        src: resolveImageSrc(name, basePath),
+        alt: "",
+        onError: () => setMissingImages((current) => ({ ...current, [name]: true })),
+        onLoad: () => setMissingImages((current) => ({ ...current, [name]: false }))
+      },
+      name
+    )) }),
+    /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-preview", classNames.previewPane), children: [
+      /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-tabs", classNames.tabs), role: "tablist", children: [
+        /* @__PURE__ */ jsx6("button", { type: "button", role: "tab", "aria-selected": tab === "detail", onClick: () => setTab("detail"), children: "\u8A73\u7D30" }),
+        /* @__PURE__ */ jsx6("button", { type: "button", role: "tab", "aria-selected": tab === "list", onClick: () => setTab("list"), children: "\u4E00\u89A7" })
+      ] }),
+      tab === "detail" ? /* @__PURE__ */ jsx6(
+        ArticleDetail,
+        {
+          article: previewArticle,
+          imageBasePath,
+          dateLabel,
+          classNames: articleClassNames
+        }
+      ) : /* @__PURE__ */ jsx6(
+        ArticleList,
+        {
+          articles: listPreview,
+          imageBasePath,
+          getArticleUrl: () => "#",
+          renderLink: (_url, children, key) => /* @__PURE__ */ jsx6("div", { children }, key)
+        }
+      )
+    ] })
+  ] });
+}
+
+// src/icons/ArrowIcon.tsx
+import { jsx as jsx7 } from "react/jsx-runtime";
+function ArrowIcon({ className }) {
+  return /* @__PURE__ */ jsx7(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: "0 0 24 24",
+      fill: "currentColor",
+      "aria-hidden": "true",
+      className,
+      children: /* @__PURE__ */ jsx7("path", { d: "M4 11h12.17l-3.58-3.59L14 6l6 6-6 6-1.41-1.41L16.17 13H4z" })
+    }
+  );
+}
+
+// src/icons/CloseIcon.tsx
+import { jsx as jsx8 } from "react/jsx-runtime";
+function CloseIcon({ className }) {
+  return /* @__PURE__ */ jsx8(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: "0 0 24 24",
+      fill: "currentColor",
+      "aria-hidden": "true",
+      className,
+      children: /* @__PURE__ */ jsx8("path", { d: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" })
+    }
+  );
+}
+
+// src/icons/CopyIcon.tsx
+import { jsx as jsx9, jsxs as jsxs5 } from "react/jsx-runtime";
+function CopyIcon({ className }) {
   return /* @__PURE__ */ jsxs5(
     "svg",
     {
@@ -407,15 +683,15 @@ function DownloadIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx8("path", { d: "M11 3h2v9.17l3.59-3.58L18 10l-6 6-6-6 1.41-1.41L11 12.17V3z" }),
-        /* @__PURE__ */ jsx8("path", { d: "M4 18h16v2H4z" })
+        /* @__PURE__ */ jsx9("path", { d: "M8 2h10a2 2 0 012 2v10h-2V4H8z" }),
+        /* @__PURE__ */ jsx9("path", { fillRule: "evenodd", d: "M4 6h12v14H4V6zm2 2v10h8V8z" })
       ]
     }
   );
 }
 
 // src/icons/ExternalLinkIcon.tsx
-import { jsx as jsx9, jsxs as jsxs6 } from "react/jsx-runtime";
+import { jsx as jsx10, jsxs as jsxs6 } from "react/jsx-runtime";
 function ExternalLinkIcon({ className }) {
   return /* @__PURE__ */ jsxs6(
     "svg",
@@ -426,15 +702,15 @@ function ExternalLinkIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx9("path", { d: "M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42L17.59 5H14z" }),
-        /* @__PURE__ */ jsx9("path", { d: "M19 13v6H5V5h6V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-6z" })
+        /* @__PURE__ */ jsx10("path", { d: "M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42L17.59 5H14z" }),
+        /* @__PURE__ */ jsx10("path", { d: "M19 13v6H5V5h6V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-6z" })
       ]
     }
   );
 }
 
 // src/icons/ImageIcon.tsx
-import { jsx as jsx10, jsxs as jsxs7 } from "react/jsx-runtime";
+import { jsx as jsx11, jsxs as jsxs7 } from "react/jsx-runtime";
 function ImageIcon({ className }) {
   return /* @__PURE__ */ jsxs7(
     "svg",
@@ -445,16 +721,16 @@ function ImageIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx10("path", { fillRule: "evenodd", d: "M2 4h20v16H2V4zm2 2v12h16V6H4z" }),
-        /* @__PURE__ */ jsx10("circle", { cx: "8", cy: "10", r: "1.75" }),
-        /* @__PURE__ */ jsx10("path", { d: "M5 17l4-5 3 3.5L15 12l4 5H5z" })
+        /* @__PURE__ */ jsx11("path", { fillRule: "evenodd", d: "M2 4h20v16H2V4zm2 2v12h16V6H4z" }),
+        /* @__PURE__ */ jsx11("circle", { cx: "8", cy: "10", r: "1.75" }),
+        /* @__PURE__ */ jsx11("path", { d: "M5 17l4-5 3 3.5L15 12l4 5H5z" })
       ]
     }
   );
 }
 
 // src/icons/PersonIcon.tsx
-import { jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
+import { jsx as jsx12, jsxs as jsxs8 } from "react/jsx-runtime";
 function PersonIcon({ className }) {
   return /* @__PURE__ */ jsxs8(
     "svg",
@@ -465,38 +741,16 @@ function PersonIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx11("circle", { cx: "12", cy: "7.5", r: "3.75" }),
-        /* @__PURE__ */ jsx11("path", { d: "M12 13.5c-4.14 0-7.5 2.35-7.5 5.25V20h15v-1.25c0-2.9-3.36-5.25-7.5-5.25z" })
+        /* @__PURE__ */ jsx12("circle", { cx: "12", cy: "7.5", r: "3.75" }),
+        /* @__PURE__ */ jsx12("path", { d: "M12 13.5c-4.14 0-7.5 2.35-7.5 5.25V20h15v-1.25c0-2.9-3.36-5.25-7.5-5.25z" })
       ]
     }
   );
 }
 
 // src/icons/TagIcon.tsx
-import { jsx as jsx12 } from "react/jsx-runtime";
-function TagIcon({ className }) {
-  return /* @__PURE__ */ jsx12(
-    "svg",
-    {
-      xmlns: "http://www.w3.org/2000/svg",
-      viewBox: "0 0 24 24",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      className,
-      children: /* @__PURE__ */ jsx12(
-        "path",
-        {
-          fillRule: "evenodd",
-          d: "M4 3h7.17c.53 0 1.04.21 1.41.59l8.83 8.83a2 2 0 0 1 0 2.83l-6.17 6.17a2 2 0 0 1-2.83 0L3.59 12.58A2 2 0 0 1 3 11.17V4a1 1 0 0 1 1-1zm3.25 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"
-        }
-      )
-    }
-  );
-}
-
-// src/icons/WarningIcon.tsx
 import { jsx as jsx13 } from "react/jsx-runtime";
-function WarningIcon({ className }) {
+function TagIcon({ className }) {
   return /* @__PURE__ */ jsx13(
     "svg",
     {
@@ -509,7 +763,7 @@ function WarningIcon({ className }) {
         "path",
         {
           fillRule: "evenodd",
-          d: "M12 2l11 19H1L12 2zm-1 7v6h2V9h-2zm0 8v2h2v-2h-2z"
+          d: "M4 3h7.17c.53 0 1.04.21 1.41.59l8.83 8.83a2 2 0 0 1 0 2.83l-6.17 6.17a2 2 0 0 1-2.83 0L3.59 12.58A2 2 0 0 1 3 11.17V4a1 1 0 0 1 1-1zm3.25 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"
         }
       )
     }
@@ -519,7 +773,7 @@ export {
   ArrowIcon,
   ArticleDetail,
   ArticleList,
-  ArticlePreview,
+  ArticleStudio,
   ClockIcon,
   CloseIcon,
   CopyIcon,

@@ -36,11 +36,16 @@ interface ArticleListClassNames {
     cardDate?: string;
     cardDateIcon?: string;
 }
-interface ArticlePreviewClassNames {
+/** ArticleStudio のクラス名（spec §9 のレイアウト図に対応） */
+interface ArticleStudioClassNames {
     wrapper?: string;
     editorPane?: string;
     textarea?: string;
     previewPane?: string;
+    tabs?: string;
+    issues?: string;
+    imagePane?: string;
+    actions?: string;
 }
 
 interface Issue {
@@ -80,13 +85,16 @@ interface Props$1 {
 declare function ArticleList({ articles, imageBasePath, getArticleUrl, classNames, renderLink, }: Props$1): react_jsx_runtime.JSX.Element;
 
 interface Props {
+    /** 衝突検出と一覧プレビューに使う既存記事 */
+    articles?: Article[];
+    /** localStorage の保存先を分ける（spec §9） */
+    storageKey?: string;
     imageBasePath?: string;
     dateLabel?: string;
-    classNames?: ArticlePreviewClassNames;
+    classNames?: ArticleStudioClassNames;
     articleClassNames?: ArticleDetailClassNames;
-    defaultValue?: string;
 }
-declare function ArticlePreview({ imageBasePath, dateLabel, classNames, articleClassNames, defaultValue, }: Props): react_jsx_runtime.JSX.Element;
+declare function ArticleStudio({ articles, storageKey, imageBasePath, dateLabel, classNames, articleClassNames, }: Props): react_jsx_runtime.JSX.Element;
 
 /**
  * アイコン共通の props（spec §11）。
@@ -119,4 +127,4 @@ declare function TagIcon({ className }: IconProps): react_jsx_runtime.JSX.Elemen
 
 declare function WarningIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
 
-export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticlePreview, type ArticlePreviewClassNames, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };
+export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };

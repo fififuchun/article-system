@@ -37,12 +37,6 @@ export interface ArticleListClassNames {
   cardDateIcon?: string;
 }
 
-export interface ArticlePreviewClassNames {
-  wrapper?: string;     // 2カラム全体のラッパー
-  editorPane?: string;  // 左側エディタ領域
-  textarea?: string;    // テキストエリア
-  previewPane?: string; // 右側プレビュー領域
-}
 
 /** ArticleStudio のクラス名（spec §9 のレイアウト図に対応） */
 export interface ArticleStudioClassNames {

@@ -1,10 +1,15 @@
-export type { Article, ArticleDetailClassNames, ArticleListClassNames, ArticlePreviewClassNames } from "./types";
+export type {
+  Article,
+  ArticleDetailClassNames,
+  ArticleListClassNames,
+  ArticleStudioClassNames,
+} from "./types";
 export type { Issue } from "./validate";
 export { createArticles } from "./createArticles";
 export { validateArticle } from "./validate";
 export { ArticleDetail } from "./components/ArticleDetail";
 export { ArticleList } from "./components/ArticleList";
-export { ArticlePreview } from "./components/ArticlePreview";
+export { ArticleStudio } from "./components/ArticleStudio";
 export type { IconProps } from "./icons/types";
 export { ArrowIcon } from "./icons/ArrowIcon";
 export { ClockIcon } from "./icons/ClockIcon";
