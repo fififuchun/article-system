@@ -13,7 +13,7 @@ import { buildDraftArticle } from "../studio/buildDraftArticle";
 import { buildFilename } from "../studio/buildFilename";
 import { buildTemplate } from "../studio/buildTemplate";
 import { downloadMarkdown } from "../studio/downloadFile";
-import { loadDraft, saveDraft } from "../studio/draftStorage";
+import { loadDraft, loadPublished, savePublished, saveDraft } from "../studio/draftStorage";
 
 /** 一覧プレビューに出す件数（spec §9） */
 const LIST_PREVIEW_COUNT = 6;
@@ -44,6 +44,8 @@ export function ArticleStudio({
   const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
   const [tab, setTab] = useState<"detail" | "list">("detail");
   const [issues, setIssues] = useState<Issue[]>([]);
+  // テンプレートに戻った直後だけ true。編集すると降りる（リロードでも残らない）
+  const [justPublished, setJustPublished] = useState(false);
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -74,8 +76,22 @@ export function ArticleStudio({
     if (found.length > 0) return;
 
     downloadMarkdown(filename, raw);
-    // 白紙に戻す。出した直後の typo に備える救済は次のタスクで足す
+    // 白紙に戻すが、出した直後に typo に気づいても取り返せるよう退避しておく（spec §9）
+    savePublished(storageKey, raw);
     setRaw(buildTemplate());
+    setJustPublished(true);
+  };
+
+  const editRaw = (value: string) => {
+    setRaw(value);
+    // 書きかけを上書きする事故を防ぐため、編集を始めたら救済ボタンを引っ込める
+    setJustPublished(false);
+  };
+
+  const restorePublished = () => {
+    const published = loadPublished(storageKey);
+    if (published !== null) setRaw(published);
+    setJustPublished(false);
   };
 
   return (
@@ -84,7 +100,7 @@ export function ArticleStudio({
         <textarea
           className={cx("as-studio-textarea", classNames.textarea)}
           value={raw}
-          onChange={(event) => setRaw(event.target.value)}
+          onChange={(event) => editRaw(event.target.value)}
           spellCheck={false}
         />
 
@@ -108,6 +124,11 @@ export function ArticleStudio({
           <button type="button" onClick={downloadDraft}>
             下書きダウンロード
           </button>
+          {justPublished && (
+            <button type="button" onClick={restorePublished}>
+              直前の記事に戻す
+            </button>
+          )}
         </div>
       </div>
 
