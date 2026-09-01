@@ -8,11 +8,12 @@ import { cx } from "../cx";
 import { validateArticle, type Issue } from "../validate";
 import { ArticleDetail } from "./ArticleDetail";
 import { ArticleList } from "./ArticleList";
+import { DownloadIcon } from "../icons/DownloadIcon";
 import { WarningIcon } from "../icons/WarningIcon";
 import { buildDraftArticle } from "../studio/buildDraftArticle";
 import { buildFilename } from "../studio/buildFilename";
 import { buildTemplate } from "../studio/buildTemplate";
-import { downloadMarkdown } from "../studio/downloadFile";
+import { downloadBlob, downloadMarkdown } from "../studio/downloadFile";
 import { renameImageInMarkdown } from "../studio/renameImage";
 import { loadDraft, loadPublished, savePublished, saveDraft } from "../studio/draftStorage";
 
@@ -81,6 +82,11 @@ export function ArticleStudio({
     ...draft,
     thumbnail: toPreviewSrc(draft.thumbnail),
     content: toPreviewSrc(draft.content),
+  };
+
+  // リネーム後の名前で保存できるので、スマホだけで作業が完結する（spec §9）
+  const downloadImage = (image: DroppedImage) => {
+    downloadBlob(image.name, image.file);
   };
 
   // スマホから選ぶと IMG_1234.jpg になるため、その場で直せることが必須（spec §9）
@@ -163,6 +169,13 @@ export function ArticleStudio({
                     value={image.name}
                     onChange={(event) => renameImage(index, event.target.value)}
                   />
+                  <button
+                    type="button"
+                    aria-label={`${image.name} をダウンロード`}
+                    onClick={() => downloadImage(image)}
+                  >
+                    <DownloadIcon className="as-studio-image-download-icon" />
+                  </button>
                 </li>
               ))}
             </ul>
