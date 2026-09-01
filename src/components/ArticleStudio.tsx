@@ -11,6 +11,9 @@ import { buildDraftArticle } from "../studio/buildDraftArticle";
 import { buildTemplate } from "../studio/buildTemplate";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
 
+/** 一覧プレビューに出す件数（spec §9） */
+const LIST_PREVIEW_COUNT = 6;
+
 interface Props {
   /** 衝突検出と一覧プレビューに使う既存記事 */
   articles?: Article[];
@@ -46,6 +49,12 @@ export function ArticleStudio({
   // 構造的に保証される（spec §9）
   const draft = buildDraftArticle(raw, articles);
 
+  // 既存記事に混ぜて日付の新しい順の直近6件。隣の記事と並べることで
+  // タイトルの折り返しやサムネイルの雰囲気を比較できる（spec §9）
+  const listPreview = [...(articles ?? []), draft]
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .slice(0, LIST_PREVIEW_COUNT);
+
   return (
     <div className={cx("as-studio", classNames.wrapper)}>
       <div className={cx("as-studio-editor", classNames.editorPane)}>
@@ -76,7 +85,7 @@ export function ArticleStudio({
           />
         ) : (
           <ArticleList
-            articles={[draft]}
+            articles={listPreview}
             imageBasePath={imageBasePath}
             getArticleUrl={() => "#"}
             // プレビューなので遷移させない。リンクにせず div で包む

@@ -2,6 +2,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { ArticleStudio } from "./ArticleStudio";
+import type { Article } from "../types";
 
 afterEach(cleanup);
 beforeEach(() => localStorage.clear());
@@ -307,5 +308,101 @@ describe("ArticleStudio — プレビューのタブ", () => {
     fireEvent.click(tab("一覧"));
 
     expect(container.querySelector(".as-grid a")).toBeNull();
+  });
+});
+
+function existing(date: string, title: string): Article {
+  return {
+    id: 0,
+    filename: `${date}.md`,
+    title,
+    date,
+    latestUpdate: date,
+    staff: "担当",
+    thumbnail: "art.webp",
+    content: "本文",
+  };
+}
+
+describe("ArticleStudio — 一覧プレビューの中身", () => {
+  const openList = () => fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
+  const titles = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll(".as-card-title")).map((el) => el.textContent);
+
+  it("既存記事に編集中の記事を混ぜる", () => {
+    const { container } = render(
+      <ArticleStudio articles={[existing("2026-01-01", "去年の記事")]} />
+    );
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(titles(container)).toContain("去年の記事");
+    expect(titles(container)).toContain("夏の更新");
+  });
+
+  // spec §9: 新規記事を含めて日付の新しい順
+  it("日付の新しい順に並べる", () => {
+    const { container } = render(
+      <ArticleStudio
+        articles={[existing("2026-01-01", "古い"), existing("2026-12-01", "新しい")]}
+      />
+    );
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(titles(container)).toEqual(["新しい", "夏の更新", "古い"]);
+  });
+
+  it("直近6件までに絞る", () => {
+    const articles = Array.from({ length: 10 }, (_, index) =>
+      existing(`2026-01-${String(index + 1).padStart(2, "0")}`, `記事${index + 1}`)
+    );
+    const { container } = render(<ArticleStudio articles={articles} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(titles(container)).toHaveLength(6);
+  });
+
+  it("6件に絞っても新しい順は保たれる", () => {
+    const articles = Array.from({ length: 10 }, (_, index) =>
+      existing(`2026-01-${String(index + 1).padStart(2, "0")}`, `記事${index + 1}`)
+    );
+    const { container } = render(<ArticleStudio articles={articles} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(titles(container)).toEqual([
+      "夏の更新",
+      "記事10",
+      "記事9",
+      "記事8",
+      "記事7",
+      "記事6",
+    ]);
+  });
+
+  it("既存記事が無くても編集中の記事だけ出す", () => {
+    const { container } = render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(titles(container)).toEqual(["夏の更新"]);
+  });
+
+  it("同じ日付の既存記事より後ろに入る", () => {
+    const { container } = render(
+      <ArticleStudio articles={[existing("2026-08-23", "同じ日の記事")]} />
+    );
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(titles(container)).toEqual(["同じ日の記事", "夏の更新"]);
   });
 });
