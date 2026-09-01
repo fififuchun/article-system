@@ -457,3 +457,67 @@ describe("ArticleStudio — 下書きダウンロード", () => {
     expect((draftButton() as HTMLButtonElement).disabled).toBe(false);
   });
 });
+
+describe("ArticleStudio — 本番ダウンロード", () => {
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const publishButton = () => screen.getByRole("button", { name: /本番/ });
+
+  it("本番ダウンロードのボタンがある", () => {
+    render(<ArticleStudio />);
+
+    expect(publishButton()).toBeDefined();
+  });
+
+  it("下書きとは別のボタンになっている", () => {
+    render(<ArticleStudio />);
+
+    expect(publishButton()).not.toBe(screen.getByRole("button", { name: /下書き/ }));
+  });
+
+  // spec §9: エラーがゼロでないと出せない
+  it("検証を通ればテンプレートに戻る", () => {
+    render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(publishButton());
+
+    expect(textarea().value).toContain("## 見出し");
+    expect(textarea().value).not.toContain("夏の更新");
+  });
+
+  it("必須項目が欠けていればテンプレートに戻らない", () => {
+    const broken = sampleMd.replace("staff: 田中 花子", "staff:");
+    render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+    fireEvent.click(publishButton());
+
+    expect(textarea().value).toBe(broken);
+  });
+
+  it("日付の形式が違えばテンプレートに戻らない", () => {
+    const broken = sampleMd.replace("date: 2026-08-23", "date: 2026/08/23");
+    render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: broken } });
+    fireEvent.click(publishButton());
+
+    expect(textarea().value).toBe(broken);
+  });
+
+  // spec §6: 既存記事が物理的に上書きされ消えるのを防ぐ
+  it("既存記事とファイル名が衝突すればテンプレートに戻らない", () => {
+    const articles = [existing("2026-08-23", "夏の更新")];
+    articles[0].filename = "2026-08-23-夏の更新.md";
+    render(<ArticleStudio articles={articles} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(publishButton());
+
+    expect(textarea().value).toBe(sampleMd);
+  });
+});

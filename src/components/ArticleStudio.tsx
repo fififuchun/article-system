@@ -5,6 +5,7 @@ import type {
   ArticleStudioClassNames,
 } from "../types";
 import { cx } from "../cx";
+import { validateArticle, type Issue } from "../validate";
 import { ArticleDetail } from "./ArticleDetail";
 import { ArticleList } from "./ArticleList";
 import { buildDraftArticle } from "../studio/buildDraftArticle";
@@ -41,6 +42,7 @@ export function ArticleStudio({
   // ?? を使うのは空文字を「下書きなし」と扱わないため（spec §9）
   const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
   const [tab, setTab] = useState<"detail" | "list">("detail");
+  const [issues, setIssues] = useState<Issue[]>([]);
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -62,6 +64,19 @@ export function ArticleStudio({
     downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
   };
 
+  // 本番は検証必須。エラーがゼロでないと出せない（spec §9）
+  const downloadForPublish = () => {
+    const filename = buildFilename(draft.date, draft.title);
+    const found = validateArticle(raw, { articles, filename });
+    setIssues(found);
+
+    if (found.length > 0) return;
+
+    downloadMarkdown(filename, raw);
+    // 白紙に戻す。出した直後の typo に備える救済は次のタスクで足す
+    setRaw(buildTemplate());
+  };
+
   return (
     <div className={cx("as-studio", classNames.wrapper)}>
       <div className={cx("as-studio-editor", classNames.editorPane)}>
@@ -73,6 +88,9 @@ export function ArticleStudio({
         />
 
         <div className={cx("as-studio-actions", classNames.actions)}>
+          <button type="button" onClick={downloadForPublish}>
+            本番ダウンロード
+          </button>
           <button type="button" onClick={downloadDraft}>
             下書きダウンロード
           </button>
