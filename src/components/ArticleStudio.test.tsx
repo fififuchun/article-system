@@ -406,3 +406,54 @@ describe("ArticleStudio — 一覧プレビューの中身", () => {
     expect(titles(container)).toEqual(["同じ日の記事", "夏の更新"]);
   });
 });
+
+describe("ArticleStudio — 下書きダウンロード", () => {
+  beforeEach(() => {
+    // jsdom に無い API。ダウンロードの中身は検証せず（フェーズ6の方針）、
+    // クリックが例外にならないようにするだけ
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const draftButton = () => screen.getByRole("button", { name: /下書き/ });
+
+  it("下書きダウンロードのボタンがある", () => {
+    render(<ArticleStudio />);
+
+    expect(draftButton()).toBeDefined();
+  });
+
+  it("操作領域に as-studio-actions が付く", () => {
+    const { container } = render(<ArticleStudio />);
+
+    expect(container.querySelector(".as-studio-actions")).not.toBeNull();
+  });
+
+  it("classNames.actions が as- クラスに追記される", () => {
+    const { container } = render(<ArticleStudio classNames={{ actions: "my-actions" }} />);
+
+    expect(container.querySelector(".as-studio-actions")?.className).toBe(
+      "as-studio-actions my-actions"
+    );
+  });
+
+  // spec §9: 下書きは押した後もそのまま留まる
+  it("押しても編集内容がそのまま残る", () => {
+    render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(draftButton());
+
+    expect(textarea().value).toBe(sampleMd);
+  });
+
+  // spec §9: 下書きは検証しない
+  it("必須項目が欠けていても押せる", () => {
+    render(<ArticleStudio />);
+
+    fireEvent.change(textarea(), { target: { value: "---\ntitle:\n---\n\n本文" } });
+
+    expect(() => fireEvent.click(draftButton())).not.toThrow();
+    expect((draftButton() as HTMLButtonElement).disabled).toBe(false);
+  });
+});

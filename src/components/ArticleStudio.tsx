@@ -8,7 +8,9 @@ import { cx } from "../cx";
 import { ArticleDetail } from "./ArticleDetail";
 import { ArticleList } from "./ArticleList";
 import { buildDraftArticle } from "../studio/buildDraftArticle";
+import { buildFilename } from "../studio/buildFilename";
 import { buildTemplate } from "../studio/buildTemplate";
+import { downloadMarkdown } from "../studio/downloadFile";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
 
 /** 一覧プレビューに出す件数（spec §9） */
@@ -55,6 +57,11 @@ export function ArticleStudio({
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
     .slice(0, LIST_PREVIEW_COUNT);
 
+  // 下書きは検証せずそのまま出す。押した後も編集を続けられる（spec §9）
+  const downloadDraft = () => {
+    downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
+  };
+
   return (
     <div className={cx("as-studio", classNames.wrapper)}>
       <div className={cx("as-studio-editor", classNames.editorPane)}>
@@ -64,6 +71,12 @@ export function ArticleStudio({
           onChange={(event) => setRaw(event.target.value)}
           spellCheck={false}
         />
+
+        <div className={cx("as-studio-actions", classNames.actions)}>
+          <button type="button" onClick={downloadDraft}>
+            下書きダウンロード
+          </button>
+        </div>
       </div>
 
       <div className={cx("as-studio-preview", classNames.previewPane)}>
