@@ -126,7 +126,7 @@
 - [x] リネーム後の名前で画像をダウンロードできるようにする
 - [x] 手書きのファイル名の画像を `<img>` の `onError` で存在確認する（**ステータスコードで判定しない**。blob 画像は対象外。spec §6）
 - [x] 本番ダウンロード時に「配置してください」画像一覧を提示する
-- [ ] PC 左右2ペイン / スマホ上下2ペインのレイアウトを `styles.css` に追加する（spec §9）
+- [x] PC 左右2ペイン / スマホ上下2ペインのレイアウトを `styles.css` に追加する（spec §9）
 - [ ] `ArticleStudio` と `ArticleStudioClassNames` を `src/index.ts` から export し、`ArticlePreview` と `ArticlePreviewClassNames` を削除する
 - [ ] `demo/` を `ArticlePreview` から `ArticleStudio` に差し替えて動作確認する
 
