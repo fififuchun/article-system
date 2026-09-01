@@ -15,6 +15,15 @@ import { buildTemplate } from "../studio/buildTemplate";
 import { downloadMarkdown } from "../studio/downloadFile";
 import { loadDraft, loadPublished, savePublished, saveDraft } from "../studio/draftStorage";
 
+/** ドロップして仮登録した画像。アップロードはしない（spec §9） */
+interface DroppedImage {
+  /** md に書かれる名前。Studio 上で変更できる */
+  name: string;
+  /** ブラウザ内だけの一時URL。リロードで無効になる */
+  url: string;
+  file: File;
+}
+
 /** 一覧プレビューに出す件数（spec §9） */
 const LIST_PREVIEW_COUNT = 6;
 
@@ -46,6 +55,7 @@ export function ArticleStudio({
   const [issues, setIssues] = useState<Issue[]>([]);
   // テンプレートに戻った直後だけ true。編集すると降りる（リロードでも残らない）
   const [justPublished, setJustPublished] = useState(false);
+  const [images, setImages] = useState<DroppedImage[]>([]);
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -54,7 +64,42 @@ export function ArticleStudio({
 
   // ArticleDetail をそのまま使うことで、プレビューと本番の一致が
   // 構造的に保証される（spec §9）
+  const editRaw = (value: string) => {
+    setRaw(value);
+    // 書きかけを上書きする事故を防ぐため、編集を始めたら救済ボタンを引っ込める
+    setJustPublished(false);
+  };
+
   const draft = buildDraftArticle(raw, articles);
+
+  // 仮登録した画像は md にファイル名で書かれる。プレビューだけ blob URL に差し替える
+  const toPreviewSrc = (value: string) =>
+    images.reduce((text, image) => text.split(image.name).join(image.url), value);
+
+  const previewArticle = {
+    ...draft,
+    thumbnail: toPreviewSrc(draft.thumbnail),
+    content: toPreviewSrc(draft.content),
+  };
+
+  // アップロードは行わない。ブラウザ内の一時URLで見せるだけ（spec §9）
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    const dropped = Array.from(event.dataTransfer?.files ?? []).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (dropped.length === 0) return;
+
+    event.preventDefault();
+    const added = dropped.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+      file,
+    }));
+
+    setImages((current) => [...current, ...added]);
+    const markdown = added.map((image) => `![](${image.name})`).join("\n\n");
+    editRaw(`${raw}\n\n${markdown}\n`);
+  };
 
   // 既存記事に混ぜて日付の新しい順の直近6件。隣の記事と並べることで
   // タイトルの折り返しやサムネイルの雰囲気を比較できる（spec §9）
@@ -80,12 +125,6 @@ export function ArticleStudio({
     savePublished(storageKey, raw);
     setRaw(buildTemplate());
     setJustPublished(true);
-  };
-
-  const editRaw = (value: string) => {
-    setRaw(value);
-    // 書きかけを上書きする事故を防ぐため、編集を始めたら救済ボタンを引っ込める
-    setJustPublished(false);
   };
 
   const restorePublished = () => {
@@ -144,7 +183,7 @@ export function ArticleStudio({
 
         {tab === "detail" ? (
           <ArticleDetail
-            article={draft}
+            article={previewArticle}
             imageBasePath={imageBasePath}
             dateLabel={dateLabel}
             classNames={articleClassNames}

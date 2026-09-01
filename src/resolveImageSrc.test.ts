@@ -10,6 +10,14 @@ describe("resolveImageSrc", () => {
     expect(resolveImageSrc(src, "/imgs/")).toBe(src);
   });
 
+  // spec §9: ドロップした画像は blob URL でプレビューに即反映する
+  it.each(["blob:http://localhost:5173/abc-123", "data:image/png;base64,iVBORw0KGgo="])(
+    "ブラウザ内の一時URL %s はそのまま返す",
+    (src) => {
+      expect(resolveImageSrc(src, "/imgs/")).toBe(src);
+    }
+  );
+
   it("相対パスには imageBasePath を前置する", () => {
     expect(resolveImageSrc("art_0.webp", "/imgs/")).toBe("/imgs/art_0.webp");
   });

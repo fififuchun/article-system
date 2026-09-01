@@ -1,5 +1,8 @@
-/** http:// https:// とプロトコル相対の // */
-const ABSOLUTE_URL = /^(?:https?:)?\/\//;
+/**
+ * http:// https:// とプロトコル相対の //、およびブラウザ内の一時URL。
+ * blob: は Studio にドロップした画像のプレビューで使う（spec §9）。
+ */
+const ABSOLUTE_URL = /^(?:(?:https?:)?\/\/|blob:|data:)/;
 
 /**
  * 絶対URLはそのまま、相対パスには imageBasePath を前置する（spec §7-3）。
