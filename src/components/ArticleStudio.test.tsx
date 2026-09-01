@@ -106,3 +106,47 @@ describe("ArticleStudio — 下書きの自動保存", () => {
     setItem.mockRestore();
   });
 });
+
+describe("ArticleStudio — 下書きの復帰", () => {
+  it("保存された下書きがあればテンプレートではなくそれを出す", () => {
+    localStorage.setItem("as-studio-draft:my-blog", "前回の続き");
+
+    render(<ArticleStudio storageKey="my-blog" />);
+
+    expect(textarea().value).toBe("前回の続き");
+  });
+
+  // spec §9: 意図的に消したものを勝手に戻すと操作を奪うことになる
+  it("空文字で保存されていればテンプレートを再挿入しない", () => {
+    localStorage.setItem("as-studio-draft:my-blog", "");
+
+    render(<ArticleStudio storageKey="my-blog" />);
+
+    expect(textarea().value).toBe("");
+  });
+
+  it("保存が無ければテンプレートを出す", () => {
+    render(<ArticleStudio storageKey="my-blog" />);
+
+    expect(textarea().value).toContain("## 見出し");
+  });
+
+  it("別の storageKey の下書きは読まない", () => {
+    localStorage.setItem("as-studio-draft:another-site", "別プロジェクトの本文");
+
+    render(<ArticleStudio storageKey="my-blog" />);
+
+    expect(textarea().value).toContain("## 見出し");
+  });
+
+  it("localStorage が読めなくてもテンプレートで起動する", () => {
+    const getItem = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+
+    render(<ArticleStudio />);
+
+    expect(textarea().value).toContain("## 見出し");
+    getItem.mockRestore();
+  });
+});

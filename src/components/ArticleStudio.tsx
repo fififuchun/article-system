@@ -6,7 +6,7 @@ import type {
 } from "../types";
 import { cx } from "../cx";
 import { buildTemplate } from "../studio/buildTemplate";
-import { saveDraft } from "../studio/draftStorage";
+import { loadDraft, saveDraft } from "../studio/draftStorage";
 
 interface Props {
   /** 衝突検出と一覧プレビューに使う既存記事 */
@@ -22,7 +22,9 @@ interface Props {
 export function ArticleStudio({ storageKey, classNames = {} }: Props) {
   // 生の md を1枚の textarea で編集する。フォーム化しないことで
   // エディタとのコピーペーストが自由に行き来できる（spec §9）
-  const [raw, setRaw] = useState(buildTemplate);
+  // 復帰する下書きがあればテンプレートを出さない。出すと保存内容を上書きしてしまう。
+  // ?? を使うのは空文字を「下書きなし」と扱わないため（spec §9）
+  const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
