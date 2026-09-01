@@ -13,6 +13,7 @@ import { buildDraftArticle } from "../studio/buildDraftArticle";
 import { buildFilename } from "../studio/buildFilename";
 import { buildTemplate } from "../studio/buildTemplate";
 import { downloadMarkdown } from "../studio/downloadFile";
+import { renameImageInMarkdown } from "../studio/renameImage";
 import { loadDraft, loadPublished, savePublished, saveDraft } from "../studio/draftStorage";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
@@ -82,6 +83,13 @@ export function ArticleStudio({
     content: toPreviewSrc(draft.content),
   };
 
+  // スマホから選ぶと IMG_1234.jpg になるため、その場で直せることが必須（spec §9）
+  const renameImage = (index: number, nextName: string) => {
+    const target = images[index];
+    setImages(images.map((image, i) => (i === index ? { ...image, name: nextName } : image)));
+    editRaw(renameImageInMarkdown(raw, target.name, nextName));
+  };
+
   // アップロードは行わない。ブラウザ内の一時URLで見せるだけ（spec §9）
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     const dropped = Array.from(event.dataTransfer?.files ?? []).filter((file) =>
@@ -142,6 +150,24 @@ export function ArticleStudio({
           onChange={(event) => editRaw(event.target.value)}
           spellCheck={false}
         />
+
+        {images.length > 0 && (
+          <div className={cx("as-studio-images", classNames.imagePane)}>
+            <ul>
+              {images.map((image, index) => (
+                <li key={image.url}>
+                  <img src={image.url} alt="" />
+                  <input
+                    type="text"
+                    aria-label="画像の名前"
+                    value={image.name}
+                    onChange={(event) => renameImage(index, event.target.value)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {issues.length > 0 && (
           <div className={cx("as-studio-issues", classNames.issues)} role="alert">
