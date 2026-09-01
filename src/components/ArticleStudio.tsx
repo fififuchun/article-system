@@ -61,6 +61,8 @@ export function ArticleStudio({
   const [justPublished, setJustPublished] = useState(false);
   const [images, setImages] = useState<DroppedImage[]>([]);
   const [missingImages, setMissingImages] = useState<Record<string, boolean>>({});
+  // 本番を出した後、仮登録の画像がまだリポジトリに置かれていない状態
+  const [placementPending, setPlacementPending] = useState(false);
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -120,6 +122,8 @@ export function ArticleStudio({
     }));
 
     setImages((current) => [...current, ...added]);
+    // 次の記事の画像なので、前回の配置依頼は畳む
+    setPlacementPending(false);
     const markdown = added.map((image) => `![](${image.name})`).join("\n\n");
     editRaw(`${raw}\n\n${markdown}\n`);
   };
@@ -154,6 +158,8 @@ export function ArticleStudio({
     savePublished(storageKey, raw);
     setRaw(buildTemplate());
     setJustPublished(true);
+    // ドロップした画像はアップロードしていないので、置いてもらう必要がある（spec §9）
+    setPlacementPending(images.length > 0);
   };
 
   const restorePublished = () => {
@@ -174,6 +180,11 @@ export function ArticleStudio({
 
         {images.length > 0 && (
           <div className={cx("as-studio-images", classNames.imagePane)}>
+            {placementPending && (
+              <p className="as-studio-images-note">
+                以下の画像を {basePath} に配置してください。md だけでは表示されません。
+              </p>
+            )}
             <ul>
               {images.map((image, index) => (
                 <li key={image.url}>
@@ -191,6 +202,9 @@ export function ArticleStudio({
                   >
                     <DownloadIcon className="as-studio-image-download-icon" />
                   </button>
+                  {placementPending && (
+                    <span className="as-studio-image-pending">未配置</span>
+                  )}
                 </li>
               ))}
             </ul>
