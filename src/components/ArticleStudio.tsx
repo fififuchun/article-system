@@ -92,6 +92,13 @@ export function ArticleStudio({
     content: toPreviewSrc(draft.content),
   };
 
+  // 自動では決して消さない。押されたときだけ、確認を取ってから戻す（spec §9）
+  const startNewArticle = () => {
+    if (!window.confirm("編集中の内容を消して新しく書き始めます。よろしいですか？")) return;
+    setRaw(buildTemplate());
+    setIssues([]);
+  };
+
   // リネーム後の名前で保存できるので、スマホだけで作業が完結する（spec §9）
   const downloadImage = (image: DroppedImage) => {
     downloadBlob(image.name, image.file);
@@ -222,6 +229,9 @@ export function ArticleStudio({
           </button>
           <button type="button" onClick={downloadDraft}>
             下書きダウンロード
+          </button>
+          <button type="button" onClick={startNewArticle}>
+            新しく書く
           </button>
         </div>
       </div>

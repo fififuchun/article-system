@@ -480,6 +480,11 @@ function ArticleStudio({
     thumbnail: toPreviewSrc(draft.thumbnail),
     content: toPreviewSrc(draft.content)
   };
+  const startNewArticle = () => {
+    if (!window.confirm("\u7DE8\u96C6\u4E2D\u306E\u5185\u5BB9\u3092\u6D88\u3057\u3066\u65B0\u3057\u304F\u66F8\u304D\u59CB\u3081\u307E\u3059\u3002\u3088\u308D\u3057\u3044\u3067\u3059\u304B\uFF1F")) return;
+    setRaw(buildTemplate());
+    setIssues([]);
+  };
   const downloadImage = (image) => {
     downloadBlob(image.name, image.file);
   };
@@ -575,7 +580,8 @@ ${markdown}
           ] }, index)) }) }),
           /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
             /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
-            /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" })
+            /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
+            /* @__PURE__ */ jsx6("button", { type: "button", onClick: startNewArticle, children: "\u65B0\u3057\u304F\u66F8\u304F" })
           ] })
         ]
       }

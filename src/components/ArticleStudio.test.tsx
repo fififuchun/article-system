@@ -604,3 +604,61 @@ describe("ArticleStudio — 検証結果の表示", () => {
     );
   });
 });
+
+describe("ArticleStudio — 新しく書く", () => {
+  const newButton = () => screen.getByRole("button", { name: /新しく書く/ });
+
+  it("ボタンがある", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    expect(newButton()).toBeDefined();
+  });
+
+  it("確認を挟む", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.click(newButton());
+
+    expect(confirmSpy).toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
+  it("承諾したらテンプレートに戻る", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(newButton());
+
+    expect(textarea().value).toContain("## 見出し");
+    expect(textarea().value).not.toContain("夏の更新");
+    confirmSpy.mockRestore();
+  });
+
+  // 自動では決して消さない（spec §9）
+  it("断ったら編集内容がそのまま残る", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(newButton());
+
+    expect(textarea().value).toBe(sampleMd);
+    confirmSpy.mockRestore();
+  });
+
+  it("戻したテンプレートの日付は今日になる", () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(newButton());
+
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    expect(textarea().value).toContain(`date: ${today}`);
+    confirmSpy.mockRestore();
+  });
+});
