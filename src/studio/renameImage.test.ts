@@ -1,6 +1,40 @@
 import { describe, it, expect } from "vitest";
 import { renameImageInMarkdown } from "./renameImage";
 
+describe("renameImageInMarkdown — フロントマター", () => {
+  const md = (thumbnail: string, body = "本文") =>
+    ["---", "title: 記事", `thumbnail: ${thumbnail}`, "---", "", body].join("\n");
+
+  // 順序次第で thumbnail だけ取り残され、本番ダウンロードが止まる
+  it("thumbnail の値も置き換える", () => {
+    expect(renameImageInMarkdown(md("a.jpg"), "a.jpg", "b.jpg")).toBe(md("b.jpg"));
+  });
+
+  it("本文と thumbnail を同時に置き換える", () => {
+    const before = md("a.jpg", "![](a.jpg)");
+    const after = md("b.jpg", "![](b.jpg)");
+
+    expect(renameImageInMarkdown(before, "a.jpg", "b.jpg")).toBe(after);
+  });
+
+  it("別のキーの値は置き換えない", () => {
+    const before = ["---", "title: a.jpg", "thumbnail: b.jpg", "---", "", "本文"].join("\n");
+
+    expect(renameImageInMarkdown(before, "a.jpg", "x.jpg")).toBe(before);
+  });
+
+  it("thumbnail の前後の空白があっても置き換える", () => {
+    const before = ["---", "thumbnail:  a.jpg ", "---", "", "本文"].join("\n");
+    const after = ["---", "thumbnail: b.jpg", "---", "", "本文"].join("\n");
+
+    expect(renameImageInMarkdown(before, "a.jpg", "b.jpg")).toBe(after);
+  });
+
+  it("該当しない thumbnail はそのまま", () => {
+    expect(renameImageInMarkdown(md("a.jpg"), "x.jpg", "y.jpg")).toBe(md("a.jpg"));
+  });
+});
+
 describe("renameImageInMarkdown", () => {
   it("画像記法のファイル名を置き換える", () => {
     expect(renameImageInMarkdown("![](IMG_1234.jpg)", "IMG_1234.jpg", "夏の風景.jpg")).toBe(

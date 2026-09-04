@@ -418,7 +418,11 @@ function downloadMarkdown(filename, markdown) {
 
 // src/studio/renameImage.ts
 function renameImageInMarkdown(markdown, from, to) {
-  return markdown.split(`](${from})`).join(`](${to})`);
+  return markdown.split(`](${from})`).join(`](${to})`).split("\n").map((line) => isThumbnailOf(line, from) ? `thumbnail: ${to}` : line).join("\n");
+}
+function isThumbnailOf(line, name) {
+  const match = line.match(/^thumbnail:(.*)$/);
+  return match !== null && match[1].trim() === name;
 }
 
 // src/studio/collectImageNames.ts
