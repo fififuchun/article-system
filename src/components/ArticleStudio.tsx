@@ -17,7 +17,7 @@ import { downloadBlob, downloadMarkdown } from "../studio/downloadFile";
 import { renameImageInMarkdown } from "../studio/renameImage";
 import { collectImageNames } from "../studio/collectImageNames";
 import { resolveImageSrc } from "../resolveImageSrc";
-import { loadDraft, loadPublished, savePublished, saveDraft } from "../studio/draftStorage";
+import { loadDraft, saveDraft } from "../studio/draftStorage";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
 interface DroppedImage {
@@ -57,8 +57,6 @@ export function ArticleStudio({
   const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
   const [tab, setTab] = useState<"detail" | "list">("detail");
   const [issues, setIssues] = useState<Issue[]>([]);
-  // テンプレートに戻った直後だけ true。編集すると降りる（リロードでも残らない）
-  const [justPublished, setJustPublished] = useState(false);
   const [images, setImages] = useState<DroppedImage[]>([]);
   const [missingImages, setMissingImages] = useState<Record<string, boolean>>({});
   // 本番を出した後、仮登録の画像がまだリポジトリに置かれていない状態
@@ -71,12 +69,6 @@ export function ArticleStudio({
 
   // ArticleDetail をそのまま使うことで、プレビューと本番の一致が
   // 構造的に保証される（spec §9）
-  const editRaw = (value: string) => {
-    setRaw(value);
-    // 書きかけを上書きする事故を防ぐため、編集を始めたら救済ボタンを引っ込める
-    setJustPublished(false);
-  };
-
   const draft = buildDraftArticle(raw, articles);
 
   // 手書きのファイル名だけ実在を確かめる。ドロップした画像はサーバーに無くて当然（spec §6）
@@ -104,7 +96,7 @@ export function ArticleStudio({
   const renameImage = (index: number, nextName: string) => {
     const target = images[index];
     setImages(images.map((image, i) => (i === index ? { ...image, name: nextName } : image)));
-    editRaw(renameImageInMarkdown(raw, target.name, nextName));
+    setRaw(renameImageInMarkdown(raw, target.name, nextName));
   };
 
   // アップロードは行わない。ブラウザ内の一時URLで見せるだけ（spec §9）
@@ -125,7 +117,7 @@ export function ArticleStudio({
     // 次の記事の画像なので、前回の配置依頼は畳む
     setPlacementPending(false);
     const markdown = added.map((image) => `![](${image.name})`).join("\n\n");
-    editRaw(`${raw}\n\n${markdown}\n`);
+    setRaw(`${raw}\n\n${markdown}\n`);
   };
 
   // 既存記事に混ぜて日付の新しい順の直近6件。隣の記事と並べることで
@@ -154,18 +146,9 @@ export function ArticleStudio({
     if (found.length > 0) return;
 
     downloadMarkdown(filename, raw);
-    // 白紙に戻すが、出した直後に typo に気づいても取り返せるよう退避しておく（spec §9）
-    savePublished(storageKey, raw);
     setRaw(buildTemplate());
-    setJustPublished(true);
     // ドロップした画像はアップロードしていないので、置いてもらう必要がある（spec §9）
     setPlacementPending(images.length > 0);
-  };
-
-  const restorePublished = () => {
-    const published = loadPublished(storageKey);
-    if (published !== null) setRaw(published);
-    setJustPublished(false);
   };
 
   return (
@@ -174,7 +157,7 @@ export function ArticleStudio({
         <textarea
           className={cx("as-studio-textarea", classNames.textarea)}
           value={raw}
-          onChange={(event) => editRaw(event.target.value)}
+          onChange={(event) => setRaw(event.target.value)}
           spellCheck={false}
         />
 
@@ -231,11 +214,6 @@ export function ArticleStudio({
           <button type="button" onClick={downloadDraft}>
             下書きダウンロード
           </button>
-          {justPublished && (
-            <button type="button" onClick={restorePublished}>
-              直前の記事に戻す
-            </button>
-          )}
         </div>
       </div>
 

@@ -33,28 +33,3 @@ export function loadDraft(storageKey?: string): string | null {
     return null;
   }
 }
-
-const PUBLISHED_PREFIX = "as-studio-published";
-
-/** 本番ダウンロードした内容の退避先（spec §9） */
-export function publishedKey(storageKey = "default"): string {
-  return `${PUBLISHED_PREFIX}:${storageKey}`;
-}
-
-/** 本番ダウンロードした内容を退避する。出した直後の typo に備える */
-export function savePublished(storageKey: string | undefined, raw: string): void {
-  try {
-    localStorage.setItem(publishedKey(storageKey), raw);
-  } catch {
-    // 退避できなくても本番の出力自体は済んでいる
-  }
-}
-
-/** 退避した内容を読む */
-export function loadPublished(storageKey?: string): string | null {
-  try {
-    return localStorage.getItem(publishedKey(storageKey));
-  } catch {
-    return null;
-  }
-}

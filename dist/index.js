@@ -448,23 +448,6 @@ function loadDraft(storageKey) {
     return null;
   }
 }
-var PUBLISHED_PREFIX = "as-studio-published";
-function publishedKey(storageKey = "default") {
-  return `${PUBLISHED_PREFIX}:${storageKey}`;
-}
-function savePublished(storageKey, raw) {
-  try {
-    localStorage.setItem(publishedKey(storageKey), raw);
-  } catch {
-  }
-}
-function loadPublished(storageKey) {
-  try {
-    return localStorage.getItem(publishedKey(storageKey));
-  } catch {
-    return null;
-  }
-}
 
 // src/components/ArticleStudio.tsx
 import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
@@ -480,17 +463,12 @@ function ArticleStudio({
   const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
   const [tab, setTab] = useState("detail");
   const [issues, setIssues] = useState([]);
-  const [justPublished, setJustPublished] = useState(false);
   const [images, setImages] = useState([]);
   const [missingImages, setMissingImages] = useState({});
   const [placementPending, setPlacementPending] = useState(false);
   useEffect(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
-  const editRaw = (value) => {
-    setRaw(value);
-    setJustPublished(false);
-  };
   const draft = buildDraftArticle(raw, articles);
   const basePath = imageBasePath ?? "/article_imgs/";
   const probeNames = collectImageNames(draft.content, draft.thumbnail).filter(
@@ -508,7 +486,7 @@ function ArticleStudio({
   const renameImage = (index, nextName) => {
     const target = images[index];
     setImages(images.map((image, i) => i === index ? { ...image, name: nextName } : image));
-    editRaw(renameImageInMarkdown(raw, target.name, nextName));
+    setRaw(renameImageInMarkdown(raw, target.name, nextName));
   };
   const handleDrop = (event) => {
     const dropped = Array.from(event.dataTransfer?.files ?? []).filter(
@@ -524,7 +502,7 @@ function ArticleStudio({
     setImages((current) => [...current, ...added]);
     setPlacementPending(false);
     const markdown = added.map((image) => `![](${image.name})`).join("\n\n");
-    editRaw(`${raw}
+    setRaw(`${raw}
 
 ${markdown}
 `);
@@ -543,15 +521,8 @@ ${markdown}
     setIssues(found);
     if (found.length > 0) return;
     downloadMarkdown(filename, raw);
-    savePublished(storageKey, raw);
     setRaw(buildTemplate());
-    setJustPublished(true);
     setPlacementPending(images.length > 0);
-  };
-  const restorePublished = () => {
-    const published = loadPublished(storageKey);
-    if (published !== null) setRaw(published);
-    setJustPublished(false);
   };
   return /* @__PURE__ */ jsxs4("div", { className: cx("as-studio", classNames.wrapper), children: [
     /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-editor", classNames.editorPane), children: [
@@ -560,7 +531,7 @@ ${markdown}
         {
           className: cx("as-studio-textarea", classNames.textarea),
           value: raw,
-          onChange: (event) => editRaw(event.target.value),
+          onChange: (event) => setRaw(event.target.value),
           spellCheck: false
         }
       ),
@@ -599,8 +570,7 @@ ${markdown}
       ] }, index)) }) }),
       /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
         /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
-        /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
-        justPublished && /* @__PURE__ */ jsx6("button", { type: "button", onClick: restorePublished, children: "\u76F4\u524D\u306E\u8A18\u4E8B\u306B\u623B\u3059" })
+        /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" })
       ] })
     ] }),
     /* @__PURE__ */ jsx6("div", { hidden: true, children: probeNames.map((name) => /* @__PURE__ */ jsx6(
