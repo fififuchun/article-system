@@ -422,6 +422,13 @@
   height: 1.2em;
   flex: none;
 }
+:where(.as-studio-id-preview) {
+  display: block;
+  font-size: var(--as-text-meta);
+  color: var(--as-color-surface);
+  background: var(--as-color-accent);
+  padding: var(--as-space-xs) var(--as-space-sm);
+}
 :where(.as-studio-actions) {
   display: flex;
   flex-wrap: wrap;
