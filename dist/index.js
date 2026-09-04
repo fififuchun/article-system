@@ -521,58 +521,65 @@ ${markdown}
     setIssues(found);
     if (found.length > 0) return;
     downloadMarkdown(filename, raw);
-    setRaw(buildTemplate());
     setPlacementPending(images.length > 0);
   };
   return /* @__PURE__ */ jsxs4("div", { className: cx("as-studio", classNames.wrapper), children: [
-    /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-editor", classNames.editorPane), children: [
-      /* @__PURE__ */ jsx6(
-        "textarea",
-        {
-          className: cx("as-studio-textarea", classNames.textarea),
-          value: raw,
-          onChange: (event) => setRaw(event.target.value),
-          spellCheck: false
-        }
-      ),
-      images.length > 0 && /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-images", classNames.imagePane), children: [
-        placementPending && /* @__PURE__ */ jsxs4("p", { className: "as-studio-images-note", children: [
-          "\u4EE5\u4E0B\u306E\u753B\u50CF\u3092 ",
-          basePath,
-          " \u306B\u914D\u7F6E\u3057\u3066\u304F\u3060\u3055\u3044\u3002md \u3060\u3051\u3067\u306F\u8868\u793A\u3055\u308C\u307E\u305B\u3093\u3002"
-        ] }),
-        /* @__PURE__ */ jsx6("ul", { children: images.map((image, index) => /* @__PURE__ */ jsxs4("li", { children: [
-          /* @__PURE__ */ jsx6("img", { src: image.url, alt: "" }),
+    /* @__PURE__ */ jsxs4(
+      "div",
+      {
+        className: cx("as-studio-editor", classNames.editorPane),
+        onDrop: handleDrop,
+        onDragOver: (event) => event.preventDefault(),
+        children: [
           /* @__PURE__ */ jsx6(
-            "input",
+            "textarea",
             {
-              type: "text",
-              "aria-label": "\u753B\u50CF\u306E\u540D\u524D",
-              value: image.name,
-              onChange: (event) => renameImage(index, event.target.value)
+              className: cx("as-studio-textarea", classNames.textarea),
+              value: raw,
+              onChange: (event) => setRaw(event.target.value),
+              spellCheck: false
             }
           ),
-          /* @__PURE__ */ jsx6(
-            "button",
-            {
-              type: "button",
-              "aria-label": `${image.name} \u3092\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9`,
-              onClick: () => downloadImage(image),
-              children: /* @__PURE__ */ jsx6(DownloadIcon, { className: "as-studio-image-download-icon" })
-            }
-          ),
-          placementPending && /* @__PURE__ */ jsx6("span", { className: "as-studio-image-pending", children: "\u672A\u914D\u7F6E" })
-        ] }, image.url)) })
-      ] }),
-      issues.length > 0 && /* @__PURE__ */ jsx6("div", { className: cx("as-studio-issues", classNames.issues), role: "alert", children: /* @__PURE__ */ jsx6("ul", { children: issues.map((issue, index) => /* @__PURE__ */ jsxs4("li", { children: [
-        /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
-        /* @__PURE__ */ jsx6("span", { children: issue.message })
-      ] }, index)) }) }),
-      /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
-        /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
-        /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" })
-      ] })
-    ] }),
+          images.length > 0 && /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-images", classNames.imagePane), children: [
+            placementPending && /* @__PURE__ */ jsxs4("p", { className: "as-studio-images-note", children: [
+              "\u4EE5\u4E0B\u306E\u753B\u50CF\u3092 ",
+              basePath,
+              " \u306B\u914D\u7F6E\u3057\u3066\u304F\u3060\u3055\u3044\u3002md \u3060\u3051\u3067\u306F\u8868\u793A\u3055\u308C\u307E\u305B\u3093\u3002"
+            ] }),
+            /* @__PURE__ */ jsx6("ul", { children: images.map((image, index) => /* @__PURE__ */ jsxs4("li", { children: [
+              /* @__PURE__ */ jsx6("img", { src: image.url, alt: "" }),
+              /* @__PURE__ */ jsx6(
+                "input",
+                {
+                  type: "text",
+                  "aria-label": "\u753B\u50CF\u306E\u540D\u524D",
+                  value: image.name,
+                  onChange: (event) => renameImage(index, event.target.value)
+                }
+              ),
+              /* @__PURE__ */ jsx6(
+                "button",
+                {
+                  type: "button",
+                  "aria-label": `${image.name} \u3092\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9`,
+                  onClick: () => downloadImage(image),
+                  children: /* @__PURE__ */ jsx6(DownloadIcon, { className: "as-studio-image-download-icon" })
+                }
+              ),
+              placementPending && /* @__PURE__ */ jsx6("span", { className: "as-studio-image-pending", children: "\u672A\u914D\u7F6E" })
+            ] }, image.url)) })
+          ] }),
+          issues.length > 0 && /* @__PURE__ */ jsx6("div", { className: cx("as-studio-issues", classNames.issues), role: "alert", children: /* @__PURE__ */ jsx6("ul", { children: issues.map((issue, index) => /* @__PURE__ */ jsxs4("li", { children: [
+            /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
+            /* @__PURE__ */ jsx6("span", { children: issue.message })
+          ] }, index)) }) }),
+          /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
+            /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
+            /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" })
+          ] })
+        ]
+      }
+    ),
     /* @__PURE__ */ jsx6("div", { hidden: true, children: probeNames.map((name) => /* @__PURE__ */ jsx6(
       "img",
       {

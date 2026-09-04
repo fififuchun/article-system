@@ -478,15 +478,14 @@ describe("ArticleStudio — 本番ダウンロード", () => {
     expect(publishButton()).not.toBe(screen.getByRole("button", { name: /下書き/ }));
   });
 
-  // spec §9: エラーがゼロでないと出せない
-  it("検証を通ればテンプレートに戻る", () => {
+  // 消したいときは消せばよいので、出した後もそのまま残す
+  it("検証を通っても編集内容はそのまま残る", () => {
     render(<ArticleStudio />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     fireEvent.click(publishButton());
 
-    expect(textarea().value).toContain("## 見出し");
-    expect(textarea().value).not.toContain("夏の更新");
+    expect(textarea().value).toBe(sampleMd);
   });
 
   it("必須項目が欠けていればテンプレートに戻らない", () => {

@@ -146,14 +146,18 @@ export function ArticleStudio({
     if (found.length > 0) return;
 
     downloadMarkdown(filename, raw);
-    setRaw(buildTemplate());
+    // 編集内容はそのまま残す。消したいときは消せばよい
     // ドロップした画像はアップロードしていないので、置いてもらう必要がある（spec §9）
     setPlacementPending(images.length > 0);
   };
 
   return (
     <div className={cx("as-studio", classNames.wrapper)}>
-      <div className={cx("as-studio-editor", classNames.editorPane)}>
+      <div
+        className={cx("as-studio-editor", classNames.editorPane)}
+        onDrop={handleDrop}
+        onDragOver={(event) => event.preventDefault()}
+      >
         <textarea
           className={cx("as-studio-textarea", classNames.textarea)}
           value={raw}
