@@ -268,14 +268,17 @@ export function ArticleStudio({
             // 遷移はしないので div で包む。編集中の記事だけ印を付けて見分ける。
             // id で見分けると、既存記事と番号が重なったとき両方に出てしまう
             getArticleUrl={(article) => (article === draft ? DRAFT_MARK : "#")}
-            renderLink={(url, children, key) => (
-              <div key={key}>
-                {url === DRAFT_MARK && (
+            renderLink={(url, children, key) =>
+              url === DRAFT_MARK ? (
+                // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
+                <div key={key} className="as-studio-draft-card">
                   <span className="as-studio-id-preview">id は {draft.id} になります</span>
-                )}
-                {children}
-              </div>
-            )}
+                  {children}
+                </div>
+              ) : (
+                <div key={key}>{children}</div>
+              )
+            }
           />
         )}
       </div>

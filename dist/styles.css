@@ -422,11 +422,18 @@
   height: 1.2em;
   flex: none;
 }
+:where(.as-studio-draft-card) {
+  position: relative;
+}
 :where(.as-studio-id-preview) {
-  display: block;
+  position: absolute;
+  top: var(--as-space-sm);
+  left: var(--as-space-sm);
+  z-index: 1;
   font-size: var(--as-text-meta);
   color: var(--as-color-surface);
   background: var(--as-color-accent);
+  border-radius: var(--as-radius-sm);
   padding: var(--as-space-xs) var(--as-space-sm);
 }
 :where(.as-studio-actions) {

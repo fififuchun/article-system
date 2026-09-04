@@ -629,14 +629,17 @@ ${markdown}
           articles: listPreview,
           imageBasePath,
           getArticleUrl: (article) => article === draft ? DRAFT_MARK : "#",
-          renderLink: (url, children, key) => /* @__PURE__ */ jsxs4("div", { children: [
-            url === DRAFT_MARK && /* @__PURE__ */ jsxs4("span", { className: "as-studio-id-preview", children: [
-              "id \u306F ",
-              draft.id,
-              " \u306B\u306A\u308A\u307E\u3059"
-            ] }),
-            children
-          ] }, key)
+          renderLink: (url, children, key) => url === DRAFT_MARK ? (
+            // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
+            /* @__PURE__ */ jsxs4("div", { className: "as-studio-draft-card", children: [
+              /* @__PURE__ */ jsxs4("span", { className: "as-studio-id-preview", children: [
+                "id \u306F ",
+                draft.id,
+                " \u306B\u306A\u308A\u307E\u3059"
+              ] }),
+              children
+            ] }, key)
+          ) : /* @__PURE__ */ jsx6("div", { children }, key)
         }
       )
     ] })
