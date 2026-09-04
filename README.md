@@ -291,49 +291,50 @@ export default function BlogDetail() {
 - **生の HTML は無効です**（`rehype-raw` 未導入）。記事経由の XSS は構造的に防がれています
 - 表・取り消し線・タスクリストなどは `remark-gfm` により利用できます
 
-### `<ArticlePreview>` — 執筆プレビュー（開発用）
+### `<ArticleStudio>` — 執筆画面
 
-マークダウンを入力しながら記事の仕上がりをリアルタイムで確認できます。
+書く・確認する・検証する・md として取り出す、までを1画面で行います。
 
 ```tsx
-// src/pages/BlogPreview.tsx
-import { ArticlePreview } from "@fififuchun/article-system";
+// src/pages/BlogStudio.tsx
+import { ArticleStudio } from "@fififuchun/article-system";
+import { articles } from "../lib/articles";
 
-export default function BlogPreview() {
-  return (
-    <ArticlePreview
-      imageBasePath="/article_imgs/"
-      dateLabel="最終更新日時"
-      defaultValue={"---\ntitle: \ndate: \n---\n"}
-      classNames={{
-        wrapper: "preview-wrapper",
-        editorPane: "preview-editor",
-        textarea: "preview-textarea",
-        previewPane: "preview-output",
-      }}
-      articleClassNames={{
-        wrapper: "article-wrapper",
-        dateYear: "article-date-year",
-        dateDay: "article-date-day",
-        title: "article-title",
-        latestUpdate: "article-latest-update",
-        thumbnail: "article-thumbnail",
-        heading: "article-heading",
-        subheading: "article-subheading",
-        paragraph: "article-paragraph",
-        image: "article-image",
-        footer: "article-footer",
-      }}
-    />
-  );
+export default function BlogStudio() {
+  return <ArticleStudio articles={articles} storageKey="my-blog" />;
 }
 ```
 
-入力内容は保存されません。**リロードすると消えます。** エディタで書いたものを貼って確認する使い方を想定しています。
+| prop | 型 | 必須 | 既定値 |
+| --- | --- | --- | --- |
+| `articles` | `Article[]` | ✔ | — |
+| `storageKey` | `string` | | `"default"` |
+| `imageBasePath` | `string` | | `"/article_imgs/"` |
+| `dateLabel` | `string` | | `"最終更新日時"` |
+| `classNames` | `ArticleStudioClassNames` | | `{}` |
+| `articleClassNames` | `ArticleDetailClassNames` | | `{}` |
 
-`defaultValue` を渡さないと初期表示が `0年undefined月undefined日` になるため、上記のように雛形を渡すことを推奨します。
+#### `articles` は必ず渡してください
 
-> このコンポーネントは v0.2 で `ArticleStudio` に置き換わる予定です（検証機能、画像のドラッグ&ドロップ、md のダウンロード、自動保存が入ります）。
+渡さないと**ファイル名の衝突を検出できません**。既存記事と同じ名前で書き出してしまい、置いた時点で既存記事が上書きされて消えます。記事が0件のプロジェクトでも `createArticles({})` の戻り値をそのまま渡してください。
+
+#### `storageKey` は複数プロジェクトで使うなら指定してください
+
+下書きは `as-studio-draft:{storageKey}` として localStorage に自動保存されます。`vite dev` はどのプロジェクトでも既定で同じオリジンを使い、localStorage はオリジン単位です。**指定しないとプロジェクト間で下書きが混ざります。**
+
+#### できること
+
+- **自動保存** — 入力のたびに保存されます。ボタンはありません。閉じても次に開くと続きから書けます
+- **プレビュー** — 詳細と一覧をタブで切り替えます。本番と同じコンポーネントを使うので表示が食い違いません
+- **検証** — ダウンロードボタンを押したときにまとめて確認します。執筆中は警告を出しません
+- **画像** — ドラッグ&ドロップで仮登録します。名前をその場で直せて、その名前で保存できます。**アップロードはしません**
+- **md の出力** — 本番用（検証必須）と下書き用（`_` 接頭、検証なし）の2つ
+
+#### 制約
+
+- リロードすると、ドロップした画像は消えます（ブラウザ内の一時URLのため）。本文は残ります。貼り直してください
+- 下書きはデバイス間で同期しません
+- 画像はリポジトリに自分で配置する必要があります。本番ダウンロード後、画像欄に「未配置」と出ます
 
 ### ルーティング
 
