@@ -345,18 +345,30 @@ export default function BlogStudio() {
 import { Routes, Route } from "react-router-dom";
 import BlogList from "./pages/BlogList";
 import BlogDetail from "./pages/BlogDetail";
-import BlogPreview from "./pages/BlogPreview";
+import BlogStudio from "./pages/BlogStudio";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/blog" element={<BlogList />} />
-      <Route path="/blog/preview" element={<BlogPreview />} />
+      <Route path="/blog/studio" element={<BlogStudio />} />
       {/* :id より前に定義する */}
       <Route path="/blog/:id" element={<BlogDetail />} />
     </Routes>
   );
 }
+```
+
+#### Studio を本番に置く場合
+
+**ホスティング側の認証を強く推奨します。** ライブラリは認証を持ちません。誰でも開ける場所に置くと、記事の下書きや執筆画面が公開されます。
+
+開発時だけ有効にするなら、環境変数でルートごと切り離せます。
+
+```tsx
+{import.meta.env.VITE_STUDIO === "1" && (
+  <Route path="/blog/studio" element={<BlogStudio />} />
+)}
 ```
 
 <br>
