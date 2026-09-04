@@ -148,7 +148,7 @@
 - [x] pre-commit フックを、ビルド忘れのコミットを実際に止められるか試して確認する
 - [x] README を改訂する① — インストールを `npm link` から**タグ固定の GitHub インストール**に差し替える（spec §12）
 - [x] README を改訂する② — `import.meta.glob` のパターンを `[!_]*.md` にすること（必須）と、その理由を書く
-- [ ] README を改訂する③ — `styles.css` の import 方法と、読み込まない場合の挙動を書く
+- [x] README を改訂する③ — `styles.css` の import 方法と、読み込まない場合の挙動を書く
 - [ ] README を改訂する④ — `ArticlePreview` の節を `ArticleStudio` に差し替え、`storageKey` の指定を推奨する
 - [ ] README を改訂する⑤ — Studio を本番に置く場合のホスティング認証の推奨、`subsubheading` の記載漏れ、一覧を新しい順にする `[...articles].reverse()` を追記する
 - [ ] `docs/` 配下（`overview.md` / `architecture.md` / `api.md`）を新しい実装に合わせて更新する

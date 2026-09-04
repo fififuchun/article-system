@@ -143,6 +143,42 @@ your-project/
 
 ---
 
+## スタイル
+
+デフォルトCSSを同梱しています。読み込むだけで記事の体裁が整い、`classNames` を一切渡さなくても読める記事になります。
+
+```tsx
+// 新規プロジェクトで必要な全コード
+import "@fififuchun/article-system/styles.css";
+
+<ArticleDetail article={article} />
+```
+
+**import は任意です。** 読み込まなければ `as-` クラスは無害なただの文字列になるため、スタイルを全部自分で書く運用もそのまま成立します。
+
+### 上書きの仕方
+
+`as-` 接頭のクラスが常時付き、`classNames` で渡したクラスは**追記**されます。
+
+```
+classNames 未指定:              <h2 class="as-heading">
+classNames={{heading:"my-h"}}:  <h2 class="as-heading my-h">
+```
+
+デフォルトCSSのセレクタはすべて `:where()` で包んであり**詳細度が0**です。読み込み順に関係なく、利用側のクラスが必ず勝ちます。Tailwind のユーティリティクラスも追記で効きます。
+
+### 色やサイズを変える
+
+CSS変数を再定義するだけで差し替えられます。
+
+```css
+:root {
+  --as-color-accent: #e2574a;
+  --as-text-body: 1rem;
+  --as-article-width: 50rem;
+}
+```
+
 ## コンポーネントの使い方
 
 ### `<ArticleList>` — 記事一覧
