@@ -146,8 +146,8 @@
 - [x] `package.json` の `exports` / `sideEffects` / `peerDependencies` が spec §12 の記述どおりか照合して直す
 - [x] `src` の変更時に `npm run build` の実行漏れを検出する pre-commit フックを書く（spec §12）
 - [x] pre-commit フックを、ビルド忘れのコミットを実際に止められるか試して確認する
-- [ ] README を改訂する① — インストールを `npm link` から**タグ固定の GitHub インストール**に差し替える（spec §12）
-- [ ] README を改訂する② — `import.meta.glob` のパターンを `[!_]*.md` にすること（必須）と、その理由を書く
+- [x] README を改訂する① — インストールを `npm link` から**タグ固定の GitHub インストール**に差し替える（spec §12）
+- [x] README を改訂する② — `import.meta.glob` のパターンを `[!_]*.md` にすること（必須）と、その理由を書く
 - [ ] README を改訂する③ — `styles.css` の import 方法と、読み込まない場合の挙動を書く
 - [ ] README を改訂する④ — `ArticlePreview` の節を `ArticleStudio` に差し替え、`storageKey` の指定を推奨する
 - [ ] README を改訂する⑤ — Studio を本番に置く場合のホスティング認証の推奨、`subsubheading` の記載漏れ、一覧を新しい順にする `[...articles].reverse()` を追記する

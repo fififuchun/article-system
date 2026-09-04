@@ -108,7 +108,7 @@ thumbnail: art_0.webp
 // src/lib/articles.ts
 import { createArticles } from "@fififuchun/article-system";
 
-const rawFiles = import.meta.glob("../articles/*.md", {
+const rawFiles = import.meta.glob("../articles/[!_]*.md", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -118,6 +118,16 @@ export const articles = createArticles(rawFiles);
 ```
 
 > `import.meta.glob` はViteのビルド時処理のため、利用側プロジェクトに記述する必要があります。
+
+#### `[!_]` は必須です
+
+`_` で始まるファイルは下書きです。**このパターンで除外しないと、下書きの本文が公開されます。**
+
+`import.meta.glob` は**ビルド時にファイルの中身を JavaScript の文字列としてバンドルに埋め込みます**。`createArticles` の中で除外してもそれはブラウザ上の処理で、**本文はすでに配信済み**です。開発者ツールから誰でも読めます。
+
+そして glob パターンは**ファイルのパスしか見られません**。フロントマターに `draft: true` と書いても Vite はそれを読めないため除外できません。**glob での除外が唯一の手段です。**
+
+`_` 始まりのファイルが渡された場合、`createArticles` は例外を投げてページを停止させます。漏洩自体は取り消せませんが、壊れたサイトが最も確実な警報として機能し、放置される期間を最短にします。
 
 ### 5. 画像ファイルを配置する
 
