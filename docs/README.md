@@ -14,4 +14,5 @@
 | [design-decisions.md](./design-decisions.md) | 検討の経緯（第1ラウンド）。確定版は spec.md |
 | [design-revisions.md](./design-revisions.md) | 検討の経緯（第2ラウンド）。確定版は spec.md |
 
-作成日: 2026-08-16 / 解析対象コミット: `ce86c36`
+ /  /  は実装に追随して更新しています。
+ /  /  は当時の記録で、更新していません。

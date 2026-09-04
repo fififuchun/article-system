@@ -151,7 +151,7 @@
 - [x] README を改訂する③ — `styles.css` の import 方法と、読み込まない場合の挙動を書く
 - [x] README を改訂する④ — `ArticlePreview` の節を `ArticleStudio` に差し替え、`storageKey` の指定を推奨する
 - [x] README を改訂する⑤ — Studio を本番に置く場合のホスティング認証の推奨、`subsubheading` の記載漏れ、一覧を新しい順にする `[...articles].reverse()` を追記する
-- [ ] `docs/` 配下（`overview.md` / `architecture.md` / `api.md`）を新しい実装に合わせて更新する
+- [x] `docs/` 配下（`overview.md` / `architecture.md` / `api.md`）を新しい実装に合わせて更新する
 
 ---
 

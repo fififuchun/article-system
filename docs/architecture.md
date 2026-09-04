@@ -1,129 +1,75 @@
-# アーキテクチャ
+# architecture.md — データフローと責務
 
-## 全体のデータフロー
+## 全体の流れ
 
 ```
-[利用側プロジェクト]                       [ライブラリ]
-
 src/articles/*.md
-      │
-      │ Vite の import.meta.glob(..., { query: "?raw", eager: true })
-      │ ※ ビルド時に静的解決される。利用側に書く必要がある
+      │  import.meta.glob（利用側に書く。ビルド時にファイルの中身を埋め込む）
       ▼
-Record<パス, ファイル内容の文字列>
-      │
-      ├──────────────────────────────▶ createArticles()
-      │                                      │
-      │                                      ├─ parseFrontmatter() で --- ブロックを分離
-      │                                      ├─ date 昇順（古い順）でソート
-      │                                      └─ ソート後の index を id として採番
-      ▼                                      ▼
-export const articles              Article[]
-      │
-      ├──▶ <ArticleList articles renderLink getArticleUrl classNames />
-      │         └─ カードを並べ、リンク要素の生成は renderLink に委譲
-      │
-      └──▶ <ArticleDetail article classNames />
-                └─ react-markdown で content を描画
-                   components マップで h2/h3/h4/p/img を差し替え、classNames を付与
-
-              <ArticlePreview />
-                └─ textarea の中身をその場で parseFrontmatter し
-                   ArticleDetail に流して即時プレビュー
+Record<パス, 中身>
+      │  createArticles
+      ├─ _ 始まりを検出 → 例外を投げてページを止める
+      ├─ parseFrontmatter
+      ├─ validateArticle → 問題があれば console.warn
+      ├─ date 昇順ソート（文字列比較）
+      └─ index を id として採番
+      ▼
+Article[]  ──→ ArticleList / ArticleDetail（読者向け）
+           └─→ ArticleStudio（書き手向け。プレビューと衝突検出に使う）
 ```
 
-重要なのは、**`import.meta.glob` の呼び出しがライブラリ側ではなく利用側にある**ことです。`import.meta.glob` は Vite がビルド時にソースコードを静的解析して展開する構文であり、コンパイル済みの `dist/index.js` の中に書いても展開されません。そのため README では `src/lib/articles.ts` を利用側に作らせ、そこで glob してから `createArticles` に渡させています。ライブラリが受け取るのは、あくまで「ファイル内容の文字列マップ」という素朴なデータです。
+Studio 側は逆向きに流れます。
 
-この境界の引き方によって、`createArticles` 自体は Vite にもファイルシステムにも依存しない純粋関数になっています。テストも書きやすく、将来 Vite 以外の仕組みで読み込む場合も差し替えが効きます。
-
-## 各モジュールの責務
-
-### `src/parser.ts` — フロントマターの分離
-
-```ts
-const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+```
+textarea の md 文字列
+      ├─ draftStorage        入力のたび localStorage へ保存
+      ├─ buildDraftArticle   → Article（プレビュー用。id は挿入位置の予告）
+      │        └─ ArticleDetail / ArticleList をそのまま描画
+      └─ ダウンロードボタン
+             ├─ validateArticle    フロントマターの検証
+             ├─ probeImages        画像の存在確認（読み込みを試す）
+             └─ downloadFile       Blob として保存
 ```
 
-正規表現1本でフロントマターと本文を分け、行ごとに**最初のコロン**で key / value に切ります。gray-matter や js-yaml といった依存を持たず、約18行で完結しています。
+## 設計の柱
 
-`indexOf(":")` で切っているため、`title: 記事：その1` のように値の側にコロンが含まれても正しく動きます。一方で YAML の機能（引用符、複数行、リスト、コメント）は一切解釈しません。詳細は [findings.md](./findings.md) を参照。
+### プレビューと本番を同じコンポーネントで描く
 
-フロントマターが無い場合は `{ data: {}, content: raw }` を返すため、例外を投げません。この寛容さが `ArticlePreview` で効いてきます（入力途中の壊れたテキストでもクラッシュしない）。
+Studio のプレビューは `ArticleDetail` / `ArticleList` を**そのまま**呼びます。プレビュー専用の描画を持たないため、片方だけ直して食い違う、ということが起こりえません。
 
-### `src/createArticles.ts` — 記事配列の生成
+### ルーターに依存しない
 
-```ts
-.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-.map((article, index) => ({ ...article, id: index }))
-```
+`ArticleList` はリンク要素の生成を `renderLink` で利用側に委ねます。React Router でも Next.js の `Link` でも素の `<a>` でも動きます。Studio のプレビューでは遷移させたくないので `<div>` を返しています。
 
-やっていることは3つだけです。
+### スタイルは持つが、必ず負ける
 
-1. 各ファイルをパースし、欠けたフィールドは `?? ""` で空文字に落とす
-2. `date` の昇順（**古い記事が先頭**）でソート
-3. ソート後の並び順をそのまま `id` にする（0始まり）
+`styles.css` のセレクタはすべて `:where()` で包み**詳細度を0**にしています。クラスセレクタは詳細度が同点で、同点だと定義順で勝敗が決まり、Vite のコード分割や HMR で順序が変わりえます。`:where()` なら読み込み順に関係なく利用側の上書きが効きます。
 
-`Object.values()` を使っているのでファイルパスは捨てられます。つまり**ファイル名は記事の識別に一切使われていません**。ファイル名の日付部分（`2024-03-15-first-steps.md`）は人間が並べ替えて眺めるためのもので、システム的な意味は持ちません。実際に効くのはフロントマターの `date` だけです。
+`src/styles.test.ts` が全セレクタを検査し、`:where()` の付け忘れをコミット前に止めます。
 
-`id` がソート結果に連動する設計は、記事の追加だけで済むという手軽さと引き換えに、URL の安定性を犠牲にしています（[findings.md](./findings.md) の「ID の不安定性」を参照）。
+### 下書きの漏洩は glob でしか防げない
 
-### `src/components/ArticleDetail.tsx` — 記事詳細
+`import.meta.glob` はビルド時にファイルの中身を JavaScript の文字列として埋め込みます。`createArticles` の中で除外してもブラウザ上の処理であり、**本文はすでに配信済み**です。glob パターンによる除外が唯一の手段で、混入時は例外を投げて**壊れたサイトを警報として使います**。
 
-react-markdown の `components` マップで、マークダウンの見出しと段落を差し替えています。
+## モジュールの責務
 
-```ts
-h2: ({ children }) => <div className={classNames.heading}>{children}</div>,
-h3: ({ children }) => <div className={classNames.subheading}>{children}</div>,
-h4: ({ children }) => <div className={classNames.subsubheading}>{children}</div>,
-p:  ({ children }) => <div className={classNames.paragraph}><p>{children}</p></div>,
-img: ({ src, alt }) => <div className={classNames.image}><img src={`${imageBasePath}${src}`} /></div>,
-```
+| モジュール | 責務 | 備考 |
+| --- | --- | --- |
+| `parser.ts` | フロントマターの分離 | YAML ではない自前実装。壊れた入力でも例外を投げない（Studio で入力途中でもクラッシュさせないため） |
+| `createArticles.ts` | md 群 → `Article[]` | ソートは文字列比較。`new Date()` だと不正な日付で `NaN` になり順序が保証されない |
+| `validate.ts` | md の検証 | 同期・純粋。画像の存在確認は含まない |
+| `levenshtein.ts` | 編集距離 | typo 検出の閾値は2（spec §6 の例 `lastUpdate` → `latestUpdate` を拾える最小値） |
+| `resolveImageSrc.ts` | 画像パスの解決 | 絶対URL・`blob:`・`data:` は素通し |
+| `studio/*` | Studio の部品 | UI を持たない純粋関数に切り出し、テストで守る |
+| `components/*` | 描画 | DOM テストで**構造だけ**を検証する。見た目は `demo/` で目視 |
 
-見出しが `<h2>` ではなく `<div>` になっている点は設計上の意図的な選択に見えます（利用側でブラウザ標準スタイルの打ち消しが不要になる）。ただし見出しレベルの情報が DOM から失われるため、アクセシビリティ・SEO の観点ではトレードオフがあります。
+## テストの方針
 
-段落だけは `<div><p>` の二重構造で、外側にクラスを付けています。おそらく「段落ごとに余白やボーダーを付けたいが、内側のテキストは `<p>` のままにしたい」という要求から来た形です。
+| 対象 | 方法 |
+| --- | --- |
+| 純粋関数 | Node 環境で通常のテスト |
+| コンポーネント | jsdom で DOM テスト。ファイル先頭に `// @vitest-environment jsdom` |
+| `styles.css` | ファイルを読んで `:where()` を検査 |
+| 見た目 | `demo/` での目視のみ |
 
-`remarkBreaks` を入れているため、**マークダウン標準と違い単一改行がそのまま `<br>` になります**。日本語の記事執筆では自然な挙動で、日本語話者向けを意識した選択です。
-
-日付は `article.date.split("-").map(Number)` で分解し、`{year}` / `{month}/{day}` を別要素に出しています。`Date` オブジェクトを経由しないためタイムゾーンのズレが起きません。素朴ですが正しい実装です。
-
-### `src/components/ArticleList.tsx` — 記事一覧
-
-このライブラリでもっとも特徴的な部分が `renderLink` です。
-
-```ts
-renderLink: (url: string, children: React.ReactNode, key: number) => React.ReactNode
-```
-
-ライブラリ側はカードの中身（画像・タイトル・日付）だけを組み立て、それを `children` として渡します。リンク要素そのものは利用側が作ります。この一手間によって、react-router-dom への依存が完全に消えています。ルーターを peerDependency にすると利用側のバージョンに縛られるため、それを避ける妥当な設計です。
-
-なお一覧のカードに表示される日付は `article.date` ではなく **`article.latestUpdate`** です。詳細ページのヘッダーが `date`（投稿日）、一覧が `latestUpdate`（更新日）という使い分けになっています。
-
-### `src/components/ArticlePreview.tsx` — 執筆用プレビュー
-
-`useState` で保持した textarea の文字列を、毎レンダリングで `parseFrontmatter` にかけ、`ArticleDetail` にそのまま流し込む2カラム構成です。50行程度で、記事執筆時の確認画面が成立しています。
-
-`ArticleDetail` を再利用しているため、**プレビューと本番の見た目が構造的に一致することが保証されます**。プレビュー専用の描画ロジックを持たないのは良い判断です。
-
-### `src/icons/ClockIcon.tsx`
-
-インライン SVG の時計アイコン。`fill="currentColor"` なので CSS の `color` で色が変わります。このライブラリが同梱する唯一のビジュアル要素で、公開エクスポートにも含まれているため利用側から単体で使えます。
-
-## ビルド構成
-
-```ts
-// tsup.config.ts
-entry: ["src/index.ts"],
-format: ["esm"],           // ESM のみ。CJS は出力しない
-dts: true,                 // 型定義を生成
-clean: true,
-external: ["react", "react-dom", "react-markdown", "remark-gfm", "remark-breaks"],
-```
-
-出力は `dist/index.js` と `dist/index.d.ts` の2ファイルのみです。マークダウン関連は `dependencies` に入っていますが `external` 指定でバンドルから除外されるため、利用側の node_modules にあるものが使われます。React の二重ロードを避ける通常の作法に従っています。
-
-## デモアプリ
-
-`demo/` は `"@fififuchun/article-system": "file:../"` でルートを参照する独立した Vite アプリです。ルーターは導入せず、`window.location.hash` と `hashchange` イベントによる自前の30行ほどのルーティングで済ませています。ライブラリがルーター非依存であることを、デモ自身が実証する形になっています。
-
-画像は `imageBasePath` に `https://placehold.co/800x400/...?text=` を渡すことで、プレースホルダ画像サービスに解決させています。`imageBasePath + ファイル名` という単純な文字列結合であることを逆手に取った小技で、デモ用の画像アセットを一切リポジトリに置かずに済んでいます。
+**Blob ダウンロード・画像のドラッグ&ドロップ・画像の存在確認の3件はテストを書いていません。** jsdom がこれらの API を実装しておらず、モックの正しさ自体は検証できないためです。ロジックは純粋関数（`downloadFile` / `probeImages` / `renameImage`）に切り出してあり、そちらはテストで守られています。

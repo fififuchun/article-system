@@ -1,13 +1,21 @@
-# 公開 API リファレンス
+# api.md — 公開API
 
-`src/index.ts` がエクスポートしているものがすべてです。
+`src/index.ts` が公開しているものの一覧です。仕様の根拠は [spec.md](./spec.md) にあります。
 
 ```ts
-export type { Article, ArticleDetailClassNames, ArticleListClassNames, ArticlePreviewClassNames };
-export { createArticles };
-export { ArticleDetail, ArticleList, ArticlePreview };
-export { ClockIcon };
+export type { Article, ArticleDetailClassNames, ArticleListClassNames, ArticleStudioClassNames };
+export type { Issue };
+export type { IconProps };
+
+export { createArticles, validateArticle };
+export { ArticleDetail, ArticleList, ArticleStudio };
+export { ArrowIcon, ClockIcon, CloseIcon, CopyIcon, DownloadIcon,
+         ExternalLinkIcon, ImageIcon, PersonIcon, TagIcon, WarningIcon };
 ```
+
+CSS は `@fififuchun/article-system/styles.css` として別に読み込みます。
+
+---
 
 ## 型
 
@@ -15,146 +23,123 @@ export { ClockIcon };
 
 ```ts
 interface Article {
-  id: number;          // 0始まりの連番。date 昇順ソート後の index
+  id: number;           // date 昇順ソート後の index（0始まり）
+  filename: string;     // 拡張子付きファイル名
   title: string;
-  date: string;        // "YYYY-MM-DD" 投稿日
-  latestUpdate: string;// "YYYY-MM-DD" 最終更新日
-  staff: string;       // 担当者名
-  thumbnail: string;   // ファイル名のみ。パスは含まない
-  content: string;     // フロントマターを除いたマークダウン本文
+  date: string;         // "YYYY-MM-DD" 公開日
+  latestUpdate: string; // "YYYY-MM-DD" 最終編集日
+  staff: string;
+  thumbnail: string;    // ファイル名のみ（パスなし）
+  content: string;      // フロントマターを除いた本文
 }
 ```
 
-全フィールドが必須（optional なし）ですが、`createArticles` はフロントマターに欠けている項目を `""` で埋めるため、**実行時に空文字が入ることがあります**。型は「存在する」ことしか保証せず、「空でない」ことは保証しません。
+`filename` は衝突検出に使います。**URL には使いません**（識別子は `id`）。
 
-### `ArticleDetailClassNames`
+### `Issue`
 
-すべて optional の `string`。
+```ts
+interface Issue {
+  level: "error";
+  field?: string;   // フロントマターのキー名。該当しない問題では未設定
+  message: string;
+}
+```
 
-| キー | 適用先 |
+### `IconProps`
+
+```ts
+interface IconProps {
+  className?: string;
+}
+```
+
+サイズは CSS で指定するため `width` / `height` は受け取りません。
+
+### `ClassNames` 各種
+
+| 型 | キー |
 | --- | --- |
-| `wrapper` | 記事全体を包む `<div>` |
-| `headerWrapper` | 日付＋タイトルの `<div>` |
-| `dateWrapper` | 年・月日を包む `<div>` |
-| `dateYear` | 年（`<p>`） |
-| `dateDay` | `月/日`（`<p>`） |
-| `title` | タイトル（`<p>`） |
-| `latestUpdate` | 更新日行の `<div>` |
-| `dateIcon` | 更新日行の `ClockIcon`（SVG） |
-| `thumbnail` | サムネイル `<img>` |
-| `heading` | マークダウンの `##`（`<div>` として出力） |
-| `subheading` | `###` |
-| `subsubheading` | `####` |
-| `paragraph` | 段落の外側 `<div>`（内側は `<p>`） |
-| `image` | 本文中画像の外側 `<div>` |
-| `footer` | 「担当：〇〇」の `<p>` |
+| `ArticleDetailClassNames` | `wrapper` `headerWrapper` `dateWrapper` `dateYear` `dateDay` `title` `latestUpdate` `dateIcon` `thumbnail` `heading` `subheading` `subsubheading` `paragraph` `image` `footer` |
+| `ArticleListClassNames` | `grid` `card` `cardImage` `cardTitle` `cardDate` `cardDateIcon` |
+| `ArticleStudioClassNames` | `wrapper` `editorPane` `textarea` `previewPane` `tabs` `issues` `imagePane` `actions` |
 
-> `subsubheading` は README のサンプルに載っていません（`####` サポートは後から追加されたため）。使う場合は自分で追加してください。
+すべて任意です。渡したクラスは `as-` 接頭のデフォルトクラスに**追記**されます。
 
-### `ArticleListClassNames`
-
-| キー | 適用先 |
-| --- | --- |
-| `grid` | 一覧全体の `<div>` |
-| `card` | カード1枚の `<div>` |
-| `cardImage` | サムネイル `<img>` |
-| `cardTitle` | タイトル `<p>` |
-| `cardDate` | 日付行の `<div>` |
-| `cardDateIcon` | 日付行の `ClockIcon` |
-
-### `ArticlePreviewClassNames`
-
-| キー | 適用先 |
-| --- | --- |
-| `wrapper` | 2カラム全体 |
-| `editorPane` | 左のエディタ領域 |
-| `textarea` | `<textarea>` 本体 |
-| `previewPane` | 右のプレビュー領域 |
+---
 
 ## 関数
 
-### `createArticles(rawFiles: Record<string, string>): Article[]`
+### `createArticles(rawFiles): Article[]`
 
-キー（ファイルパス）は使われず、値の文字列だけを処理します。返り値は `date` 昇順（古い順）で、`id` は 0 からの連番です。
+`import.meta.glob` の戻り値から記事一覧を作ります。
+
+- `_` 始まりのファイル名を見つけたら**例外を投げます**（下書きの漏洩を知らせる警報）
+- `date` を**文字列比較**で昇順ソートし、その index を `id` にします
+- 各記事を検証し、問題があれば `console.warn` で報告します
+
+### `validateArticle(raw, context?): Issue[]`
+
+md の文字列を検証します。例外は投げません。
 
 ```ts
-const rawFiles = import.meta.glob("../articles/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
-
-export const articles = createArticles(rawFiles);
+validateArticle(raw, { articles?: Article[]; filename?: string })
 ```
 
-`eager: true` が必須です（`false` だと値が `() => Promise<string>` になり、型アサーションが嘘になって実行時に壊れます）。
+検出するもの: 必須5項目の欠落、キー名の typo、日付の形式違反、引用符付きの値、フロントマターの閉じ忘れ、`latestUpdate < date`、ファイル名の衝突。
+
+**画像の存在確認は含みません。** 読み込みを伴うため `ArticleStudio` 側で行います。
+
+---
 
 ## コンポーネント
 
-### `<ArticleList>`
-
-| prop | 型 | 必須 | デフォルト |
-| --- | --- | --- | --- |
-| `articles` | `Article[]` | ✔ | — |
-| `getArticleUrl` | `(article: Article) => string` | ✔ | — |
-| `renderLink` | `(url, children, key) => React.ReactNode` | ✔ | — |
-| `imageBasePath` | `string` | | `"/article_imgs/"` |
-| `classNames` | `ArticleListClassNames` | | `{}` |
-
-`renderLink` には `key` が第3引数で渡されます。返す要素に `key={key}` を付けるのは**利用側の責任**です。付け忘れると React の key 警告が出ます。
-
-```tsx
-renderLink={(url, children, key) => <Link key={key} to={url}>{children}</Link>}
-```
-
-表示される日付は `article.latestUpdate` です。
-
 ### `<ArticleDetail>`
 
-| prop | 型 | 必須 | デフォルト |
+| prop | 型 | 必須 | 既定値 |
 | --- | --- | --- | --- |
 | `article` | `Article` | ✔ | — |
 | `imageBasePath` | `string` | | `"/article_imgs/"` |
-| `classNames` | `ArticleDetailClassNames` | | `{}` |
 | `dateLabel` | `string` | | `"最終更新日時"` |
+| `classNames` | `ArticleDetailClassNames` | | `{}` |
 
-ヘッダーの大きな日付は `article.date`、`dateLabel` の隣に出るのが `article.latestUpdate` です。
+見出しは `<h2>` / `<h3>` / `<h4>` で出力します。`thumbnail` が空なら描画しません。絶対URL・`blob:`・`data:` は `imageBasePath` を前置せず素通しします。
 
-記事が見つからない場合のハンドリングはありません。`articles[Number(id)]` が `undefined` のときのガードは利用側で書く必要があります（README のサンプルもそうしています）。
+### `<ArticleList>`
 
-### `<ArticlePreview>`
-
-| prop | 型 | 必須 | デフォルト |
+| prop | 型 | 必須 | 既定値 |
 | --- | --- | --- | --- |
+| `articles` | `Article[]` | ✔ | — |
+| `getArticleUrl` | `(article) => string` | ✔ | — |
+| `renderLink` | `(url, children, key) => ReactNode` | ✔ | — |
+| `imageBasePath` | `string` | | `"/article_imgs/"` |
+| `classNames` | `ArticleListClassNames` | | `{}` |
+
+`renderLink` でリンク要素の生成を委ねているため**ルーターに依存しません**。カードに出す日付は `latestUpdate` です。
+
+### `<ArticleStudio>`
+
+| prop | 型 | 必須 | 既定値 |
+| --- | --- | --- | --- |
+| `articles` | `Article[]` | ✔ | — |
+| `storageKey` | `string` | | `"default"` |
 | `imageBasePath` | `string` | | `"/article_imgs/"` |
 | `dateLabel` | `string` | | `"最終更新日時"` |
-| `classNames` | `ArticlePreviewClassNames` | | `{}` |
+| `classNames` | `ArticleStudioClassNames` | | `{}` |
 | `articleClassNames` | `ArticleDetailClassNames` | | `{}` |
-| `defaultValue` | `string` | | `""` |
 
-`defaultValue` は初期値としてのみ使われ、非制御です。入力内容の保存機能（localStorage、ファイル出力など）はありません。リロードすると消えます。
+`articles` は必須です。渡さないとファイル名の衝突を検出できず、既存記事が上書きで消えます。
 
-### `<ClockIcon>`
+---
 
-```tsx
-<ClockIcon className?: string />
-```
+## アイコン
 
-24x24 viewBox、`fill="currentColor"`。サイズは CSS（`width` / `height`）で指定します。
+すべてインライン SVG です。`fill="currentColor"` で CSS の `color` に追従し、`aria-hidden="true"` が付きます。サイズは CSS で指定します。
 
-## マークダウンでサポートされる記法
-
-有効なプラグインは `remark-gfm` と `remark-breaks` です。
-
-| 記法 | 状態 |
+| 分類 | アイコン |
 | --- | --- |
-| `##` `###` `####` | ✔ `<div>` + 指定クラスで出力 |
-| 段落 | ✔ `<div><p>` |
-| `![](file.webp)` | ✔ `imageBasePath` を前置して出力 |
-| 単一改行 | ✔ `<br>` に変換（remark-breaks） |
-| 表、取り消し線、タスクリスト、自動リンク | ✔ 動作するが**クラス指定不可**（素の HTML 要素） |
-| リスト、引用、コードブロック、太字、リンク | ✔ 動作するが**クラス指定不可** |
-| `#`（h1） | ✔ 動作するが `<h1>` のまま、クラス指定不可 |
-| 生の HTML | ✘ 無効（`rehype-raw` 未導入。文字列としてエスケープされる） |
+| 記事系 | `ClockIcon` `PersonIcon` `TagIcon` |
+| Studio 系 | `DownloadIcon` `ImageIcon` `WarningIcon` `CloseIcon` |
+| 汎用 | `ArrowIcon` `ExternalLinkIcon` `CopyIcon` |
 
-`classNames` を渡せるのは `components` マップに定義された h2 / h3 / h4 / p / img のみです。それ以外の要素は react-markdown のデフォルト出力なので、利用側で `.article-wrapper ul` のような子孫セレクタでスタイルを当てることになります。
+`ArrowIcon` は右向きです。他の向きは CSS の `transform: rotate()` で作ります。
