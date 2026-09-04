@@ -144,7 +144,7 @@
 ### フェーズ7: 配布まわり（spec §12 §13 / 実装順序 7）
 
 - [x] `package.json` の `exports` / `sideEffects` / `peerDependencies` が spec §12 の記述どおりか照合して直す
-- [ ] `src` の変更時に `npm run build` の実行漏れを検出する pre-commit フックを書く（spec §12）
+- [x] `src` の変更時に `npm run build` の実行漏れを検出する pre-commit フックを書く（spec §12）
 - [ ] pre-commit フックを、ビルド忘れのコミットを実際に止められるか試して確認する
 - [ ] README を改訂する① — インストールを `npm link` から**タグ固定の GitHub インストール**に差し替える（spec §12）
 - [ ] README を改訂する② — `import.meta.glob` のパターンを `[!_]*.md` にすること（必須）と、その理由を書く

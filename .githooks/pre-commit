@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# src/ を変更したのに dist/ を再ビルドしていないコミットを止める（spec §12）。
+#
+# dist/ はリポジトリにコミットし続けます。GitHub から直接インストールするため、
+# 成果物が入っていないと動きません。src を直して npm run build を忘れると、
+# GitHub 上のコードと配布物がズレたまま各プロジェクトに配られます。
+
+staged_src=$(git diff --cached --name-only --diff-filter=ACMR | grep '^src/' | grep -v '\.test\.') || true
+
+if [ -z "$staged_src" ]; then
+  exit 0
+fi
+
+npm run build >/dev/null 2>&1 || {
+  echo "pre-commit: ビルドに失敗しました。"
+  exit 1
+}
+
+if ! git diff --quiet -- dist; then
+  echo "pre-commit: src を変更しましたが dist が最新ではありません。"
+  echo ""
+  git diff --stat -- dist
+  echo ""
+  echo "  npm run build && git add dist"
+  echo ""
+  echo "を実行してからコミットし直してください。"
+  exit 1
+fi
+
+exit 0
