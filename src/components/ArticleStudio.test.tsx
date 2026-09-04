@@ -1,11 +1,27 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import { ArticleStudio } from "./ArticleStudio";
 import type { Article } from "../types";
 
 afterEach(cleanup);
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  // jsdom は img.src を設定しても読み込みイベントを発火しない。
+  // 画像は「読み込めた」ものとして扱い、存在確認そのものは検証しない
+  vi.stubGlobal(
+    "Image",
+    class {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        queueMicrotask(() => this.onload?.());
+      }
+    }
+  );
+});
+
+afterEach(() => vi.unstubAllGlobals());
 
 const textarea = () => screen.getByRole("textbox") as HTMLTextAreaElement;
 
@@ -527,7 +543,12 @@ describe("ArticleStudio — 検証結果の表示", () => {
     URL.revokeObjectURL = vi.fn();
   });
 
-  const publish = () => fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+  // 画像の確認が非同期なので、状態が落ち着くまで待つ
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+  };
   const broken = sampleMd.replace("staff: 田中 花子", "staff:");
 
   // spec §9: 起動直後から必須項目の欠落が出続けると本当の間違いを見落とす
@@ -537,7 +558,7 @@ describe("ArticleStudio — 検証結果の表示", () => {
     expect(container.querySelector(".as-studio-issues")).toBeNull();
   });
 
-  it("執筆中は検証結果を出さない", () => {
+  it("執筆中は検証結果を出さない", async () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
@@ -545,46 +566,46 @@ describe("ArticleStudio — 検証結果の表示", () => {
     expect(container.querySelector(".as-studio-issues")).toBeNull();
   });
 
-  it("本番ダウンロードを押すと問題を一覧で出す", () => {
+  it("本番ダウンロードを押すと問題を一覧で出す", async () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
-    publish();
+    await publish();
 
     expect(container.querySelector(".as-studio-issues")).not.toBeNull();
   });
 
-  it("問題の内容を文言で出す", () => {
+  it("問題の内容を文言で出す", async () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
-    publish();
+    await publish();
 
     expect(container.querySelector(".as-studio-issues")?.textContent).toContain("staff");
   });
 
-  it("問題の数だけ項目を出す", () => {
+  it("問題の数だけ項目を出す", async () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: "---\ntitle:\n---\n\n本文" } });
-    publish();
+    await publish();
 
     expect(container.querySelectorAll(".as-studio-issues li").length).toBeGreaterThan(1);
   });
 
-  it("問題が解消して押し直すと消える", () => {
+  it("問題が解消して押し直すと消える", async () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
-    publish();
+    await publish();
     fireEvent.change(textarea(), { target: { value: sampleMd } });
-    publish();
+    await publish();
 
     expect(container.querySelector(".as-studio-issues")).toBeNull();
   });
 
   // spec §9: 下書きは検証しない
-  it("下書きダウンロードでは検証結果を出さない", () => {
+  it("下書きダウンロードでは検証結果を出さない", async () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
@@ -593,11 +614,11 @@ describe("ArticleStudio — 検証結果の表示", () => {
     expect(container.querySelector(".as-studio-issues")).toBeNull();
   });
 
-  it("classNames.issues が as- クラスに追記される", () => {
+  it("classNames.issues が as- クラスに追記される", async () => {
     const { container } = render(<ArticleStudio articles={[]} classNames={{ issues: "my-issues" }} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
-    publish();
+    await publish();
 
     expect(container.querySelector(".as-studio-issues")?.className).toBe(
       "as-studio-issues my-issues"

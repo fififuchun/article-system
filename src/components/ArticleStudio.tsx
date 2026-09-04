@@ -16,7 +16,7 @@ import { buildTemplate } from "../studio/buildTemplate";
 import { downloadBlob, downloadMarkdown } from "../studio/downloadFile";
 import { renameImageInMarkdown } from "../studio/renameImage";
 import { collectImageNames } from "../studio/collectImageNames";
-import { resolveImageSrc } from "../resolveImageSrc";
+import { findMissingImages } from "../studio/probeImages";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
@@ -66,7 +66,6 @@ export function ArticleStudio({
   const [tab, setTab] = useState<"detail" | "list">("detail");
   const [issues, setIssues] = useState<Issue[]>([]);
   const [images, setImages] = useState<DroppedImage[]>([]);
-  const [missingImages, setMissingImages] = useState<Record<string, boolean>>({});
   // 本番を出した後、仮登録の画像がまだリポジトリに置かれていない状態
   const [placementPending, setPlacementPending] = useState(false);
 
@@ -152,15 +151,15 @@ export function ArticleStudio({
     downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
   };
 
-  // 本番は検証必須。エラーがゼロでないと出せない（spec §9）
-  const downloadForPublish = () => {
+  // 本番は検証必須。エラーがゼロでないと出せない（spec §9）。
+  // 画像の確認もここで初めて行う。執筆中に確かめると打鍵ごとに要求が飛ぶ
+  const downloadForPublish = async () => {
     const filename = buildFilename(draft.date, draft.title);
-    const missing = probeNames
-      .filter((name) => missingImages[name])
-      .map((name) => ({
-        level: "error" as const,
-        message: `画像 ${name} が ${basePath} に見つかりません。名前を確かめてください。`,
-      }));
+    const missingNames = await findMissingImages(probeNames, basePath);
+    const missing = missingNames.map((name) => ({
+      level: "error" as const,
+      message: `画像 ${name} が ${basePath} に見つかりません。名前が違うか、まだ配置していない可能性があります。`,
+    }));
     const found = [...validateArticle(raw, { articles, filename }), ...missing];
     setIssues(found);
 
@@ -243,20 +242,6 @@ export function ArticleStudio({
             新しく書く
           </button>
         </div>
-      </div>
-
-      {/* 実在確認のためだけに読み込む。SPA では 404 でも index.html が 200 で
-          返りうるため、ステータスではなく onError で判定する（spec §6） */}
-      <div hidden>
-        {probeNames.map((name) => (
-          <img
-            key={name}
-            src={resolveImageSrc(name, basePath)}
-            alt=""
-            onError={() => setMissingImages((current) => ({ ...current, [name]: true }))}
-            onLoad={() => setMissingImages((current) => ({ ...current, [name]: false }))}
-          />
-        ))}
       </div>
 
       <div className={cx("as-studio-preview", classNames.previewPane)}>

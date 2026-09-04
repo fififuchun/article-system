@@ -434,6 +434,21 @@ function collectImageNames(markdown, thumbnail) {
   );
 }
 
+// src/studio/probeImages.ts
+async function findMissingImages(names, imageBasePath) {
+  const results = await Promise.all(
+    names.map(
+      (name) => new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve(null);
+        image.onerror = () => resolve(name);
+        image.src = resolveImageSrc(name, imageBasePath);
+      })
+    )
+  );
+  return results.filter((name) => name !== null);
+}
+
 // src/studio/draftStorage.ts
 var PREFIX = "as-studio-draft";
 function draftKey(storageKey = "default") {
@@ -469,7 +484,6 @@ function ArticleStudio({
   const [tab, setTab] = useState("detail");
   const [issues, setIssues] = useState([]);
   const [images, setImages] = useState([]);
-  const [missingImages, setMissingImages] = useState({});
   const [placementPending, setPlacementPending] = useState(false);
   useEffect(() => {
     saveDraft(storageKey, raw);
@@ -525,11 +539,12 @@ ${markdown}
   const downloadDraft = () => {
     downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
   };
-  const downloadForPublish = () => {
+  const downloadForPublish = async () => {
     const filename = buildFilename(draft.date, draft.title);
-    const missing = probeNames.filter((name) => missingImages[name]).map((name) => ({
+    const missingNames = await findMissingImages(probeNames, basePath);
+    const missing = missingNames.map((name) => ({
       level: "error",
-      message: `\u753B\u50CF ${name} \u304C ${basePath} \u306B\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u540D\u524D\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002`
+      message: `\u753B\u50CF ${name} \u304C ${basePath} \u306B\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u540D\u524D\u304C\u9055\u3046\u304B\u3001\u307E\u3060\u914D\u7F6E\u3057\u3066\u3044\u306A\u3044\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\u3002`
     }));
     const found = [...validateArticle(raw, { articles, filename }), ...missing];
     setIssues(found);
@@ -595,16 +610,6 @@ ${markdown}
         ]
       }
     ),
-    /* @__PURE__ */ jsx6("div", { hidden: true, children: probeNames.map((name) => /* @__PURE__ */ jsx6(
-      "img",
-      {
-        src: resolveImageSrc(name, basePath),
-        alt: "",
-        onError: () => setMissingImages((current) => ({ ...current, [name]: true })),
-        onLoad: () => setMissingImages((current) => ({ ...current, [name]: false }))
-      },
-      name
-    )) }),
     /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-preview", classNames.previewPane), children: [
       /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-tabs", classNames.tabs), role: "tablist", children: [
         /* @__PURE__ */ jsx6("button", { type: "button", role: "tab", "aria-selected": tab === "detail", onClick: () => setTab("detail"), children: "\u8A73\u7D30" }),
