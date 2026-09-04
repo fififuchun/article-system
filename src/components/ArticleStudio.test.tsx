@@ -717,3 +717,68 @@ describe("ArticleStudio — 編集中の記事を一覧から落とさない", (
     expect(titles(container)).toEqual(["夏の更新", "B", "A"]);
   });
 });
+
+describe("ArticleStudio — id の予告", () => {
+  const openList = () => fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
+  const badge = (container: HTMLElement) =>
+    container.querySelector(".as-studio-id-preview")?.textContent;
+
+  it("編集中の記事のカードに id を出す", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(badge(container)).toContain("0");
+  });
+
+  it("既存記事の末尾に付くなら件数と同じ id になる", () => {
+    const articles = [existing("2026-01-01", "A"), existing("2026-02-01", "B")];
+    const { container } = render(<ArticleStudio articles={articles} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(badge(container)).toContain("2");
+  });
+
+  // spec §3: 既存記事より古い日付を入れると以降の id がずれる
+  it("既存記事の間に入るなら挿入位置の id を出す", () => {
+    const articles = [existing("2026-01-01", "A"), existing("2026-12-01", "B")];
+    const { container } = render(<ArticleStudio articles={articles} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(badge(container)).toContain("1");
+  });
+
+  it("既存記事のカードには出さない", () => {
+    const articles = [existing("2026-01-01", "A")];
+    const { container } = render(<ArticleStudio articles={articles} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(container.querySelectorAll(".as-studio-id-preview")).toHaveLength(1);
+  });
+
+  it("既存記事と id が重なっても編集中の記事にだけ出す", () => {
+    const clashing = existing("2026-01-01", "A");
+    clashing.id = 1; // 編集中の記事と同じ番号になる
+    const { container } = render(<ArticleStudio articles={[clashing]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(container.querySelectorAll(".as-studio-id-preview")).toHaveLength(1);
+  });
+
+  it("詳細タブには出さない", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+
+    expect(container.querySelector(".as-studio-id-preview")).toBeNull();
+  });
+});

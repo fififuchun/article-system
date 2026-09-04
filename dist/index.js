@@ -451,6 +451,7 @@ function loadDraft(storageKey) {
 
 // src/components/ArticleStudio.tsx
 import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+var DRAFT_MARK = "#draft-preview";
 var LIST_PREVIEW_COUNT = 6;
 function ArticleStudio({
   articles,
@@ -618,8 +619,15 @@ ${markdown}
         {
           articles: listPreview,
           imageBasePath,
-          getArticleUrl: () => "#",
-          renderLink: (_url, children, key) => /* @__PURE__ */ jsx6("div", { children }, key)
+          getArticleUrl: (article) => article === draft ? DRAFT_MARK : "#",
+          renderLink: (url, children, key) => /* @__PURE__ */ jsxs4("div", { children: [
+            url === DRAFT_MARK && /* @__PURE__ */ jsxs4("span", { className: "as-studio-id-preview", children: [
+              "id \u306F ",
+              draft.id,
+              " \u306B\u306A\u308A\u307E\u3059"
+            ] }),
+            children
+          ] }, key)
         }
       )
     ] })

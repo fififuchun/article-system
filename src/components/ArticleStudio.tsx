@@ -28,6 +28,9 @@ interface DroppedImage {
   file: File;
 }
 
+/** 一覧プレビューで編集中の記事を見分けるための印 */
+const DRAFT_MARK = "#draft-preview";
+
 /** 一覧プレビューに出す件数（spec §9） */
 const LIST_PREVIEW_COUNT = 6;
 
@@ -277,9 +280,17 @@ export function ArticleStudio({
           <ArticleList
             articles={listPreview}
             imageBasePath={imageBasePath}
-            getArticleUrl={() => "#"}
-            // プレビューなので遷移させない。リンクにせず div で包む
-            renderLink={(_url, children, key) => <div key={key}>{children}</div>}
+            // 遷移はしないので div で包む。編集中の記事だけ印を付けて見分ける。
+            // id で見分けると、既存記事と番号が重なったとき両方に出てしまう
+            getArticleUrl={(article) => (article === draft ? DRAFT_MARK : "#")}
+            renderLink={(url, children, key) => (
+              <div key={key}>
+                {url === DRAFT_MARK && (
+                  <span className="as-studio-id-preview">id は {draft.id} になります</span>
+                )}
+                {children}
+              </div>
+            )}
           />
         )}
       </div>
