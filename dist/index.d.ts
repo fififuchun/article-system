@@ -85,8 +85,13 @@ interface Props$1 {
 declare function ArticleList({ articles, imageBasePath, getArticleUrl, classNames, renderLink, }: Props$1): react_jsx_runtime.JSX.Element;
 
 interface Props {
-    /** 衝突検出と一覧プレビューに使う既存記事 */
-    articles?: Article[];
+    /**
+     * 既存記事。**必須です。**
+     *
+     * 渡さないとファイル名の衝突を検出できず、既存記事が上書きで消えます（spec §6）。
+     * 記事が0件のプロジェクトでも createArticles({}) の戻り値をそのまま渡してください。
+     */
+    articles: Article[];
     /** localStorage の保存先を分ける（spec §9） */
     storageKey?: string;
     imageBasePath?: string;
