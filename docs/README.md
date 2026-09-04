@@ -14,5 +14,6 @@
 | [design-decisions.md](./design-decisions.md) | 検討の経緯（第1ラウンド）。確定版は spec.md |
 | [design-revisions.md](./design-revisions.md) | 検討の経緯（第2ラウンド）。確定版は spec.md |
 
- /  /  は実装に追随して更新しています。
- /  /  は当時の記録で、更新していません。
+`overview.md` / `architecture.md` / `api.md` は実装に追随して更新しています。
+
+`findings.md` / `design-decisions.md` / `design-revisions.md` は解析当時（`ce86c36`）の記録で、更新していません。
