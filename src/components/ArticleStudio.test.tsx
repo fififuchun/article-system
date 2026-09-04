@@ -11,20 +11,20 @@ const textarea = () => screen.getByRole("textbox") as HTMLTextAreaElement;
 
 describe("ArticleStudio — 骨組み", () => {
   it("props を省略しても描画できる", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     expect(container.querySelector(".as-studio")).not.toBeNull();
   });
 
   it("textarea に雛形を入れて起動する", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     expect(textarea().value).toContain("title:");
     expect(textarea().value).toContain("## 見出し");
   });
 
   it("入力した内容が textarea に反映される", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: "書き換えた本文" } });
 
@@ -32,7 +32,7 @@ describe("ArticleStudio — 骨組み", () => {
   });
 
   it("空にしてもテンプレートを再挿入しない（spec §9）", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: "" } });
 
@@ -42,7 +42,7 @@ describe("ArticleStudio — 骨組み", () => {
   it.each(["as-studio", "as-studio-editor", "as-studio-textarea"])(
     "classNames 未指定でも %s が付く",
     (className) => {
-      const { container } = render(<ArticleStudio />);
+      const { container } = render(<ArticleStudio articles={[]} />);
 
       expect(container.querySelector(`.${className}`)).not.toBeNull();
     }
@@ -50,7 +50,7 @@ describe("ArticleStudio — 骨組み", () => {
 
   it("classNames を渡すと as- クラスに追記される", () => {
     const { container } = render(
-      <ArticleStudio classNames={{ wrapper: "my-studio", textarea: "my-textarea" }} />
+      <ArticleStudio articles={[]} classNames={{ wrapper: "my-studio", textarea: "my-textarea" }} />
     );
 
     expect(container.querySelector(".as-studio")?.className).toBe("as-studio my-studio");
@@ -62,7 +62,7 @@ describe("ArticleStudio — 骨組み", () => {
 
 describe("ArticleStudio — 下書きの自動保存", () => {
   it("入力のたびに localStorage へ保存する", () => {
-    render(<ArticleStudio storageKey="my-blog" />);
+    render(<ArticleStudio articles={[]} storageKey="my-blog" />);
 
     fireEvent.change(textarea(), { target: { value: "書きかけの本文" } });
 
@@ -70,7 +70,7 @@ describe("ArticleStudio — 下書きの自動保存", () => {
   });
 
   it("storageKey ごとに保存先が分かれる", () => {
-    render(<ArticleStudio storageKey="another-site" />);
+    render(<ArticleStudio articles={[]} storageKey="another-site" />);
 
     fireEvent.change(textarea(), { target: { value: "別プロジェクトの本文" } });
 
@@ -79,7 +79,7 @@ describe("ArticleStudio — 下書きの自動保存", () => {
   });
 
   it("storageKey 未指定なら既定のキーに保存する", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: "既定の本文" } });
 
@@ -87,7 +87,7 @@ describe("ArticleStudio — 下書きの自動保存", () => {
   });
 
   it("空にした状態も保存する（意図的に消したものを戻さない）", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: "" } });
 
@@ -100,7 +100,7 @@ describe("ArticleStudio — 下書きの自動保存", () => {
     });
 
     expect(() => {
-      render(<ArticleStudio />);
+      render(<ArticleStudio articles={[]} />);
       fireEvent.change(textarea(), { target: { value: "本文" } });
     }).not.toThrow();
 
@@ -112,7 +112,7 @@ describe("ArticleStudio — 下書きの復帰", () => {
   it("保存された下書きがあればテンプレートではなくそれを出す", () => {
     localStorage.setItem("as-studio-draft:my-blog", "前回の続き");
 
-    render(<ArticleStudio storageKey="my-blog" />);
+    render(<ArticleStudio articles={[]} storageKey="my-blog" />);
 
     expect(textarea().value).toBe("前回の続き");
   });
@@ -121,13 +121,13 @@ describe("ArticleStudio — 下書きの復帰", () => {
   it("空文字で保存されていればテンプレートを再挿入しない", () => {
     localStorage.setItem("as-studio-draft:my-blog", "");
 
-    render(<ArticleStudio storageKey="my-blog" />);
+    render(<ArticleStudio articles={[]} storageKey="my-blog" />);
 
     expect(textarea().value).toBe("");
   });
 
   it("保存が無ければテンプレートを出す", () => {
-    render(<ArticleStudio storageKey="my-blog" />);
+    render(<ArticleStudio articles={[]} storageKey="my-blog" />);
 
     expect(textarea().value).toContain("## 見出し");
   });
@@ -135,7 +135,7 @@ describe("ArticleStudio — 下書きの復帰", () => {
   it("別の storageKey の下書きは読まない", () => {
     localStorage.setItem("as-studio-draft:another-site", "別プロジェクトの本文");
 
-    render(<ArticleStudio storageKey="my-blog" />);
+    render(<ArticleStudio articles={[]} storageKey="my-blog" />);
 
     expect(textarea().value).toContain("## 見出し");
   });
@@ -145,7 +145,7 @@ describe("ArticleStudio — 下書きの復帰", () => {
       throw new Error("SecurityError");
     });
 
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     expect(textarea().value).toContain("## 見出し");
     getItem.mockRestore();
@@ -168,20 +168,20 @@ const sampleMd = [
 
 describe("ArticleStudio — 詳細プレビュー", () => {
   it("プレビュー領域に as-studio-preview が付く", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     expect(container.querySelector(".as-studio-preview")).not.toBeNull();
   });
 
   // spec §9: ArticleDetail をそのまま使うことで本番との一致を構造的に保証する
   it("ArticleDetail をそのまま描画する", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     expect(container.querySelector(".as-studio-preview .as-article")).not.toBeNull();
   });
 
   it("編集内容がプレビューに反映される", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
 
@@ -190,7 +190,7 @@ describe("ArticleStudio — 詳細プレビュー", () => {
   });
 
   it("入力を変えるとプレビューも変わる", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     fireEvent.change(textarea(), {
@@ -201,7 +201,7 @@ describe("ArticleStudio — 詳細プレビュー", () => {
   });
 
   it("imageBasePath をプレビューに渡す", () => {
-    const { container } = render(<ArticleStudio imageBasePath="/imgs/" />);
+    const { container } = render(<ArticleStudio articles={[]} imageBasePath="/imgs/" />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
 
@@ -211,7 +211,7 @@ describe("ArticleStudio — 詳細プレビュー", () => {
   });
 
   it("dateLabel をプレビューに渡す", () => {
-    const { container } = render(<ArticleStudio dateLabel="更新" />);
+    const { container } = render(<ArticleStudio articles={[]} dateLabel="更新" />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
 
@@ -220,7 +220,7 @@ describe("ArticleStudio — 詳細プレビュー", () => {
 
   it("articleClassNames をプレビューの記事に渡す", () => {
     const { container } = render(
-      <ArticleStudio articleClassNames={{ title: "my-title" }} />
+      <ArticleStudio articles={[]} articleClassNames={{ title: "my-title" }} />
     );
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
@@ -229,7 +229,7 @@ describe("ArticleStudio — 詳細プレビュー", () => {
   });
 
   it("classNames.previewPane が as- クラスに追記される", () => {
-    const { container } = render(<ArticleStudio classNames={{ previewPane: "my-preview" }} />);
+    const { container } = render(<ArticleStudio articles={[]} classNames={{ previewPane: "my-preview" }} />);
 
     expect(container.querySelector(".as-studio-preview")?.className).toBe(
       "as-studio-preview my-preview"
@@ -241,14 +241,14 @@ describe("ArticleStudio — プレビューのタブ", () => {
   const tab = (name: string) => screen.getByRole("tab", { name });
 
   it("詳細と一覧のタブがある", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     expect(tab("詳細")).toBeDefined();
     expect(tab("一覧")).toBeDefined();
   });
 
   it("既定では詳細を選ぶ", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     expect(tab("詳細").getAttribute("aria-selected")).toBe("true");
     expect(tab("一覧").getAttribute("aria-selected")).toBe("false");
@@ -257,7 +257,7 @@ describe("ArticleStudio — プレビューのタブ", () => {
   });
 
   it("一覧タブを押すと一覧に切り替わる", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.click(tab("一覧"));
 
@@ -266,7 +266,7 @@ describe("ArticleStudio — プレビューのタブ", () => {
   });
 
   it("詳細タブに戻せる", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.click(tab("一覧"));
     fireEvent.click(tab("詳細"));
@@ -276,7 +276,7 @@ describe("ArticleStudio — プレビューのタブ", () => {
   });
 
   it("選択状態が aria-selected に出る", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.click(tab("一覧"));
 
@@ -285,7 +285,7 @@ describe("ArticleStudio — プレビューのタブ", () => {
   });
 
   it("タブを切り替えても編集内容は保たれる", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     fireEvent.click(tab("一覧"));
@@ -295,7 +295,7 @@ describe("ArticleStudio — プレビューのタブ", () => {
   });
 
   it("classNames.tabs が as- クラスに追記される", () => {
-    const { container } = render(<ArticleStudio classNames={{ tabs: "my-tabs" }} />);
+    const { container } = render(<ArticleStudio articles={[]} classNames={{ tabs: "my-tabs" }} />);
 
     expect(container.querySelector(".as-studio-tabs")?.className).toBe(
       "as-studio-tabs my-tabs"
@@ -303,7 +303,7 @@ describe("ArticleStudio — プレビューのタブ", () => {
   });
 
   it("一覧プレビューは遷移させない", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.click(tab("一覧"));
 
@@ -387,7 +387,7 @@ describe("ArticleStudio — 一覧プレビューの中身", () => {
   });
 
   it("既存記事が無くても編集中の記事だけ出す", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     openList();
@@ -418,19 +418,19 @@ describe("ArticleStudio — 下書きダウンロード", () => {
   const draftButton = () => screen.getByRole("button", { name: /下書き/ });
 
   it("下書きダウンロードのボタンがある", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     expect(draftButton()).toBeDefined();
   });
 
   it("操作領域に as-studio-actions が付く", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     expect(container.querySelector(".as-studio-actions")).not.toBeNull();
   });
 
   it("classNames.actions が as- クラスに追記される", () => {
-    const { container } = render(<ArticleStudio classNames={{ actions: "my-actions" }} />);
+    const { container } = render(<ArticleStudio articles={[]} classNames={{ actions: "my-actions" }} />);
 
     expect(container.querySelector(".as-studio-actions")?.className).toBe(
       "as-studio-actions my-actions"
@@ -439,7 +439,7 @@ describe("ArticleStudio — 下書きダウンロード", () => {
 
   // spec §9: 下書きは押した後もそのまま留まる
   it("押しても編集内容がそのまま残る", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     fireEvent.click(draftButton());
@@ -449,7 +449,7 @@ describe("ArticleStudio — 下書きダウンロード", () => {
 
   // spec §9: 下書きは検証しない
   it("必須項目が欠けていても押せる", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: "---\ntitle:\n---\n\n本文" } });
 
@@ -467,20 +467,20 @@ describe("ArticleStudio — 本番ダウンロード", () => {
   const publishButton = () => screen.getByRole("button", { name: /本番/ });
 
   it("本番ダウンロードのボタンがある", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     expect(publishButton()).toBeDefined();
   });
 
   it("下書きとは別のボタンになっている", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     expect(publishButton()).not.toBe(screen.getByRole("button", { name: /下書き/ }));
   });
 
   // 消したいときは消せばよいので、出した後もそのまま残す
   it("検証を通っても編集内容はそのまま残る", () => {
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     fireEvent.click(publishButton());
@@ -490,7 +490,7 @@ describe("ArticleStudio — 本番ダウンロード", () => {
 
   it("必須項目が欠けていればテンプレートに戻らない", () => {
     const broken = sampleMd.replace("staff: 田中 花子", "staff:");
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
     fireEvent.click(publishButton());
@@ -500,7 +500,7 @@ describe("ArticleStudio — 本番ダウンロード", () => {
 
   it("日付の形式が違えばテンプレートに戻らない", () => {
     const broken = sampleMd.replace("date: 2026-08-23", "date: 2026/08/23");
-    render(<ArticleStudio />);
+    render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
     fireEvent.click(publishButton());
@@ -532,13 +532,13 @@ describe("ArticleStudio — 検証結果の表示", () => {
 
   // spec §9: 起動直後から必須項目の欠落が出続けると本当の間違いを見落とす
   it("起動直後は検証結果を出さない", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     expect(container.querySelector(".as-studio-issues")).toBeNull();
   });
 
   it("執筆中は検証結果を出さない", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
 
@@ -546,7 +546,7 @@ describe("ArticleStudio — 検証結果の表示", () => {
   });
 
   it("本番ダウンロードを押すと問題を一覧で出す", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
     publish();
@@ -555,7 +555,7 @@ describe("ArticleStudio — 検証結果の表示", () => {
   });
 
   it("問題の内容を文言で出す", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
     publish();
@@ -564,7 +564,7 @@ describe("ArticleStudio — 検証結果の表示", () => {
   });
 
   it("問題の数だけ項目を出す", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: "---\ntitle:\n---\n\n本文" } });
     publish();
@@ -573,7 +573,7 @@ describe("ArticleStudio — 検証結果の表示", () => {
   });
 
   it("問題が解消して押し直すと消える", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
     publish();
@@ -585,7 +585,7 @@ describe("ArticleStudio — 検証結果の表示", () => {
 
   // spec §9: 下書きは検証しない
   it("下書きダウンロードでは検証結果を出さない", () => {
-    const { container } = render(<ArticleStudio />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
     fireEvent.click(screen.getByRole("button", { name: /下書き/ }));
@@ -594,7 +594,7 @@ describe("ArticleStudio — 検証結果の表示", () => {
   });
 
   it("classNames.issues が as- クラスに追記される", () => {
-    const { container } = render(<ArticleStudio classNames={{ issues: "my-issues" }} />);
+    const { container } = render(<ArticleStudio articles={[]} classNames={{ issues: "my-issues" }} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
     publish();

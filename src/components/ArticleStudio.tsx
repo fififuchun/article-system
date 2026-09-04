@@ -32,8 +32,13 @@ interface DroppedImage {
 const LIST_PREVIEW_COUNT = 6;
 
 interface Props {
-  /** 衝突検出と一覧プレビューに使う既存記事 */
-  articles?: Article[];
+  /**
+   * 既存記事。**必須です。**
+   *
+   * 渡さないとファイル名の衝突を検出できず、既存記事が上書きで消えます（spec §6）。
+   * 記事が0件のプロジェクトでも createArticles({}) の戻り値をそのまま渡してください。
+   */
+  articles: Article[];
   /** localStorage の保存先を分ける（spec §9） */
   storageKey?: string;
   imageBasePath?: string;
@@ -122,7 +127,7 @@ export function ArticleStudio({
 
   // 既存記事に混ぜて日付の新しい順の直近6件。隣の記事と並べることで
   // タイトルの折り返しやサムネイルの雰囲気を比較できる（spec §9）
-  const listPreview = [...(articles ?? []), draft]
+  const listPreview = [...articles, draft]
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
     .slice(0, LIST_PREVIEW_COUNT);
 
