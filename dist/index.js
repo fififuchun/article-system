@@ -512,7 +512,11 @@ function ArticleStudio({
 ${markdown}
 `);
   };
-  const listPreview = [...articles, draft].sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0).slice(0, LIST_PREVIEW_COUNT);
+  const byDateDesc = (a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+  const listPreview = [
+    ...[...articles].sort(byDateDesc).slice(0, LIST_PREVIEW_COUNT - 1),
+    draft
+  ].sort(byDateDesc);
   const downloadDraft = () => {
     downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
   };

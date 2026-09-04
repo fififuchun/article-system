@@ -662,3 +662,58 @@ describe("ArticleStudio — 新しく書く", () => {
     confirmSpy.mockRestore();
   });
 });
+
+describe("ArticleStudio — 編集中の記事を一覧から落とさない", () => {
+  const openList = () => fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
+  const titles = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll(".as-card-title")).map((el) => el.textContent);
+
+  const tenArticles = () =>
+    Array.from({ length: 10 }, (_, index) =>
+      existing(`2026-01-${String(index + 1).padStart(2, "0")}`, `記事${index + 1}`)
+    );
+
+  // spec §3 の「id がずれる」を確認したい場面でこそ見えなくなっては困る
+  it("すべての既存記事より古くても一覧に出る", () => {
+    const { container } = render(<ArticleStudio articles={tenArticles()} />);
+
+    fireEvent.change(textarea(), {
+      target: { value: sampleMd.replace("date: 2026-08-23", "date: 2025-01-01") },
+    });
+    openList();
+
+    expect(titles(container)).toContain("夏の更新");
+  });
+
+  it("古い日付でも6件を超えない", () => {
+    const { container } = render(<ArticleStudio articles={tenArticles()} />);
+
+    fireEvent.change(textarea(), {
+      target: { value: sampleMd.replace("date: 2026-08-23", "date: 2025-01-01") },
+    });
+    openList();
+
+    expect(titles(container)).toHaveLength(6);
+  });
+
+  it("古い日付なら日付順どおり末尾に置く", () => {
+    const { container } = render(<ArticleStudio articles={tenArticles()} />);
+
+    fireEvent.change(textarea(), {
+      target: { value: sampleMd.replace("date: 2026-08-23", "date: 2025-01-01") },
+    });
+    openList();
+
+    expect(titles(container)?.at(-1)).toBe("夏の更新");
+  });
+
+  it("既存記事が5件以下ならすべて出る", () => {
+    const articles = [existing("2026-01-01", "A"), existing("2026-02-01", "B")];
+    const { container } = render(<ArticleStudio articles={articles} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(titles(container)).toEqual(["夏の更新", "B", "A"]);
+  });
+});

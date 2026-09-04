@@ -133,10 +133,16 @@ export function ArticleStudio({
   };
 
   // 既存記事に混ぜて日付の新しい順の直近6件。隣の記事と並べることで
-  // タイトルの折り返しやサムネイルの雰囲気を比較できる（spec §9）
-  const listPreview = [...articles, draft]
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-    .slice(0, LIST_PREVIEW_COUNT);
+  // タイトルの折り返しやサムネイルの雰囲気を比較できる（spec §9）。
+  // 編集中の記事は先に確保する。過去日を書いたとき、id がずれるかを
+  // 確認したい場面でこそ一覧から漏れてしまうため
+  const byDateDesc = (a: Article, b: Article) =>
+    a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+
+  const listPreview = [
+    ...[...articles].sort(byDateDesc).slice(0, LIST_PREVIEW_COUNT - 1),
+    draft,
+  ].sort(byDateDesc);
 
   // 下書きは検証せずそのまま出す。押した後も編集を続けられる（spec §9）
   const downloadDraft = () => {
