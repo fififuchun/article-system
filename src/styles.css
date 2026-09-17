@@ -1,0 +1,582 @@
+/*
+ * @fififuchun/article-system デフォルトスタイル
+ *
+ * すべてのセレクタを :where() で包み、詳細度を 0 にしています（spec §10）。
+ * クラスセレクタは詳細度が同点のため、同点だと CSS の定義順で勝敗が決まり、
+ * Vite のコード分割や HMR で順序が変わりえます。:where() なら読み込み順に
+ * 関係なく利用側の上書きが常に効きます。
+ *
+ * 色やサイズは下の変数を再定義するだけで差し替えられます。
+ */
+
+:where(:root) {
+  /* 色 */
+  --as-color-text: #333;
+  --as-color-heading: #222;
+  --as-color-muted: #888;
+  --as-color-subtle: #aaa;
+  --as-color-accent: #4a90e2;
+  --as-color-border: #eee;
+  --as-color-surface: #fff;
+  --as-color-surface-muted: #f6f7f9;
+  --as-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --as-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --as-color-error: #c0392b;
+  --as-color-error-surface: #fdf3f2;
+
+  /* 書体 */
+  --as-font-body: system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP", Meiryo, sans-serif;
+  --as-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Noto Sans Mono", monospace;
+
+  /* 文字サイズ — タイトル > h2 > h3 > h4 の段差をここで作る */
+  --as-text-title: 1.5rem;
+  --as-text-heading: 1.25rem;
+  --as-text-subheading: 1rem;
+  --as-text-subsubheading: 0.9375rem;
+  --as-text-body: 0.9375rem;
+  --as-text-small: 0.8125rem;
+  --as-text-meta: 0.75rem;
+  --as-text-date-year: 0.875rem;
+  --as-text-date-day: 1.75rem;
+
+  /* 行間 */
+  --as-leading-body: 1.8;
+  --as-leading-heading: 1.4;
+
+  /* 余白 */
+  --as-space-xs: 0.25rem;
+  --as-space-sm: 0.5rem;
+  --as-space-md: 0.75rem;
+  --as-space-lg: 1.25rem;
+  --as-space-xl: 2rem;
+
+  /* レイアウト */
+  --as-article-width: 45rem;
+  --as-radius: 8px;
+  --as-radius-sm: 6px;
+}
+
+/* 記事のタイポグラフィ
+ *
+ * 見出しは h2 / h3 / h4 で出力されるため、ブラウザ標準の文字サイズと
+ * 余白をここで打ち消します。author 側の宣言は詳細度に関係なく
+ * ブラウザ標準に優先するため、:where() のままリセットが効きます。
+ */
+
+:where(.as-title) {
+  flex: 1;
+  align-self: center;
+  font-size: var(--as-text-title);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  margin: 0;
+}
+
+:where(.as-heading) {
+  font-size: var(--as-text-heading);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  border-left: 4px solid var(--as-color-accent);
+  padding-left: var(--as-space-md);
+  margin: var(--as-space-xl) 0 var(--as-space-md);
+}
+
+:where(.as-subheading) {
+  font-size: var(--as-text-subheading);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  margin: var(--as-space-lg) 0 var(--as-space-sm);
+}
+
+:where(.as-subsubheading) {
+  font-size: var(--as-text-subsubheading);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-text);
+  margin: var(--as-space-lg) 0 var(--as-space-xs);
+}
+
+:where(.as-paragraph) {
+  font-size: var(--as-text-body);
+  line-height: var(--as-leading-body);
+  color: var(--as-color-text);
+  margin: var(--as-space-md) 0;
+}
+
+/* 記事の外枠と周辺 */
+
+:where(.as-article) {
+  font-family: var(--as-font-body);
+  color: var(--as-color-text);
+  background: var(--as-color-surface);
+  max-width: var(--as-article-width);
+  margin-inline: auto;
+  padding: var(--as-space-xl);
+  border-radius: var(--as-radius);
+  box-shadow: var(--as-shadow-card);
+}
+
+:where(.as-header) {
+  display: flex;
+  align-items: stretch;
+  gap: var(--as-space-lg);
+  margin-bottom: var(--as-space-md);
+}
+
+/* 日付ブロック。右の罫線がタイトルとの仕切りになる */
+:where(.as-date) {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  padding-right: var(--as-space-lg);
+  border-right: 1px solid var(--as-color-border);
+}
+
+:where(.as-date-year) {
+  font-size: var(--as-text-date-year);
+  line-height: 1.2;
+  color: var(--as-color-muted);
+  margin: 0;
+}
+
+:where(.as-date-day) {
+  font-size: var(--as-text-date-day);
+  line-height: 1.2;
+  color: var(--as-color-muted);
+  margin: 0;
+}
+
+:where(.as-latest-update) {
+  display: flex;
+  align-items: center;
+  gap: var(--as-space-xs);
+  font-size: var(--as-text-meta);
+  color: var(--as-color-subtle);
+  margin-bottom: var(--as-space-lg);
+}
+
+/* サイズを指定しないとインライン SVG は 300x150 で描画される */
+:where(.as-date-icon) {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
+}
+
+:where(.as-thumbnail) {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--as-radius-sm);
+  margin-bottom: var(--as-space-xl);
+}
+
+:where(.as-image) {
+  margin: var(--as-space-lg) 0;
+}
+
+:where(.as-image img) {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--as-radius-sm);
+}
+
+/* 文中のインライン画像。はみ出しを防ぐ */
+:where(.as-paragraph img) {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+:where(.as-footer) {
+  font-size: var(--as-text-small);
+  color: var(--as-color-muted);
+  margin-top: var(--as-space-xl);
+  padding-top: var(--as-space-md);
+  border-top: 1px solid var(--as-color-border);
+}
+
+/* 本文中の素の要素（remark-gfm の出力）
+ *
+ * リスト・表・引用・コードブロックには as- クラスが付かないため、
+ * 記事の外枠からの子孫セレクタで当てます（spec §7）。
+ */
+
+:where(.as-article ul, .as-article ol) {
+  font-size: var(--as-text-body);
+  line-height: var(--as-leading-body);
+  color: var(--as-color-text);
+  margin: var(--as-space-md) 0;
+  padding-left: 1.5em;
+}
+
+:where(.as-article li) {
+  margin: var(--as-space-xs) 0;
+}
+
+:where(.as-article li > ul, .as-article li > ol) {
+  margin: var(--as-space-xs) 0;
+}
+
+/* タスクリスト。マーカーを消してチェックボックスと行頭を揃える */
+:where(.as-article li:has(> input[type="checkbox"])) {
+  list-style: none;
+  margin-left: -1.5em;
+}
+
+:where(.as-article input[type="checkbox"]) {
+  margin-right: var(--as-space-xs);
+}
+
+:where(.as-article table) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--as-text-small);
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-text);
+  margin: var(--as-space-lg) 0;
+}
+
+:where(.as-article th, .as-article td) {
+  border: 1px solid var(--as-color-border);
+  padding: var(--as-space-sm) var(--as-space-md);
+  text-align: left;
+}
+
+:where(.as-article th) {
+  background: var(--as-color-surface-muted);
+  font-weight: bold;
+}
+
+:where(.as-article blockquote) {
+  font-size: var(--as-text-body);
+  line-height: var(--as-leading-body);
+  color: var(--as-color-muted);
+  border-left: 4px solid var(--as-color-border);
+  margin: var(--as-space-lg) 0;
+  padding: var(--as-space-sm) var(--as-space-lg);
+}
+
+:where(.as-article code) {
+  font-family: var(--as-font-mono);
+  font-size: 0.9em;
+  background: var(--as-color-surface-muted);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+:where(.as-article pre) {
+  font-family: var(--as-font-mono);
+  font-size: var(--as-text-small);
+  line-height: 1.6;
+  background: var(--as-color-surface-muted);
+  margin: var(--as-space-lg) 0;
+  padding: var(--as-space-md);
+  border-radius: var(--as-radius-sm);
+  overflow-x: auto;
+}
+
+/* コードブロック内の code は pre 側の見た目に任せる */
+:where(.as-article pre code) {
+  font-size: inherit;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* 一覧のグリッド
+ *
+ * renderLink が返す要素（多くは <a>）が as-grid と as-card のあいだに入ります。
+ * グリッドの直接の子はそのリンクなので、リンク側にレイアウトを当てます（spec §8）。
+ */
+
+:where(.as-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--as-space-lg);
+  font-family: var(--as-font-body);
+}
+
+/* リンクの既定の下線と色を打ち消し、カードを高さいっぱいに広げる */
+:where(.as-grid > *) {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+:where(.as-card) {
+  height: 100%;
+  background: var(--as-color-surface);
+  border-radius: var(--as-radius);
+  box-shadow: var(--as-shadow-card);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+:where(.as-card:hover) {
+  box-shadow: var(--as-shadow-card-hover);
+}
+
+:where(.as-card-image) {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  object-fit: cover;
+}
+
+:where(.as-card-title) {
+  font-size: var(--as-text-body);
+  font-weight: bold;
+  line-height: var(--as-leading-heading);
+  color: var(--as-color-heading);
+  margin: 0;
+  padding: var(--as-space-md) var(--as-space-md) var(--as-space-xs);
+}
+
+:where(.as-card-date) {
+  display: flex;
+  align-items: center;
+  gap: var(--as-space-xs);
+  font-size: var(--as-text-meta);
+  color: var(--as-color-muted);
+  padding: 0 var(--as-space-md) var(--as-space-md);
+}
+
+:where(.as-card-date-icon) {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
+}
+
+/* レスポンシブ
+ *
+ * メディアクエリの条件には CSS 変数を使えないため、ここだけリテラルで書きます。
+ * 40rem = 640px。
+ */
+
+@media (max-width: 40rem) {
+  :where(.as-article) {
+    padding: var(--as-space-lg);
+  }
+
+  :where(.as-grid) {
+    grid-template-columns: 1fr;
+    gap: var(--as-space-md);
+  }
+
+  :where(.as-heading) {
+    margin-top: var(--as-space-lg);
+  }
+
+  :where(.as-thumbnail) {
+    margin-bottom: var(--as-space-lg);
+  }
+
+  /* 表だけは縮められないので横スクロールに逃がす */
+  :where(.as-article table) {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* ArticleStudio
+ *
+ * PC は左右2ペイン、スマホは上下2ペイン（spec §9）。
+ * 列の指定だけを切り替え、中身の構造は変えません。
+ */
+
+:where(.as-studio) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--as-space-lg);
+  align-items: start;
+  font-family: var(--as-font-body);
+  color: var(--as-color-text);
+}
+
+:where(.as-studio-editor) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--as-space-md);
+}
+
+:where(.as-studio-textarea) {
+  width: 100%;
+  min-height: 60vh;
+  box-sizing: border-box;
+  font-family: var(--as-font-mono);
+  font-size: var(--as-text-small);
+  line-height: 1.7;
+  color: var(--as-color-text);
+  background: var(--as-color-surface);
+  border: 1px solid var(--as-color-border);
+  border-radius: var(--as-radius-sm);
+  padding: var(--as-space-md);
+  resize: vertical;
+}
+
+:where(.as-studio-tabs) {
+  display: flex;
+  gap: var(--as-space-xs);
+  margin-bottom: var(--as-space-md);
+}
+
+:where(.as-studio-tabs button) {
+  font: inherit;
+  font-size: var(--as-text-small);
+  color: var(--as-color-muted);
+  background: var(--as-color-surface);
+  border: 1px solid var(--as-color-border);
+  border-radius: var(--as-radius-sm);
+  padding: var(--as-space-xs) var(--as-space-md);
+  cursor: pointer;
+}
+
+:where(.as-studio-tabs button[aria-selected="true"]) {
+  color: var(--as-color-surface);
+  background: var(--as-color-accent);
+  border-color: var(--as-color-accent);
+}
+
+/* 仮登録した画像。名前を直してその場で保存できる */
+:where(.as-studio-images) {
+  font-size: var(--as-text-small);
+}
+
+:where(.as-studio-images ul) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+:where(.as-studio-images li) {
+  display: flex;
+  align-items: center;
+  gap: var(--as-space-sm);
+  padding: var(--as-space-xs) 0;
+}
+
+:where(.as-studio-images img) {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: var(--as-radius-sm);
+  flex: none;
+}
+
+:where(.as-studio-images input) {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--as-color-text);
+  border: 1px solid var(--as-color-border);
+  border-radius: var(--as-radius-sm);
+  padding: var(--as-space-xs) var(--as-space-sm);
+}
+
+:where(.as-studio-images button) {
+  display: flex;
+  align-items: center;
+  color: var(--as-color-muted);
+  background: none;
+  border: none;
+  padding: var(--as-space-xs);
+  cursor: pointer;
+}
+
+:where(.as-studio-image-download-icon) {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+:where(.as-studio-images-note) {
+  color: var(--as-color-muted);
+  margin: 0 0 var(--as-space-sm);
+}
+
+:where(.as-studio-image-pending) {
+  color: var(--as-color-error);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* 検証結果。押したときだけ出る（spec §9） */
+:where(.as-studio-issues) {
+  font-size: var(--as-text-small);
+  color: var(--as-color-error);
+  background: var(--as-color-error-surface);
+  border: 1px solid var(--as-color-error);
+  border-radius: var(--as-radius-sm);
+  padding: var(--as-space-md);
+}
+
+:where(.as-studio-issues ul) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+:where(.as-studio-issues li) {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--as-space-xs);
+  padding: var(--as-space-xs) 0;
+}
+
+:where(.as-studio-issue-icon) {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
+}
+
+/* 編集中の記事のカードに重ねる id の予告。カードの高さを崩さない */
+:where(.as-studio-draft-card) {
+  position: relative;
+}
+
+:where(.as-studio-id-preview) {
+  position: absolute;
+  top: var(--as-space-sm);
+  left: var(--as-space-sm);
+  z-index: 1;
+  font-size: var(--as-text-meta);
+  color: var(--as-color-surface);
+  background: var(--as-color-accent);
+  border-radius: var(--as-radius-sm);
+  padding: var(--as-space-xs) var(--as-space-sm);
+}
+
+:where(.as-studio-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--as-space-sm);
+}
+
+:where(.as-studio-actions button) {
+  font: inherit;
+  font-size: var(--as-text-small);
+  color: var(--as-color-text);
+  background: var(--as-color-surface);
+  border: 1px solid var(--as-color-border);
+  border-radius: var(--as-radius-sm);
+  padding: var(--as-space-sm) var(--as-space-lg);
+  cursor: pointer;
+}
+
+@media (max-width: 40rem) {
+  :where(.as-studio) {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.as-studio-textarea) {
+    min-height: 40vh;
+  }
+}

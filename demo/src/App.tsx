@@ -3,6 +3,7 @@ import { ArticleDetail, ArticleList, type Article } from "@fififuchun/article-sy
 import { articles } from "./lib/articles";
 import PreviewPage from "./pages/PreviewPage";
 import "./styles.css";
+import "@fififuchun/article-system/styles.css";
 
 type Route = "list" | "detail" | "preview";
 
@@ -14,8 +15,32 @@ function getRoute(): { route: Route; id?: number } {
   return { route: "list" };
 }
 
+/* カスタム時だけ渡すクラス。渡さなければ demo 独自CSSは要素に付かず当たらない */
+const detailClassNames = {
+  wrapper: "article-wrapper",
+  dateYear: "article-date-year",
+  dateDay: "article-date-day",
+  title: "article-title",
+  latestUpdate: "article-latest-update",
+  thumbnail: "article-thumbnail",
+  heading: "article-heading",
+  subheading: "article-subheading",
+  paragraph: "article-paragraph",
+  image: "article-image",
+  footer: "article-footer",
+};
+
+const listClassNames = {
+  grid: "grid",
+  card: "card",
+  cardImage: "card-image",
+  cardTitle: "card-title",
+  cardDate: "card-date",
+};
+
 export default function App() {
   const [{ route, id }, setRouteState] = useState(getRoute);
+  const [useCustomCss, setUseCustomCss] = useState(false);
 
   useEffect(() => {
     const handler = () => setRouteState(getRoute());
@@ -49,6 +74,13 @@ export default function App() {
           >
             プレビュー
           </a>
+          <button
+            type="button"
+            className="css-toggle"
+            onClick={() => setUseCustomCss((current) => !current)}
+          >
+            CSS: {useCustomCss ? "カスタム" : "デフォルト"}
+          </button>
         </div>
       </nav>
 
@@ -67,19 +99,7 @@ export default function App() {
               article={selectedArticle}
               imageBasePath="https://placehold.co/800x400/e8e8e8/999999?text="
               dateLabel="最終更新日時"
-              classNames={{
-                wrapper: "article-wrapper",
-                dateYear: "article-date-year",
-                dateDay: "article-date-day",
-                title: "article-title",
-                latestUpdate: "article-latest-update",
-                thumbnail: "article-thumbnail",
-                heading: "article-heading",
-                subheading: "article-subheading",
-                paragraph: "article-paragraph",
-                image: "article-image",
-                footer: "article-footer",
-              }}
+              classNames={useCustomCss ? detailClassNames : undefined}
             />
           </>
         )}
@@ -89,19 +109,9 @@ export default function App() {
             articles={articles}
             imageBasePath="https://placehold.co/400x240/e8e8e8/999999?text="
             getArticleUrl={(article) => `#/article/${article.id}`}
-            classNames={{
-              grid: "grid",
-              card: "card",
-              cardImage: "card-image",
-              cardTitle: "card-title",
-              cardDate: "card-date",
-            }}
+            classNames={useCustomCss ? listClassNames : undefined}
             renderLink={(url, children, key) => (
-              <a
-                key={key}
-                href={url}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
+              <a key={key} href={url}>
                 {children}
               </a>
             )}

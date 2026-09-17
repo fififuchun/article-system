@@ -1,5 +1,8 @@
 import type { Article, ArticleListClassNames } from "../types";
 import { ClockIcon } from "../icons/ClockIcon";
+import { cx } from "../cx";
+import { formatDate } from "../formatDate";
+import { resolveImageSrc } from "../resolveImageSrc";
 
 interface Props {
   articles: Article[];
@@ -21,20 +24,20 @@ export function ArticleList({
   renderLink,
 }: Props) {
   return (
-    <div className={classNames.grid}>
+    <div className={cx("as-grid", classNames.grid)}>
       {articles.map((article) => {
-        const [year, month, day] = article.latestUpdate.split("-").map(Number);
+        const { year, month, day } = formatDate(article.latestUpdate);
         return renderLink(
           getArticleUrl(article),
-          <div className={classNames.card}>
+          <div className={cx("as-card", classNames.card)}>
             <img
-              src={`${imageBasePath}${article.thumbnail}`}
+              src={resolveImageSrc(article.thumbnail, imageBasePath)}
               alt={article.title}
-              className={classNames.cardImage}
+              className={cx("as-card-image", classNames.cardImage)}
             />
-            <p className={classNames.cardTitle}>{article.title}</p>
-            <div className={classNames.cardDate}>
-              <ClockIcon className={classNames.cardDateIcon} />
+            <p className={cx("as-card-title", classNames.cardTitle)}>{article.title}</p>
+            <div className={cx("as-card-date", classNames.cardDate)}>
+              <ClockIcon className={cx("as-card-date-icon", classNames.cardDateIcon)} />
               <span>{year}年{month}月{day}日</span>
             </div>
           </div>,

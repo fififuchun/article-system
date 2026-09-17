@@ -2,6 +2,8 @@ import * as react_jsx_runtime from 'react/jsx-runtime';
 
 interface Article {
     id: number;
+    /** 拡張子付きファイル名。衝突検出と既存記事の編集に使う。URL には使わない（spec §3） */
+    filename: string;
     title: string;
     date: string;
     latestUpdate: string;
@@ -34,12 +36,34 @@ interface ArticleListClassNames {
     cardDate?: string;
     cardDateIcon?: string;
 }
-interface ArticlePreviewClassNames {
+/** ArticleStudio のクラス名（spec §9 のレイアウト図に対応） */
+interface ArticleStudioClassNames {
     wrapper?: string;
     editorPane?: string;
     textarea?: string;
     previewPane?: string;
+    tabs?: string;
+    issues?: string;
+    imagePane?: string;
+    actions?: string;
 }
+
+interface Issue {
+    level: "error";
+    field?: string;
+    message: string;
+}
+interface ValidateContext {
+    /** ファイル名衝突の検出に使う既存記事 */
+    articles?: Article[];
+    /** 検証対象のファイル名 */
+    filename?: string;
+}
+/**
+ * md の文字列を検証して問題の一覧を返す。
+ * 問題が無ければ空配列を返す。例外は投げない。
+ */
+declare function validateArticle(raw: string, context?: ValidateContext): Issue[];
 
 declare function createArticles(rawFiles: Record<string, string>): Article[];
 
@@ -61,16 +85,51 @@ interface Props$1 {
 declare function ArticleList({ articles, imageBasePath, getArticleUrl, classNames, renderLink, }: Props$1): react_jsx_runtime.JSX.Element;
 
 interface Props {
+    /**
+     * 既存記事。**必須です。**
+     *
+     * 渡さないとファイル名の衝突を検出できず、既存記事が上書きで消えます（spec §6）。
+     * 記事が0件のプロジェクトでも createArticles({}) の戻り値をそのまま渡してください。
+     */
+    articles: Article[];
+    /** localStorage の保存先を分ける（spec §9） */
+    storageKey?: string;
     imageBasePath?: string;
     dateLabel?: string;
-    classNames?: ArticlePreviewClassNames;
+    classNames?: ArticleStudioClassNames;
     articleClassNames?: ArticleDetailClassNames;
-    defaultValue?: string;
 }
-declare function ArticlePreview({ imageBasePath, dateLabel, classNames, articleClassNames, defaultValue, }: Props): react_jsx_runtime.JSX.Element;
+declare function ArticleStudio({ articles, storageKey, imageBasePath, dateLabel, classNames, articleClassNames, }: Props): react_jsx_runtime.JSX.Element;
 
-declare function ClockIcon({ className }: {
+/**
+ * アイコン共通の props（spec §11）。
+ *
+ * サイズは CSS で指定するため width / height は受け取りません。
+ * 色は `fill="currentColor"` により CSS の `color` で変わります。
+ */
+interface IconProps {
     className?: string;
-}): react_jsx_runtime.JSX.Element;
+}
 
-export { type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticlePreview, type ArticlePreviewClassNames, ClockIcon, createArticles };
+/** 右向き。他の向きは CSS の transform: rotate() で作る */
+declare function ArrowIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function ClockIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function CloseIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function CopyIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function DownloadIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function ExternalLinkIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function ImageIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function PersonIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function TagIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+declare function WarningIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
+
+export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };

@@ -219,3 +219,20 @@ body {
   font-size: 13px;
   color: #888;
 }
+
+/* デフォルトCSS / カスタムCSS の切り替え */
+.css-toggle {
+  font: inherit;
+  font-size: 13px;
+  color: #555;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.css-toggle:hover {
+  border-color: #4a90e2;
+  color: #4a90e2;
+}
