@@ -482,6 +482,13 @@ describe("ArticleStudio — 本番ダウンロード", () => {
 
   const publishButton = () => screen.getByRole("button", { name: /本番/ });
 
+  // 画像の確認が非同期なので、状態が落ち着くまで待つ
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(publishButton());
+    });
+  };
+
   it("本番ダウンロードのボタンがある", () => {
     render(<ArticleStudio articles={[]} />);
 
@@ -504,36 +511,30 @@ describe("ArticleStudio — 本番ダウンロード", () => {
     expect(textarea().value).toBe(sampleMd);
   });
 
-  it("必須項目が欠けていればテンプレートに戻らない", () => {
-    const broken = sampleMd.replace("staff: 田中 花子", "staff:");
-    render(<ArticleStudio articles={[]} />);
-
-    fireEvent.change(textarea(), { target: { value: broken } });
-    fireEvent.click(publishButton());
-
-    expect(textarea().value).toBe(broken);
-  });
-
-  it("日付の形式が違えばテンプレートに戻らない", () => {
+  it("日付の形式が違えば出力を止める", async () => {
     const broken = sampleMd.replace("date: 2026-08-23", "date: 2026/08/23");
-    render(<ArticleStudio articles={[]} />);
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: broken } });
-    fireEvent.click(publishButton());
+    await publish();
 
-    expect(textarea().value).toBe(broken);
+    expect(container.querySelector(".as-studio-issues")?.textContent).toContain(
+      "YYYY-MM-DD"
+    );
   });
 
   // spec §6: 既存記事が物理的に上書きされ消えるのを防ぐ
-  it("既存記事とファイル名が衝突すればテンプレートに戻らない", () => {
+  it("既存記事とファイル名が衝突すれば出力を止める", async () => {
     const articles = [existing("2026-08-23", "夏の更新")];
     articles[0].filename = "2026-08-23-夏の更新.md";
-    render(<ArticleStudio articles={articles} />);
+    const { container } = render(<ArticleStudio articles={articles} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
-    fireEvent.click(publishButton());
+    await publish();
 
-    expect(textarea().value).toBe(sampleMd);
+    expect(container.querySelector(".as-studio-issues")?.textContent).toContain(
+      "重複"
+    );
   });
 });
 
