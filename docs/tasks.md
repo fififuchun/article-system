@@ -153,6 +153,18 @@
 - [x] README を改訂する⑤ — Studio を本番に置く場合のホスティング認証の推奨、`subsubheading` の記載漏れ、一覧を新しい順にする `[...articles].reverse()` を追記する
 - [x] `docs/` 配下（`overview.md` / `architecture.md` / `api.md`）を新しい実装に合わせて更新する
 
+### フェーズ8: Studio のレイアウト修正（spec §9）
+
+デモを触って決めた7件。spec §9 のレイアウト図を更新済み。
+
+- [ ] 操作を上端の帯にまとめる — `as-studio-actions` と `as-studio-tabs` をグリッドの1段目に置き、狭い画面では解体して各ペインの側に戻す
+- [ ] 検証エラーを textarea の上に移す
+- [ ] ペイン間の `gap` を無くして罫線1本にする
+- [ ] textarea の角丸と枠線を外し、ペインいっぱいに広げる
+- [ ] ボタンの角丸をやめ、罫線で区切った一続きの帯にする
+- [ ] 帯を sticky にし、オフセットを `--as-studio-header-top` で調整できるようにする
+- [ ] `demo/` で `--as-studio-header-top` を指定し、ナビと重ならないことを目視確認する
+
 ---
 
 ## ⚠️ 注意点・前提条件
