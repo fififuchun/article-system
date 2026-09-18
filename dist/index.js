@@ -553,6 +553,15 @@ ${markdown}
     setPlacementPending(images.length > 0);
   };
   return /* @__PURE__ */ jsxs4("div", { className: cx("as-studio", classNames.wrapper), children: [
+    /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
+      /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
+      /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
+      /* @__PURE__ */ jsx6("button", { type: "button", onClick: startNewArticle, children: "\u65B0\u3057\u304F\u66F8\u304F" })
+    ] }),
+    /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-tabs", classNames.tabs), role: "tablist", children: [
+      /* @__PURE__ */ jsx6("button", { type: "button", role: "tab", "aria-selected": tab === "detail", onClick: () => setTab("detail"), children: "\u8A73\u7D30" }),
+      /* @__PURE__ */ jsx6("button", { type: "button", role: "tab", "aria-selected": tab === "list", onClick: () => setTab("list"), children: "\u4E00\u89A7" })
+    ] }),
     /* @__PURE__ */ jsxs4(
       "div",
       {
@@ -560,6 +569,10 @@ ${markdown}
         onDrop: handleDrop,
         onDragOver: (event) => event.preventDefault(),
         children: [
+          issues.length > 0 && /* @__PURE__ */ jsx6("div", { className: cx("as-studio-issues", classNames.issues), role: "alert", children: /* @__PURE__ */ jsx6("ul", { children: issues.map((issue, index) => /* @__PURE__ */ jsxs4("li", { children: [
+            /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
+            /* @__PURE__ */ jsx6("span", { children: issue.message })
+          ] }, index)) }) }),
           /* @__PURE__ */ jsx6(
             "textarea",
             {
@@ -597,52 +610,37 @@ ${markdown}
               ),
               placementPending && /* @__PURE__ */ jsx6("span", { className: "as-studio-image-pending", children: "\u672A\u914D\u7F6E" })
             ] }, image.url)) })
-          ] }),
-          issues.length > 0 && /* @__PURE__ */ jsx6("div", { className: cx("as-studio-issues", classNames.issues), role: "alert", children: /* @__PURE__ */ jsx6("ul", { children: issues.map((issue, index) => /* @__PURE__ */ jsxs4("li", { children: [
-            /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
-            /* @__PURE__ */ jsx6("span", { children: issue.message })
-          ] }, index)) }) }),
-          /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
-            /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
-            /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
-            /* @__PURE__ */ jsx6("button", { type: "button", onClick: startNewArticle, children: "\u65B0\u3057\u304F\u66F8\u304F" })
           ] })
         ]
       }
     ),
-    /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-preview", classNames.previewPane), children: [
-      /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-tabs", classNames.tabs), role: "tablist", children: [
-        /* @__PURE__ */ jsx6("button", { type: "button", role: "tab", "aria-selected": tab === "detail", onClick: () => setTab("detail"), children: "\u8A73\u7D30" }),
-        /* @__PURE__ */ jsx6("button", { type: "button", role: "tab", "aria-selected": tab === "list", onClick: () => setTab("list"), children: "\u4E00\u89A7" })
-      ] }),
-      tab === "detail" ? /* @__PURE__ */ jsx6(
-        ArticleDetail,
-        {
-          article: previewArticle,
-          imageBasePath,
-          dateLabel,
-          classNames: articleClassNames
-        }
-      ) : /* @__PURE__ */ jsx6(
-        ArticleList,
-        {
-          articles: listPreview,
-          imageBasePath,
-          getArticleUrl: (article) => article === draft ? DRAFT_MARK : "#",
-          renderLink: (url, children, key) => url === DRAFT_MARK ? (
-            // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
-            /* @__PURE__ */ jsxs4("div", { className: "as-studio-draft-card", children: [
-              /* @__PURE__ */ jsxs4("span", { className: "as-studio-id-preview", children: [
-                "id \u306F ",
-                draft.id,
-                " \u306B\u306A\u308A\u307E\u3059"
-              ] }),
-              children
-            ] }, key)
-          ) : /* @__PURE__ */ jsx6("div", { children }, key)
-        }
-      )
-    ] })
+    /* @__PURE__ */ jsx6("div", { className: cx("as-studio-preview", classNames.previewPane), children: tab === "detail" ? /* @__PURE__ */ jsx6(
+      ArticleDetail,
+      {
+        article: previewArticle,
+        imageBasePath,
+        dateLabel,
+        classNames: articleClassNames
+      }
+    ) : /* @__PURE__ */ jsx6(
+      ArticleList,
+      {
+        articles: listPreview,
+        imageBasePath,
+        getArticleUrl: (article) => article === draft ? DRAFT_MARK : "#",
+        renderLink: (url, children, key) => url === DRAFT_MARK ? (
+          // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
+          /* @__PURE__ */ jsxs4("div", { className: "as-studio-draft-card", children: [
+            /* @__PURE__ */ jsxs4("span", { className: "as-studio-id-preview", children: [
+              "id \u306F ",
+              draft.id,
+              " \u306B\u306A\u308A\u307E\u3059"
+            ] }),
+            children
+          ] }, key)
+        ) : /* @__PURE__ */ jsx6("div", { children }, key)
+      }
+    ) })
   ] });
 }
 

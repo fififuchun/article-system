@@ -173,11 +173,47 @@ export function ArticleStudio({
 
   return (
     <div className={cx("as-studio", classNames.wrapper)}>
+      {/* 操作は上端の帯にまとめる。狭い画面では CSS で各ペインの側に戻す（spec §9） */}
+      <div className={cx("as-studio-actions", classNames.actions)}>
+        <button type="button" onClick={downloadForPublish}>
+          本番ダウンロード
+        </button>
+        <button type="button" onClick={downloadDraft}>
+          下書きダウンロード
+        </button>
+        <button type="button" onClick={startNewArticle}>
+          新しく書く
+        </button>
+      </div>
+
+      <div className={cx("as-studio-tabs", classNames.tabs)} role="tablist">
+        <button type="button" role="tab" aria-selected={tab === "detail"} onClick={() => setTab("detail")}>
+          詳細
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "list"} onClick={() => setTab("list")}>
+          一覧
+        </button>
+      </div>
+
       <div
         className={cx("as-studio-editor", classNames.editorPane)}
         onDrop={handleDrop}
         onDragOver={(event) => event.preventDefault()}
       >
+        {/* 押したボタンの真下に出す。textarea の下だと画面外に出て気づかない */}
+        {issues.length > 0 && (
+          <div className={cx("as-studio-issues", classNames.issues)} role="alert">
+            <ul>
+              {issues.map((issue, index) => (
+                <li key={index}>
+                  <WarningIcon className="as-studio-issue-icon" />
+                  <span>{issue.message}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <textarea
           className={cx("as-studio-textarea", classNames.textarea)}
           value={raw}
@@ -218,42 +254,9 @@ export function ArticleStudio({
           </div>
         )}
 
-        {issues.length > 0 && (
-          <div className={cx("as-studio-issues", classNames.issues)} role="alert">
-            <ul>
-              {issues.map((issue, index) => (
-                <li key={index}>
-                  <WarningIcon className="as-studio-issue-icon" />
-                  <span>{issue.message}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className={cx("as-studio-actions", classNames.actions)}>
-          <button type="button" onClick={downloadForPublish}>
-            本番ダウンロード
-          </button>
-          <button type="button" onClick={downloadDraft}>
-            下書きダウンロード
-          </button>
-          <button type="button" onClick={startNewArticle}>
-            新しく書く
-          </button>
-        </div>
       </div>
 
       <div className={cx("as-studio-preview", classNames.previewPane)}>
-        <div className={cx("as-studio-tabs", classNames.tabs)} role="tablist">
-          <button type="button" role="tab" aria-selected={tab === "detail"} onClick={() => setTab("detail")}>
-            詳細
-          </button>
-          <button type="button" role="tab" aria-selected={tab === "list"} onClick={() => setTab("list")}>
-            一覧
-          </button>
-        </div>
-
         {tab === "detail" ? (
           <ArticleDetail
             article={previewArticle}

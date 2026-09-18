@@ -54,6 +54,8 @@
 
   /* レイアウト */
   --as-article-width: 45rem;
+  /* Studio の操作帯が貼り付く位置。利用側に固定ヘッダーがあればその高さを入れる */
+  --as-studio-header-top: 0px;
   --as-radius: 8px;
   --as-radius-sm: 6px;
 }
@@ -396,18 +398,75 @@
 :where(.as-studio) {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--as-space-lg);
+  grid-template-areas:
+    "actions tabs"
+    "editor  preview";
   align-items: start;
   font-family: var(--as-font-body);
   color: var(--as-color-text);
+  background: var(--as-color-surface);
+}
+
+/* 操作の帯。actions と tabs は別要素だが、同じ行に並べて1本の帯に見せる。
+   狭い画面ではそれぞれを各ペインの側へ戻せるよう、入れ子にはしない（spec §9） */
+:where(.as-studio-actions) {
+  grid-area: actions;
+  position: sticky;
+  top: var(--as-studio-header-top);
+  z-index: 2;
+  display: flex;
+  background: var(--as-color-surface);
+  border-bottom: 1px solid var(--as-color-border);
+}
+
+:where(.as-studio-tabs) {
+  grid-area: tabs;
+  position: sticky;
+  top: var(--as-studio-header-top);
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--as-color-surface);
+  border-bottom: 1px solid var(--as-color-border);
+}
+
+/* 角丸を持たず、罫線で区切った一続きの帯にする */
+:where(.as-studio-actions button, .as-studio-tabs button) {
+  font: inherit;
+  font-size: var(--as-text-small);
+  color: var(--as-color-text);
+  background: none;
+  border: none;
+  border-right: 1px solid var(--as-color-border);
+  padding: var(--as-space-sm) var(--as-space-lg);
+  cursor: pointer;
+}
+
+:where(.as-studio-tabs button) {
+  color: var(--as-color-muted);
+  border-right: none;
+  border-left: 1px solid var(--as-color-border);
+}
+
+:where(.as-studio-tabs button[aria-selected="true"]) {
+  color: var(--as-color-surface);
+  background: var(--as-color-accent);
 }
 
 :where(.as-studio-editor) {
+  grid-area: editor;
   display: flex;
   flex-direction: column;
-  gap: var(--as-space-md);
+  /* ペイン間は罫線1本。隙間は空けない */
+  border-right: 1px solid var(--as-color-border);
 }
 
+:where(.as-studio-preview) {
+  grid-area: preview;
+  padding: var(--as-space-lg);
+}
+
+/* 角丸も枠線も持たず、ペインいっぱいに広がる */
 :where(.as-studio-textarea) {
   width: 100%;
   min-height: 60vh;
@@ -417,38 +476,16 @@
   line-height: 1.7;
   color: var(--as-color-text);
   background: var(--as-color-surface);
-  border: 1px solid var(--as-color-border);
-  border-radius: var(--as-radius-sm);
-  padding: var(--as-space-md);
+  border: none;
+  padding: var(--as-space-lg);
   resize: vertical;
-}
-
-:where(.as-studio-tabs) {
-  display: flex;
-  gap: var(--as-space-xs);
-  margin-bottom: var(--as-space-md);
-}
-
-:where(.as-studio-tabs button) {
-  font: inherit;
-  font-size: var(--as-text-small);
-  color: var(--as-color-muted);
-  background: var(--as-color-surface);
-  border: 1px solid var(--as-color-border);
-  border-radius: var(--as-radius-sm);
-  padding: var(--as-space-xs) var(--as-space-md);
-  cursor: pointer;
-}
-
-:where(.as-studio-tabs button[aria-selected="true"]) {
-  color: var(--as-color-surface);
-  background: var(--as-color-accent);
-  border-color: var(--as-color-accent);
 }
 
 /* 仮登録した画像。名前を直してその場で保存できる */
 :where(.as-studio-images) {
   font-size: var(--as-text-small);
+  border-top: 1px solid var(--as-color-border);
+  padding: var(--as-space-md) var(--as-space-lg);
 }
 
 :where(.as-studio-images ul) {
@@ -513,9 +550,8 @@
   font-size: var(--as-text-small);
   color: var(--as-color-error);
   background: var(--as-color-error-surface);
-  border: 1px solid var(--as-color-error);
-  border-radius: var(--as-radius-sm);
-  padding: var(--as-space-md);
+  border-bottom: 1px solid var(--as-color-error);
+  padding: var(--as-space-md) var(--as-space-lg);
 }
 
 :where(.as-studio-issues ul) {
@@ -554,29 +590,41 @@
   padding: var(--as-space-xs) var(--as-space-sm);
 }
 
-:where(.as-studio-actions) {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--as-space-sm);
-}
-
-:where(.as-studio-actions button) {
-  font: inherit;
-  font-size: var(--as-text-small);
-  color: var(--as-color-text);
-  background: var(--as-color-surface);
-  border: 1px solid var(--as-color-border);
-  border-radius: var(--as-radius-sm);
-  padding: var(--as-space-sm) var(--as-space-lg);
-  cursor: pointer;
-}
-
 @media (max-width: 40rem) {
+  /* 帯を解体する。タブは切り替え対象であるプレビューの直前に戻す（spec §9） */
   :where(.as-studio) {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "actions"
+      "editor"
+      "tabs"
+      "preview";
+  }
+
+  :where(.as-studio-actions, .as-studio-tabs) {
+    position: static;
+  }
+
+  :where(.as-studio-tabs) {
+    justify-content: flex-start;
+    border-top: 1px solid var(--as-color-border);
+  }
+
+  :where(.as-studio-tabs button) {
+    border-left: none;
+    border-right: 1px solid var(--as-color-border);
+  }
+
+  :where(.as-studio-editor) {
+    border-right: none;
+  }
+
+  :where(.as-studio-preview) {
+    padding: var(--as-space-md);
   }
 
   :where(.as-studio-textarea) {
     min-height: 40vh;
+    padding: var(--as-space-md);
   }
 }

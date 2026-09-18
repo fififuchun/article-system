@@ -9,6 +9,11 @@ body {
   color: #222;
 }
 
+:root {
+  /* このデモのナビが sticky なので、Studio の操作帯をその下にずらす */
+  --as-studio-header-top: 52px;
+}
+
 /* Nav */
 .nav {
   display: flex;
