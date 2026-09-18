@@ -304,7 +304,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-areas: "actions tabs" "editor  preview";
-  align-items: start;
   font-family: var(--as-font-body);
   color: var(--as-color-text);
   background: var(--as-color-surface);
@@ -324,7 +323,6 @@
   top: var(--as-studio-header-top);
   z-index: 2;
   display: flex;
-  justify-content: flex-end;
   background: var(--as-color-surface);
   border-bottom: 1px solid var(--as-color-border);
 }
@@ -339,6 +337,7 @@
   cursor: pointer;
 }
 :where(.as-studio-tabs button) {
+  flex: 1;
   color: var(--as-color-muted);
   border-right: none;
   border-left: 1px solid var(--as-color-border);
@@ -369,6 +368,7 @@
   border: none;
   padding: var(--as-space-lg);
   resize: vertical;
+  flex: 1;
 }
 :where(.as-studio-images) {
   font-size: var(--as-text-small);
@@ -470,7 +470,6 @@
     position: static;
   }
   :where(.as-studio-tabs) {
-    justify-content: flex-start;
     border-top: 1px solid var(--as-color-border);
   }
   :where(.as-studio-tabs button) {

@@ -163,7 +163,7 @@
 - [x] textarea の角丸と枠線を外し、ペインいっぱいに広げる
 - [x] ボタンの角丸をやめ、罫線で区切った一続きの帯にする
 - [x] 帯を sticky にし、オフセットを `--as-studio-header-top` で調整できるようにする
-- [ ] `demo/` で `--as-studio-header-top` を指定し、ナビと重ならないことを目視確認する
+- [x] `demo/` で `--as-studio-header-top` を指定し、ナビと重ならないことを目視確認する
 
 ---
 

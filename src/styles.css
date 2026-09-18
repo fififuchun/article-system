@@ -401,7 +401,8 @@
   grid-template-areas:
     "actions tabs"
     "editor  preview";
-  align-items: start;
+  /* stretch のままにする。start にすると帯の左右で高さが揃わず、
+     ペイン間の罫線も短いほうの高さで途切れる */
   font-family: var(--as-font-body);
   color: var(--as-color-text);
   background: var(--as-color-surface);
@@ -425,7 +426,6 @@
   top: var(--as-studio-header-top);
   z-index: 2;
   display: flex;
-  justify-content: flex-end;
   background: var(--as-color-surface);
   border-bottom: 1px solid var(--as-color-border);
 }
@@ -442,7 +442,9 @@
   cursor: pointer;
 }
 
+/* 右半分を2等分し、詳細と一覧が同じ幅で並ぶようにする */
 :where(.as-studio-tabs button) {
+  flex: 1;
   color: var(--as-color-muted);
   border-right: none;
   border-left: 1px solid var(--as-color-border);
@@ -479,6 +481,8 @@
   border: none;
   padding: var(--as-space-lg);
   resize: vertical;
+  /* ペインが伸びたぶんを埋める。埋めないと下に隙間が残る */
+  flex: 1;
 }
 
 /* 仮登録した画像。名前を直してその場で保存できる */
@@ -606,7 +610,6 @@
   }
 
   :where(.as-studio-tabs) {
-    justify-content: flex-start;
     border-top: 1px solid var(--as-color-border);
   }
 
