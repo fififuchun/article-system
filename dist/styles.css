@@ -340,6 +340,9 @@
   flex: 1;
   color: var(--as-color-muted);
   border-right: none;
+  border-left: none;
+}
+:where(.as-studio-tabs button + button) {
   border-left: 1px solid var(--as-color-border);
 }
 :where(.as-studio-tabs button[aria-selected=true]) {
@@ -473,8 +476,7 @@
     border-top: 1px solid var(--as-color-border);
   }
   :where(.as-studio-tabs button) {
-    border-left: none;
-    border-right: 1px solid var(--as-color-border);
+    border-right: none;
   }
   :where(.as-studio-editor) {
     border-right: none;

@@ -447,6 +447,11 @@
   flex: 1;
   color: var(--as-color-muted);
   border-right: none;
+  border-left: none;
+}
+
+/* 罫線はタブどうしのあいだだけ。先頭の左側には引かない */
+:where(.as-studio-tabs button + button) {
   border-left: 1px solid var(--as-color-border);
 }
 
@@ -613,9 +618,9 @@
     border-top: 1px solid var(--as-color-border);
   }
 
+  /* 広い画面と同じく、罫線はタブどうしのあいだだけにする */
   :where(.as-studio-tabs button) {
-    border-left: none;
-    border-right: 1px solid var(--as-color-border);
+    border-right: none;
   }
 
   :where(.as-studio-editor) {
