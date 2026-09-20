@@ -20,11 +20,19 @@ const params = {
 /** 呼ばれた順に [メソッド, パス] を記録しつつ、GitHub の応答を真似る */
 let calls: [string, string][];
 
-function stubGitHub(existingPaths: string[] = []) {
+function stubGitHub(
+  existingPaths: string[] = [],
+  failAt?: (method: string, path: string) => boolean
+) {
   calls = [];
   const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
     const path = url.replace("https://api.github.com", "");
-    calls.push([init.method ?? "GET", path]);
+    const method = init.method ?? "GET";
+    calls.push([method, path]);
+
+    if (failAt?.(method, path)) {
+      return new Response(JSON.stringify({ message: "失敗させた" }), { status: 500 });
+    }
 
     if (path.includes("/git/ref/heads/")) {
       return new Response(JSON.stringify({ object: { sha: "commit-old" } }), { status: 200 });
@@ -296,5 +304,39 @@ describe("commitArticle — 画像", () => {
     expect(
       fetchMock.mock.calls.some(([url]) => (url as string).endsWith("/git/blobs"))
     ).toBe(false);
+  });
+});
+
+// ★Git Data API を選んだ理由そのもの（spec §15）。
+// ref 更新より前にリポジトリへ現れるものがあってはならない
+describe("commitArticle — どの手順で失敗しても ref を進めない", () => {
+  const steps: [string, string, string][] = [
+    ["先端の取得", "GET", "/git/ref/heads/"],
+    ["親コミットの取得", "GET", "/git/commits/"],
+    ["ツリーの取得", "GET", "/git/trees/"],
+    ["blob の作成", "POST", "/git/blobs"],
+    ["ツリーの作成", "POST", "/git/trees"],
+    ["コミットの作成", "POST", "/git/commits"],
+  ];
+
+  it.each(steps)("%s が失敗しても ref は進まない", async (_label, method, marker) => {
+    const images = [{ name: "art_0.webp", file: new Blob([new Uint8Array([104])]) }];
+    stubGitHub(
+      [],
+      (calledMethod, path) =>
+        calledMethod === method &&
+        (method === "GET" ? path.includes(marker) : path.endsWith(marker))
+    );
+
+    await expect(commitArticle({ ...params, images })).rejects.toThrow();
+    expect(calls.some(([calledMethod]) => calledMethod === "PATCH")).toBe(false);
+  });
+
+  it("成功したときだけ ref が1回だけ進む", async () => {
+    stubGitHub();
+
+    await commitArticle(params);
+
+    expect(calls.filter(([method]) => method === "PATCH")).toHaveLength(1);
   });
 });
