@@ -910,17 +910,19 @@ Contents API は 1リクエスト＝1ファイル＝1コミットです。md と
 
 Git Data API なら blob → tree → commit → ref の順に組み立て、**最後の ref 更新までリポジトリには何も現れません**。
 
-1. `GET /repos/{repo}/git/ref/heads/{branch}` — 最新のコミットSHA
-2. `POST .../git/blobs` — md と画像それぞれ（画像は `encoding: "base64"`）
-3. `POST .../git/trees` — `base_tree` に現在のツリー、`tree` に追加分
-4. `POST .../git/commits` — メッセージは `記事を追加: {title}`
-5. `PATCH .../git/refs/heads/{branch}` — ここで初めて公開される
+1. `GET .../git/ref/heads/{branch}` — 最新のコミットSHA
+2. `GET .../git/commits/{sha}` — そのコミットのツリーSHA（`base_tree` に要る）
+3. `GET .../git/trees/{sha}?recursive=1` — 衝突の確認
+4. `POST .../git/blobs` — md と画像それぞれ（画像は `encoding: "base64"`）
+5. `POST .../git/trees` — `base_tree` に現在のツリー、`tree` に追加分
+6. `POST .../git/commits` — メッセージは `記事を追加: {title}`
+7. `PATCH .../git/refs/heads/{branch}` — ここで初めて公開される。`force` は付けない
 
 ### 衝突検出は GitHub の最新ツリーを見る
 
 `articles` は**ビルド時のスナップショット**です。同じセッションで先にコミットした記事はそこに載っていないため、`articles` だけで判定すると**直前に自分が書いた記事を黙って上書きします**。
 
-コミット時に取得する最新ツリー（手順3で `base_tree` のために引くもの）で同名ファイルを検出します。追加の通信は発生しません。
+コミット時に最新のツリーを1回引き、同名ファイルを検出します。`base_tree` に渡すツリーSHA は親コミットから得られますが、**中身の一覧は別途 `GET .../git/trees/{sha}?recursive=1` が要ります**。衝突していたら、その時点で止めて何も書きません。
 
 ### 失敗したとき
 
