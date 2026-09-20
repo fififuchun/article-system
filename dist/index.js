@@ -607,11 +607,11 @@ function loadToken(storageKey) {
     clearToken(storageKey);
     return null;
   }
-  if (typeof parsed?.accessToken !== "string" || typeof parsed?.expiresAt !== "number") {
+  if (typeof parsed?.accessToken !== "string") {
     clearToken(storageKey);
     return null;
   }
-  if (parsed.expiresAt <= Date.now()) {
+  if (typeof parsed.expiresAt === "number" && parsed.expiresAt <= Date.now()) {
     clearToken(storageKey);
     return null;
   }

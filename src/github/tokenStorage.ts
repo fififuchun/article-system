@@ -3,8 +3,12 @@ const PREFIX = "as-github-token";
 /** GitHub から受け取ったトークン一式（spec §15） */
 export interface StoredToken {
   accessToken: string;
-  /** 失効する時刻（epoch ミリ秒） */
-  expiresAt: number;
+  /**
+   * 失効する時刻（epoch ミリ秒）。
+   *
+   * PAT には期限情報が無いため省略できます。その場合はタブを閉じるまで保ちます。
+   */
+  expiresAt?: number;
   refreshToken?: string;
   refreshTokenExpiresAt?: number;
 }
@@ -57,12 +61,13 @@ export function loadToken(storageKey?: string): StoredToken | null {
     return null;
   }
 
-  if (typeof parsed?.accessToken !== "string" || typeof parsed?.expiresAt !== "number") {
+  if (typeof parsed?.accessToken !== "string") {
     clearToken(storageKey);
     return null;
   }
 
-  if (parsed.expiresAt <= Date.now()) {
+  // 期限を持つのは GitHub App のトークンだけ。PAT は持たない
+  if (typeof parsed.expiresAt === "number" && parsed.expiresAt <= Date.now()) {
     clearToken(storageKey);
     return null;
   }

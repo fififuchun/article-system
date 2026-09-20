@@ -183,11 +183,10 @@
 ブラウザから `code` を交換できない（SPA 対応は Preview / Paused）。詳細は spec §15。
 `api.github.com` は CORS 対応なので 9-3 以降はそのまま進められる。
 
-- [ ] GitHub App 用のコードを消す（`pkce.ts` / `authUrl.ts` / `exchangeCode.ts` / `navigate.ts` / `useGitHubAuth.ts` と各テスト）。`GitHubConfig` から `clientId` と `redirectUri` を外す
-- [ ] `tokenStorage` の `expiresAt` を任意にする（PAT には期限情報が無い。無期限扱いでタブを閉じるまで保つ。テスト → 実装 → グリーン）
+- [x] `tokenStorage` の `expiresAt` を任意にする（PAT には期限情報が無い。無期限扱いでタブを閉じるまで保つ。テスト → 実装 → グリーン）
 - [ ] `src/github/verifyToken.ts` — `GET /repos/{repo}` で読めることと `permissions.push` を確かめる。401 / 404 / 権限不足を区別する（テスト → 実装 → グリーン）
 - [ ] `useGitHubToken` フック — 貼り付け・検証・保存・破棄をまとめ、`{ status, token, error, submit, clear }` を返す（テスト → 実装 → グリーン）
-- [ ] トークンが無いとき編集画面を出さず、入力欄だけを出す（`type="password"`、保存後は再表示しない。テスト → 実装 → グリーン）
+- [ ] 関門をトークン入力欄に差し替える（`type="password"`、保存後は再表示しない）。あわせて GitHub App 用のコード（`pkce` / `authUrl` / `exchangeCode` / `navigate` / `useGitHubAuth` と `tokenStorage` の PendingAuth）を消し、`GitHubConfig` から `clientId` と `redirectUri` を外す（テスト → 実装 → グリーン）
 
 #### 9-3 コミット（Git Data API）
 

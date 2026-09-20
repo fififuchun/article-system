@@ -114,3 +114,27 @@ describe("トークンを漏らさない", () => {
     expect(sessionStorage.key(0)).not.toContain("ghu_");
   });
 });
+
+// PAT には期限情報が無い（spec §15）。タブを閉じるまで保つ
+describe("期限の無いトークン（PAT）", () => {
+  const pat = { accessToken: "github_pat_secret" };
+
+  it("expiresAt が無くても保存して読み出せる", () => {
+    saveToken("blog", pat);
+
+    expect(loadToken("blog")).toEqual(pat);
+  });
+
+  it("expiresAt が無ければ期限切れ扱いにしない", () => {
+    saveToken("blog", pat);
+    loadToken("blog");
+
+    expect(sessionStorage.length).toBe(1);
+  });
+
+  it("accessToken が無い値は受け付けない", () => {
+    sessionStorage.setItem(tokenKey("blog"), JSON.stringify({ expiresAt: Date.now() + 1000 }));
+
+    expect(loadToken("blog")).toBeNull();
+  });
+});
