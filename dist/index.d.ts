@@ -55,8 +55,6 @@ interface ArticleStudioClassNames {
  * 渡さなければ挙動は変わりません。
  */
 interface GitHubConfig {
-    /** GitHub App のクライアントID。App は利用側が作る */
-    clientId: string;
     /** "owner/name" */
     repo: string;
     /** 既定 "main" */
@@ -65,8 +63,6 @@ interface GitHubConfig {
     mdDir?: string;
     /** 画像の置き場所。`imageBasePath`（表示用URL）とは別物。既定 "public/article_imgs" */
     imageDir?: string;
-    /** 既定は現在のページURL。GitHub App に登録した Callback URL と完全一致させる */
-    redirectUri?: string;
 }
 
 interface Issue {
@@ -125,7 +121,7 @@ interface Props {
 /**
  * 記事を書く画面。
  *
- * `github` を渡すとログインが必須になり、ダウンロードの代わりに
+ * `github` を渡すとトークンが必須になり、ダウンロードの代わりに
  * リポジトリへコミットします。渡さなければ挙動は変わりません（spec §15）。
  */
 declare function ArticleStudio(props: Props): react_jsx_runtime.JSX.Element;

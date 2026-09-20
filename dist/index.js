@@ -303,7 +303,7 @@ function ArticleList({
 }
 
 // src/components/ArticleStudio.tsx
-import { useEffect as useEffect2, useState as useState2 } from "react";
+import { useEffect, useState as useState2 } from "react";
 
 // src/icons/DownloadIcon.tsx
 import { jsx as jsx4, jsxs as jsxs3 } from "react/jsx-runtime";
@@ -472,113 +472,57 @@ function loadDraft(storageKey) {
 function trimSlashes(path) {
   return path.replace(/^\/+|\/+$/g, "");
 }
-function resolveGitHubConfig(config, location) {
+function resolveGitHubConfig(config) {
   return {
-    clientId: config.clientId,
     repo: config.repo,
     branch: config.branch || "main",
     mdDir: trimSlashes(config.mdDir || "src/articles"),
-    imageDir: trimSlashes(config.imageDir || "public/article_imgs"),
-    // 既定はクエリとハッシュを含めない。`?code=` が残ったURLを登録すると
-    // 交換済みの code を再送してしまう
-    redirectUri: config.redirectUri || `${location.origin}${location.pathname}`
+    imageDir: trimSlashes(config.imageDir || "public/article_imgs")
   };
 }
 
-// src/github/useGitHubAuth.ts
-import { useEffect, useRef, useState } from "react";
+// src/github/useGitHubToken.ts
+import { useState } from "react";
 
-// src/github/pkce.ts
-function toBase64Url(bytes) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+// src/github/verifyToken.ts
+var GITHUB_API_BASE = "https://api.github.com";
+var GITHUB_API_VERSION = "2022-11-28";
+function authHeaders(token) {
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": GITHUB_API_VERSION
+  };
 }
-function randomUrlSafeToken(byteLength = 32) {
-  return toBase64Url(crypto.getRandomValues(new Uint8Array(byteLength)));
-}
-function createCodeVerifier() {
-  return randomUrlSafeToken(32);
-}
-async function createCodeChallenge(verifier) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
-  return toBase64Url(new Uint8Array(digest));
-}
-
-// src/github/authUrl.ts
-var GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
-function createState() {
-  return randomUrlSafeToken(16);
-}
-function buildAuthorizeUrl({
-  clientId,
-  redirectUri,
-  state,
-  codeChallenge
-}) {
-  const query = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    state,
-    code_challenge: codeChallenge,
-    code_challenge_method: "S256"
-  });
-  return `${GITHUB_AUTHORIZE_URL}?${query}`;
-}
-
-// src/github/exchangeCode.ts
-var GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
-async function exchangeCodeForToken({
-  clientId,
-  code,
-  redirectUri,
-  codeVerifier,
-  state,
-  expectedState
-}) {
-  if (!expectedState || state !== expectedState) {
-    throw new Error("\u8A8D\u53EF\u306E state \u304C\u4E00\u81F4\u3057\u307E\u305B\u3093\u3002\u30ED\u30B0\u30A4\u30F3\u3092\u3084\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
+async function verifyToken(token, repo) {
+  let response;
+  try {
+    response = await fetch(`${GITHUB_API_BASE}/repos/${repo}`, {
+      headers: authHeaders(token)
+    });
+  } catch {
+    throw new Error("GitHub \u306B\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u901A\u4FE1\u72B6\u614B\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002");
   }
-  const response = await fetch(GITHUB_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      // 既定では HTML が返る
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      client_id: clientId,
-      code,
-      redirect_uri: redirectUri,
-      code_verifier: codeVerifier
-    })
-  });
-  if (!response.ok) {
-    throw new Error(`GitHub \u306E\u30C8\u30FC\u30AF\u30F3\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F\uFF08HTTP ${response.status}\uFF09`);
+  if (response.status === 401) {
+    throw new Error("\u30C8\u30FC\u30AF\u30F3\u304C\u7121\u52B9\u3067\u3059\u3002GitHub \u3067\u4F5C\u308A\u76F4\u3057\u3066\u8CBC\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
   }
-  const body = await response.json();
-  if (body.error) {
-    throw new Error(body.error_description || body.error);
-  }
-  if (!body.access_token) {
-    throw new Error("GitHub \u304B\u3089\u30C8\u30FC\u30AF\u30F3\u304C\u8FD4\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002");
-  }
-  if (typeof body.expires_in !== "number") {
+  if (response.status === 404) {
     throw new Error(
-      "GitHub App \u304C\u6709\u52B9\u671F\u9650\u4ED8\u304D\u30C8\u30FC\u30AF\u30F3\u3092\u8FD4\u3057\u3066\u3044\u307E\u305B\u3093\u3002App \u306E\u8A2D\u5B9A\u3067\u671F\u9650\u3092\u6709\u52B9\u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+      `\u30EA\u30DD\u30B8\u30C8\u30EA ${repo} \u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u540D\u524D\u306E\u7DB4\u308A\u3068\u3001\u30C8\u30FC\u30AF\u30F3\u304C\u3053\u306E\u30EA\u30DD\u30B8\u30C8\u30EA\u3092\u5BFE\u8C61\u306B\u3057\u3066\u3044\u308B\u304B\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002`
     );
   }
-  return {
-    accessToken: body.access_token,
-    expiresAt: Date.now() + body.expires_in * 1e3,
-    refreshToken: body.refresh_token,
-    refreshTokenExpiresAt: typeof body.refresh_token_expires_in === "number" ? Date.now() + body.refresh_token_expires_in * 1e3 : void 0
-  };
-}
-
-// src/github/navigate.ts
-function redirectTo(url) {
-  window.location.assign(url);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(
+      body.message ? `GitHub \u304C\u62D2\u5426\u3057\u307E\u3057\u305F: ${body.message}` : `GitHub \u3078\u306E\u554F\u3044\u5408\u308F\u305B\u306B\u5931\u6557\u3057\u307E\u3057\u305F\uFF08HTTP ${response.status}\uFF09`
+    );
+  }
+  const repository = await response.json();
+  if (!repository.permissions?.push) {
+    throw new Error(
+      "\u3053\u306E\u30C8\u30FC\u30AF\u30F3\u306B\u306F\u66F8\u304D\u8FBC\u307F\u6A29\u9650\u304C\u3042\u308A\u307E\u305B\u3093\u3002Contents \u3092 Read and write \u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+    );
+  }
 }
 
 // src/github/tokenStorage.ts
@@ -623,121 +567,47 @@ function clearToken(storageKey) {
   } catch {
   }
 }
-var PENDING_PREFIX = "as-github-pending";
-function pendingKey(storageKey = "default") {
-  return `${PENDING_PREFIX}:${storageKey}`;
-}
-function savePendingAuth(storageKey, pending) {
-  try {
-    sessionStorage.setItem(pendingKey(storageKey), JSON.stringify(pending));
-  } catch {
-  }
-}
-function loadPendingAuth(storageKey) {
-  let raw = null;
-  try {
-    raw = sessionStorage.getItem(pendingKey(storageKey));
-  } catch {
-    return null;
-  }
-  if (raw === null) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed?.state !== "string" || typeof parsed?.codeVerifier !== "string") {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-function clearPendingAuth(storageKey) {
-  try {
-    sessionStorage.removeItem(pendingKey(storageKey));
-  } catch {
-  }
-}
 
-// src/github/useGitHubAuth.ts
-function readCallback() {
-  const query = new URLSearchParams(window.location.search);
-  const code = query.get("code");
-  const state = query.get("state");
-  return code === null ? null : { code, state: state ?? "" };
-}
-function stripCallbackQuery() {
-  const url = new URL(window.location.href);
-  url.searchParams.delete("code");
-  url.searchParams.delete("state");
-  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-}
-function useGitHubAuth(config, storageKey) {
-  const callback = useRef(readCallback()).current;
+// src/github/useGitHubToken.ts
+function useGitHubToken(repo, storageKey) {
   const [token, setToken] = useState(
-    () => callback ? null : loadToken(storageKey)?.accessToken ?? null
+    () => loadToken(storageKey)?.accessToken ?? null
   );
-  const [status, setStatus] = useState(() => {
-    if (callback) return "loading";
-    return loadToken(storageKey) ? "authenticated" : "anonymous";
-  });
+  const [status, setStatus] = useState(
+    () => loadToken(storageKey) ? "ready" : "missing"
+  );
   const [error, setError] = useState(null);
-  useEffect(() => {
-    if (!callback) return;
-    let cancelled = false;
-    const pending = loadPendingAuth(storageKey);
-    stripCallbackQuery();
-    clearPendingAuth(storageKey);
-    if (!pending) {
+  const submit = async (value) => {
+    const candidate = value.trim();
+    if (!candidate) {
       setStatus("error");
-      setError("\u30ED\u30B0\u30A4\u30F3\u306E\u9014\u4E2D\u7D4C\u904E\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u3082\u3046\u4E00\u5EA6\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
+      setError("\u30C8\u30FC\u30AF\u30F3\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
       return;
     }
-    exchangeCodeForToken({
-      clientId: config.clientId,
-      code: callback.code,
-      redirectUri: config.redirectUri,
-      codeVerifier: pending.codeVerifier,
-      state: callback.state,
-      expectedState: pending.state
-    }).then((stored) => {
-      if (cancelled) return;
-      saveToken(storageKey, stored);
-      setToken(stored.accessToken);
-      setStatus("authenticated");
-    }).catch((reason) => {
-      if (cancelled) return;
+    setStatus("verifying");
+    setError(null);
+    try {
+      await verifyToken(candidate, repo);
+    } catch (reason) {
       setStatus("error");
-      setError(reason instanceof Error ? reason.message : "\u30ED\u30B0\u30A4\u30F3\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002");
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [callback, config.clientId, config.redirectUri, storageKey]);
-  const login = async () => {
-    const codeVerifier = createCodeVerifier();
-    const state = createState();
-    savePendingAuth(storageKey, { state, codeVerifier });
-    redirectTo(
-      buildAuthorizeUrl({
-        clientId: config.clientId,
-        redirectUri: config.redirectUri,
-        state,
-        codeChallenge: await createCodeChallenge(codeVerifier)
-      })
-    );
+      setError(reason instanceof Error ? reason.message : "\u30C8\u30FC\u30AF\u30F3\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002");
+      return;
+    }
+    saveToken(storageKey, { accessToken: candidate });
+    setToken(candidate);
+    setStatus("ready");
   };
-  const logout = () => {
+  const clear = () => {
     clearToken(storageKey);
-    clearPendingAuth(storageKey);
     setToken(null);
     setError(null);
-    setStatus("anonymous");
+    setStatus("missing");
   };
-  return { status, token, error, login, logout };
+  return { status, token, error, submit, clear };
 }
 
 // src/components/ArticleStudio.tsx
-import { Fragment, jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
 var DRAFT_MARK = "#draft-preview";
 var LIST_PREVIEW_COUNT = 6;
 function StudioEditor({
@@ -753,7 +623,7 @@ function StudioEditor({
   const [issues, setIssues] = useState2([]);
   const [images, setImages] = useState2([]);
   const [placementPending, setPlacementPending] = useState2(false);
-  useEffect2(() => {
+  useEffect(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
   const draft = buildDraftArticle(raw, articles);
@@ -912,15 +782,45 @@ ${markdown}
   ] });
 }
 function GitHubGate({ github, ...props }) {
-  const config = resolveGitHubConfig(github, window.location);
-  const auth = useGitHubAuth(config, props.storageKey);
-  if (auth.status === "authenticated") {
+  const config = resolveGitHubConfig(github);
+  const auth = useGitHubToken(config.repo, props.storageKey);
+  const [draftToken, setDraftToken] = useState2("");
+  if (auth.status === "ready") {
     return /* @__PURE__ */ jsx6(StudioEditor, { ...props });
   }
-  return /* @__PURE__ */ jsx6("div", { className: cx("as-studio-login", props.classNames?.login), children: auth.status === "loading" ? /* @__PURE__ */ jsx6("p", { children: "GitHub \u3068\u901A\u4FE1\u3057\u3066\u3044\u307E\u3059\u2026" }) : /* @__PURE__ */ jsxs4(Fragment, { children: [
-    auth.error && /* @__PURE__ */ jsx6("p", { className: "as-studio-login-error", role: "alert", children: auth.error }),
-    /* @__PURE__ */ jsx6("p", { children: "\u8A18\u4E8B\u3092\u66F8\u304F\u306B\u306F GitHub \u306B\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002" }),
-    /* @__PURE__ */ jsx6("button", { type: "button", onClick: () => void auth.login(), children: "GitHub \u3067\u30ED\u30B0\u30A4\u30F3" })
+  const submit = async (event) => {
+    event.preventDefault();
+    await auth.submit(draftToken);
+    setDraftToken("");
+  };
+  return /* @__PURE__ */ jsx6("div", { className: cx("as-studio-login", props.classNames?.login), children: /* @__PURE__ */ jsxs4("form", { className: "as-studio-login-form", onSubmit: (event) => void submit(event), children: [
+    /* @__PURE__ */ jsxs4("p", { children: [
+      config.repo,
+      " \u306B\u8A18\u4E8B\u3092\u30B3\u30DF\u30C3\u30C8\u3057\u307E\u3059\u3002\u66F8\u304D\u8FBC\u3081\u308B\u30C8\u30FC\u30AF\u30F3\u3092\u8CBC\u3063\u3066\u304F\u3060\u3055\u3044\u3002"
+    ] }),
+    auth.error && /* @__PURE__ */ jsxs4("p", { className: "as-studio-login-error", role: "alert", children: [
+      /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
+      /* @__PURE__ */ jsx6("span", { children: auth.error })
+    ] }),
+    /* @__PURE__ */ jsxs4("label", { className: "as-studio-login-label", children: [
+      /* @__PURE__ */ jsx6("span", { children: "GitHub \u30C8\u30FC\u30AF\u30F3" }),
+      /* @__PURE__ */ jsx6(
+        "input",
+        {
+          type: "password",
+          value: draftToken,
+          onChange: (event) => setDraftToken(event.target.value),
+          autoComplete: "off",
+          spellCheck: false
+        }
+      )
+    ] }),
+    /* @__PURE__ */ jsx6("button", { type: "submit", disabled: auth.status === "verifying", children: auth.status === "verifying" ? "\u78BA\u8A8D\u3057\u3066\u3044\u307E\u3059\u2026" : "\u4FDD\u5B58\u3057\u3066\u59CB\u3081\u308B" }),
+    /* @__PURE__ */ jsxs4("p", { className: "as-studio-login-note", children: [
+      "GitHub \u306E Settings \u2192 Developer settings \u2192 Personal access tokens \u2192 Fine-grained tokens \u3067\u3001\u5BFE\u8C61\u3092 ",
+      config.repo,
+      " \u3060\u3051\u306B\u3057\u3001Contents \u3092 Read and write \u306B\u3057\u3066\u4F5C\u308A\u307E\u3059\u3002"
+    ] })
   ] }) });
 }
 function ArticleStudio(props) {

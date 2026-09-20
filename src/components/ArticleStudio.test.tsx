@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
-import { render, screen, cleanup, fireEvent, act, waitFor } from "@testing-library/react";
-import { redirectTo } from "../github/navigate";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import { saveToken } from "../github/tokenStorage";
+import { verifyToken } from "../github/verifyToken";
 
-vi.mock("../github/navigate", () => ({ redirectTo: vi.fn() }));
+vi.mock("../github/verifyToken", () => ({ verifyToken: vi.fn() }));
 import { ArticleStudio } from "./ArticleStudio";
 import type { Article } from "../types";
 
@@ -892,34 +892,45 @@ describe("ArticleStudio — github を渡さないとき（spec §15）", () => 
   });
 });
 
-// spec §15: github を渡したら、ログインするまで編集画面を出さない
+// spec §15: github を渡したら、トークンを入れるまで編集画面を出さない
 describe("ArticleStudio — github を渡したとき（spec §15）", () => {
-  const github = { clientId: "Iv1.abc", repo: "me/blog" };
+  const github = { repo: "me/blog" };
 
   beforeEach(() => {
     sessionStorage.clear();
-    window.history.replaceState({}, "", "/studio");
-    vi.mocked(redirectTo).mockClear();
+    vi.mocked(verifyToken).mockReset();
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
   });
 
-  const signedIn = () =>
-    saveToken(undefined, { accessToken: "ghu_secret", expiresAt: Date.now() + 60_000 });
+  const signedIn = () => saveToken(undefined, { accessToken: "github_pat_secret" });
+  const tokenInput = () => screen.getByLabelText(/トークン/) as HTMLInputElement;
+  const paste = async (value: string) => {
+    fireEvent.change(tokenInput(), { target: { value } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /保存|使う|続ける/ }));
+    });
+  };
 
-  it("未ログインなら編集画面を出さない", () => {
+  it("トークンが無ければ編集画面を出さない", () => {
     const { container } = render(<ArticleStudio articles={[]} github={github} />);
 
-    expect(screen.queryByRole("textbox")).toBeNull();
     expect(container.querySelector(".as-studio-textarea")).toBeNull();
   });
 
-  it("未ログインならログインボタンだけを出す", () => {
-    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+  it("トークンの入力欄を出す", () => {
+    render(<ArticleStudio articles={[]} github={github} />);
 
-    expect(screen.getByRole("button", { name: /ログイン/ })).toBeDefined();
-    expect(container.querySelectorAll("button")).toHaveLength(1);
+    expect(tokenInput()).toBeDefined();
   });
 
-  it("ログイン領域に as-studio-login が付く", () => {
+  // 肩越しに見られても読めないようにする（spec §15）
+  it("入力欄を伏せ字にする", () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(tokenInput().type).toBe("password");
+  });
+
+  it("関門に as-studio-login が付く", () => {
     const { container } = render(<ArticleStudio articles={[]} github={github} />);
 
     expect(container.querySelector(".as-studio-login")).not.toBeNull();
@@ -935,19 +946,36 @@ describe("ArticleStudio — github を渡したとき（spec §15）", () => {
     );
   });
 
-  it("ログインボタンを押すと認可画面へ遷移する", async () => {
+  it("貼って保存すると対象リポジトリで検証する", async () => {
     render(<ArticleStudio articles={[]} github={github} />);
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /ログイン/ }));
-    });
+    await paste("github_pat_secret");
 
-    expect(vi.mocked(redirectTo).mock.calls[0][0]).toContain(
-      "https://github.com/login/oauth/authorize"
-    );
+    expect(vi.mocked(verifyToken)).toHaveBeenCalledWith("github_pat_secret", "me/blog");
   });
 
-  it("ログイン済みなら編集画面を出す", () => {
+  it("検証を通ると編集画面に変わる", async () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    await paste("github_pat_secret");
+
+    expect(container.querySelector(".as-studio-textarea")).not.toBeNull();
+    expect(container.querySelector(".as-studio-login")).toBeNull();
+  });
+
+  it("検証に失敗したら理由を出し、編集画面を出さない", async () => {
+    vi.mocked(verifyToken).mockRejectedValue(new Error("トークンが無効です。"));
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    await paste("github_pat_bad");
+
+    expect(container.querySelector(".as-studio-login")?.textContent).toContain(
+      "トークンが無効です。"
+    );
+    expect(container.querySelector(".as-studio-textarea")).toBeNull();
+  });
+
+  it("保存済みのトークンがあれば最初から編集画面を出す", () => {
     signedIn();
 
     const { container } = render(<ArticleStudio articles={[]} github={github} />);
@@ -956,7 +984,7 @@ describe("ArticleStudio — github を渡したとき（spec §15）", () => {
     expect(container.querySelector(".as-studio-login")).toBeNull();
   });
 
-  it("ログイン済みなら下書きの復帰も今までどおり動く", () => {
+  it("トークンがあれば下書きの復帰も今までどおり動く", () => {
     signedIn();
     localStorage.setItem("as-studio-draft:default", "保存してあった下書き");
 
@@ -965,25 +993,12 @@ describe("ArticleStudio — github を渡したとき（spec §15）", () => {
     expect(textarea().value).toBe("保存してあった下書き");
   });
 
-  // 失敗したまま黙って未ログイン画面に戻ると、原因が分からない
-  it("ログインに失敗したら理由を出す", async () => {
-    window.history.replaceState({}, "", "/studio?code=the-code&state=st4te");
-
-    const { container } = render(<ArticleStudio articles={[]} github={github} />);
-
-    await waitFor(() =>
-      expect(container.querySelector(".as-studio-login")?.textContent).toContain(
-        "もう一度ログイン"
-      )
-    );
-  });
-
   // トークンは戻り値以外に出さない（spec §15）
-  it("トークンを画面に出さない", () => {
-    signedIn();
-
+  it("保存したトークンを画面に出さない", async () => {
     const { container } = render(<ArticleStudio articles={[]} github={github} />);
 
-    expect(container.innerHTML).not.toContain("ghu_secret");
+    await paste("github_pat_secret");
+
+    expect(container.innerHTML).not.toContain("github_pat_secret");
   });
 });

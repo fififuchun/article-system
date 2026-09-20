@@ -20,7 +20,7 @@ import { collectImageNames } from "../studio/collectImageNames";
 import { findMissingImages } from "../studio/probeImages";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
 import { resolveGitHubConfig } from "../github/resolveConfig";
-import { useGitHubAuth } from "../github/useGitHubAuth";
+import { useGitHubToken } from "../github/useGitHubToken";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
 interface DroppedImage {
@@ -298,47 +298,71 @@ function StudioEditor({
 }
 
 /**
- * GitHub ログインの関門（spec §15）。
+ * GitHub トークンの関門（spec §15）。
  *
- * ログインを通るまで編集画面を描画しません。書き込み権限は GitHub 側
- * （App のインストール先とユーザーの権限）で決まるため、ライブラリが
- * 認可を持つ必要がありません。
+ * 書き込めるトークンを受け取るまで編集画面を描画しません。書き込み権限は
+ * GitHub 側（トークンのスコープ）で決まるため、ライブラリが認可を持つ
+ * 必要がありません。
  */
 function GitHubGate({ github, ...props }: Props & { github: GitHubConfig }) {
-  // window.location をここで読むのは、既定のリダイレクト先が
-  // 「いま開いているページ」だから（spec §15）
-  const config = resolveGitHubConfig(github, window.location);
-  const auth = useGitHubAuth(config, props.storageKey);
+  const config = resolveGitHubConfig(github);
+  const auth = useGitHubToken(config.repo, props.storageKey);
+  const [draftToken, setDraftToken] = useState("");
 
-  if (auth.status === "authenticated") {
+  if (auth.status === "ready") {
     return <StudioEditor {...props} />;
   }
 
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await auth.submit(draftToken);
+    // 受け入れても断られても、入力欄に残さない
+    setDraftToken("");
+  };
+
   return (
     <div className={cx("as-studio-login", props.classNames?.login)}>
-      {auth.status === "loading" ? (
-        <p>GitHub と通信しています…</p>
-      ) : (
-        <>
-          {auth.error && (
-            <p className="as-studio-login-error" role="alert">
-              {auth.error}
-            </p>
-          )}
-          <p>記事を書くには GitHub にログインしてください。</p>
-          <button type="button" onClick={() => void auth.login()}>
-            GitHub でログイン
-          </button>
-        </>
-      )}
+      <form className="as-studio-login-form" onSubmit={(event) => void submit(event)}>
+        <p>
+          {config.repo} に記事をコミットします。書き込めるトークンを貼ってください。
+        </p>
+
+        {auth.error && (
+          <p className="as-studio-login-error" role="alert">
+            <WarningIcon className="as-studio-issue-icon" />
+            <span>{auth.error}</span>
+          </p>
+        )}
+
+        <label className="as-studio-login-label">
+          <span>GitHub トークン</span>
+          {/* 肩越しに見られても読めないようにする（spec §15） */}
+          <input
+            type="password"
+            value={draftToken}
+            onChange={(event) => setDraftToken(event.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </label>
+
+        <button type="submit" disabled={auth.status === "verifying"}>
+          {auth.status === "verifying" ? "確認しています…" : "保存して始める"}
+        </button>
+
+        <p className="as-studio-login-note">
+          GitHub の Settings → Developer settings → Personal access tokens →
+          Fine-grained tokens で、対象を {config.repo} だけにし、Contents を
+          Read and write にして作ります。
+        </p>
+      </form>
     </div>
   );
 }
-
 /**
  * 記事を書く画面。
  *
- * `github` を渡すとログインが必須になり、ダウンロードの代わりに
+ * `github` を渡すとトークンが必須になり、ダウンロードの代わりに
  * リポジトリへコミットします。渡さなければ挙動は変わりません（spec §15）。
  */
 export function ArticleStudio(props: Props) {
