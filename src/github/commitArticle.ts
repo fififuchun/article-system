@@ -11,6 +11,12 @@ export class ArticleExistsError extends Error {
   }
 }
 
+/** コミットに含める画像。`imageDir` の下に置く */
+export interface CommitImage {
+  name: string;
+  file: Blob;
+}
+
 interface CommitParams {
   token: string;
   config: ResolvedGitHubConfig;
@@ -18,6 +24,24 @@ interface CommitParams {
   filename: string;
   markdown: string;
   message: string;
+  images?: CommitImage[];
+}
+
+/**
+ * 画像を base64 にする。GitHub の blob API はバイナリを直接受け取れない。
+ *
+ * 一度に spread すると大きな画像で引数の上限を超えるため、小分けにする。
+ */
+async function toBase64(file: Blob): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const CHUNK = 0x8000;
+  let binary = "";
+
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+
+  return btoa(binary);
 }
 
 interface RefResponse {
@@ -57,6 +81,7 @@ export async function commitArticle({
   filename,
   markdown,
   message,
+  images = [],
 }: CommitParams): Promise<string> {
   const { repo, branch, mdDir } = config;
   const path = `${mdDir}/${filename}`;
@@ -91,12 +116,30 @@ export async function commitArticle({
     body: { content: markdown, encoding: "utf-8" },
   });
 
+  // 画像も同じコミットに入れる。別コミットにすると、途中で失敗したとき
+  // 画像だけがリポジトリに残る（spec §15）
+  const imageEntries = await Promise.all(
+    images.map(async (image) => {
+      const uploaded = await githubRequest<BlobResponse>(token, `/repos/${repo}/git/blobs`, {
+        method: "POST",
+        body: { content: await toBase64(image.file), encoding: "base64" },
+      });
+
+      return {
+        path: `${config.imageDir}/${image.name}`,
+        mode: FILE_MODE,
+        type: "blob" as const,
+        sha: uploaded.sha,
+      };
+    })
+  );
+
   // 5. 置き場所を決めたツリー。base_tree を渡さないと既存のファイルが全部消える
   const tree = await githubRequest<TreeResponse>(token, `/repos/${repo}/git/trees`, {
     method: "POST",
     body: {
       base_tree: baseTreeSha,
-      tree: [{ path, mode: FILE_MODE, type: "blob", sha: blob.sha }],
+      tree: [{ path, mode: FILE_MODE, type: "blob", sha: blob.sha }, ...imageEntries],
     },
   });
 

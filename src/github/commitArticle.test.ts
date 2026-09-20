@@ -221,3 +221,80 @@ describe("commitArticle — 失敗", () => {
     ).toBe(false);
   });
 });
+
+describe("commitArticle — 画像", () => {
+  // spec §15: 画像も同じコミットに含める。別コミットにすると、
+  // 途中で失敗したとき画像だけが残る
+  const images = [
+    { name: "art_0.webp", file: new Blob([new Uint8Array([104, 101, 108, 108, 111])]) },
+  ];
+
+  it("画像を base64 の blob にして送る", async () => {
+    const fetchMock = stubGitHub();
+
+    await commitArticle({ ...params, images });
+
+    const blobBodies = fetchMock.mock.calls
+      .filter(([url]) => (url as string).endsWith("/git/blobs"))
+      .map(([, init]) => JSON.parse((init as RequestInit).body as string));
+
+    expect(blobBodies).toContainEqual({ content: "aGVsbG8=", encoding: "base64" });
+  });
+
+  it("imageDir の下に置く", async () => {
+    const fetchMock = stubGitHub();
+
+    await commitArticle({ ...params, images });
+
+    const paths = bodyFor(fetchMock, "/git/trees").tree.map(
+      (entry: { path: string }) => entry.path
+    );
+    expect(paths).toContain("public/article_imgs/art_0.webp");
+  });
+
+  it("md と画像を同じツリーに入れる", async () => {
+    const fetchMock = stubGitHub();
+
+    await commitArticle({ ...params, images });
+
+    expect(bodyFor(fetchMock, "/git/trees").tree).toHaveLength(2);
+  });
+
+  it("ツリーは1回しか作らない（＝コミットは1つ）", async () => {
+    const fetchMock = stubGitHub();
+
+    await commitArticle({ ...params, images });
+
+    const treePosts = fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        (url as string).endsWith("/git/trees") && (init as RequestInit).method === "POST"
+    );
+    expect(treePosts).toHaveLength(1);
+  });
+
+  it("画像が無ければ md だけを置く", async () => {
+    const fetchMock = stubGitHub();
+
+    await commitArticle({ ...params, images: [] });
+
+    expect(bodyFor(fetchMock, "/git/trees").tree).toHaveLength(1);
+  });
+
+  it("画像があっても ref の更新は最後のまま", async () => {
+    stubGitHub();
+
+    await commitArticle({ ...params, images });
+
+    expect(calls.findIndex(([method]) => method === "PATCH")).toBe(calls.length - 1);
+  });
+
+  it("md の衝突を先に見て、画像を1つも送らない", async () => {
+    const fetchMock = stubGitHub(["src/articles/2026-08-23-夏の更新.md"]);
+
+    await commitArticle({ ...params, images }).catch(() => {});
+
+    expect(
+      fetchMock.mock.calls.some(([url]) => (url as string).endsWith("/git/blobs"))
+    ).toBe(false);
+  });
+});
