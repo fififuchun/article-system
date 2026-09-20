@@ -864,6 +864,7 @@ interface GitHubConfig {
   branch?: string;    // 既定 "main"
   mdDir?: string;     // 既定 "src/articles"
   imageDir?: string;  // 既定 "public/article_imgs"
+  redirectUri?: string; // 既定は現在のページURL（origin + pathname）
 }
 ```
 
@@ -888,6 +889,20 @@ interface GitHubConfig {
 **sessionStorage** に置きます。リロードしてもログインし直さずに済み、タブを閉じれば消えます。トークンは画面に出しません。
 
 なお**下書き本文は localStorage に残ります**（§9）。トークンの寿命を短くしても、書きかけの記事が端末に残る点は変わりません。
+
+### リダイレクト先
+
+GitHub は**事前に登録された Callback URL にしか戻しません**。登録していないURLに戻せてしまうと、別サイトがトークンを横取りできるためです。
+
+既定では**現在のページURL**（`location.origin + location.pathname`）を使います。利用側は GitHub App の設定に同じURLを登録するだけで済みます。`redirectUri` を渡せば上書きできます。
+
+**末尾スラッシュの有無まで完全一致**が要ります。ずれていると GitHub 側で弾かれます。
+
+### 実地確認
+
+テストは `fetch` をスタブするため、**本物の GitHub と通信できることは証明しません**。`demo/` に「GitHub 連携」ページを置き、`clientId` と `repo` を画面から入力してログインからコミットまでを目で確かめます。リポジトリには秘密を置きません。
+
+デモの既存ページは `github` を渡さないままにします。既定の挙動を見せる場としての役割を変えないためです。
 
 ### コミットは Git Data API で1コミット
 

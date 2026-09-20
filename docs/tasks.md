@@ -205,7 +205,7 @@
 
 - [ ] `src/index.ts` から `GitHubConfig` 型を公開する
 - [ ] README に GitHub App の作り方（SPA リダイレクトURI、有効期限付きトークン、インストール先）と `github` prop の例を書く
-- [ ] `demo/` では `github` を渡さないことを明記する（デモは既定の挙動を見せる場）
+- [ ] `demo/` に「GitHub 連携」ページを足し、`clientId` と `repo` を画面から入力してログイン〜コミットまでを実地確認する（既存ページは `github` を渡さないまま）
 - [ ] バージョンを 0.3.0 に上げ、タグを打つ
 
 ---
