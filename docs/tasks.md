@@ -184,7 +184,7 @@
 - [x] `src/github/authUrl.ts` — 認可URLの組み立て（`client_id` / `redirect_uri` / `state` / `code_challenge` / `code_challenge_method=S256`）。テストは URL の中身を検証する（テスト → 実装 → グリーン）
 - [x] `src/github/exchangeCode.ts` — `POST /login/oauth/access_token` で code を交換する。`state` 不一致は例外。`fetch` をスタブしてテストする（テスト → 実装 → グリーン）
 - [x] `useGitHubAuth` フック — 上記をまとめ、`{ status, login, logout, token }` を返す。リダイレクト後の `?code=` を拾い、履歴から消す（テスト → 実装 → グリーン）
-- [ ] 未ログイン時に編集画面を出さず、ログインボタンだけを出す（テスト → 実装 → グリーン）
+- [x] 未ログイン時に編集画面を出さず、ログインボタンだけを出す（テスト → 実装 → グリーン）
 
 #### 9-3 コミット（Git Data API）
 

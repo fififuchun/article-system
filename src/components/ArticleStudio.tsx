@@ -19,6 +19,8 @@ import { renameImageInMarkdown } from "../studio/renameImage";
 import { collectImageNames } from "../studio/collectImageNames";
 import { findMissingImages } from "../studio/probeImages";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
+import { resolveGitHubConfig } from "../github/resolveConfig";
+import { useGitHubAuth } from "../github/useGitHubAuth";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
 interface DroppedImage {
@@ -53,7 +55,10 @@ interface Props {
   github?: GitHubConfig;
 }
 
-export function ArticleStudio({
+/**
+ * Studio の本体。`github` を渡した場合は、ログインを通ったときだけ描画される。
+ */
+function StudioEditor({
   articles,
   storageKey,
   imageBasePath,
@@ -289,5 +294,59 @@ export function ArticleStudio({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * GitHub ログインの関門（spec §15）。
+ *
+ * ログインを通るまで編集画面を描画しません。書き込み権限は GitHub 側
+ * （App のインストール先とユーザーの権限）で決まるため、ライブラリが
+ * 認可を持つ必要がありません。
+ */
+function GitHubGate({ github, ...props }: Props & { github: GitHubConfig }) {
+  // window.location をここで読むのは、既定のリダイレクト先が
+  // 「いま開いているページ」だから（spec §15）
+  const config = resolveGitHubConfig(github, window.location);
+  const auth = useGitHubAuth(config, props.storageKey);
+
+  if (auth.status === "authenticated") {
+    return <StudioEditor {...props} />;
+  }
+
+  return (
+    <div className={cx("as-studio-login", props.classNames?.login)}>
+      {auth.status === "loading" ? (
+        <p>GitHub と通信しています…</p>
+      ) : (
+        <>
+          {auth.error && (
+            <p className="as-studio-login-error" role="alert">
+              {auth.error}
+            </p>
+          )}
+          <p>記事を書くには GitHub にログインしてください。</p>
+          <button type="button" onClick={() => void auth.login()}>
+            GitHub でログイン
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 記事を書く画面。
+ *
+ * `github` を渡すとログインが必須になり、ダウンロードの代わりに
+ * リポジトリへコミットします。渡さなければ挙動は変わりません（spec §15）。
+ */
+export function ArticleStudio(props: Props) {
+  // コンポーネントを分けているのは、github を渡さない利用側で
+  // 認証のコードが一切動かないようにするため
+  return props.github ? (
+    <GitHubGate {...props} github={props.github} />
+  ) : (
+    <StudioEditor {...props} />
   );
 }

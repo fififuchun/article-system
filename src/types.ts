@@ -48,6 +48,7 @@ export interface ArticleStudioClassNames {
   issues?: string;      // 検証で見つかった Issue の一覧
   imagePane?: string;   // 仮登録した画像の一覧（名前とダウンロード）
   actions?: string;     // 本番DL / 下書きDL のボタン列
+  login?: string;       // GitHub ログインを促す画面（spec §15）
 }
 
 /**

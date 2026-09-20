@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
-import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, act, waitFor } from "@testing-library/react";
+import { redirectTo } from "../github/navigate";
+import { saveToken } from "../github/tokenStorage";
+
+vi.mock("../github/navigate", () => ({ redirectTo: vi.fn() }));
 import { ArticleStudio } from "./ArticleStudio";
 import type { Article } from "../types";
 
@@ -885,5 +889,101 @@ describe("ArticleStudio — github を渡さないとき（spec §15）", () => 
     await publish();
 
     expect(sessionStorage.length).toBe(0);
+  });
+});
+
+// spec §15: github を渡したら、ログインするまで編集画面を出さない
+describe("ArticleStudio — github を渡したとき（spec §15）", () => {
+  const github = { clientId: "Iv1.abc", repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    window.history.replaceState({}, "", "/studio");
+    vi.mocked(redirectTo).mockClear();
+  });
+
+  const signedIn = () =>
+    saveToken(undefined, { accessToken: "ghu_secret", expiresAt: Date.now() + 60_000 });
+
+  it("未ログインなら編集画面を出さない", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(container.querySelector(".as-studio-textarea")).toBeNull();
+  });
+
+  it("未ログインならログインボタンだけを出す", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(screen.getByRole("button", { name: /ログイン/ })).toBeDefined();
+    expect(container.querySelectorAll("button")).toHaveLength(1);
+  });
+
+  it("ログイン領域に as-studio-login が付く", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(container.querySelector(".as-studio-login")).not.toBeNull();
+  });
+
+  it("classNames.login が as- クラスに追記される", () => {
+    const { container } = render(
+      <ArticleStudio articles={[]} github={github} classNames={{ login: "my-login" }} />
+    );
+
+    expect(container.querySelector(".as-studio-login")?.className).toBe(
+      "as-studio-login my-login"
+    );
+  });
+
+  it("ログインボタンを押すと認可画面へ遷移する", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /ログイン/ }));
+    });
+
+    expect(vi.mocked(redirectTo).mock.calls[0][0]).toContain(
+      "https://github.com/login/oauth/authorize"
+    );
+  });
+
+  it("ログイン済みなら編集画面を出す", () => {
+    signedIn();
+
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(container.querySelector(".as-studio-textarea")).not.toBeNull();
+    expect(container.querySelector(".as-studio-login")).toBeNull();
+  });
+
+  it("ログイン済みなら下書きの復帰も今までどおり動く", () => {
+    signedIn();
+    localStorage.setItem("as-studio-draft:default", "保存してあった下書き");
+
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(textarea().value).toBe("保存してあった下書き");
+  });
+
+  // 失敗したまま黙って未ログイン画面に戻ると、原因が分からない
+  it("ログインに失敗したら理由を出す", async () => {
+    window.history.replaceState({}, "", "/studio?code=the-code&state=st4te");
+
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    await waitFor(() =>
+      expect(container.querySelector(".as-studio-login")?.textContent).toContain(
+        "もう一度ログイン"
+      )
+    );
+  });
+
+  // トークンは戻り値以外に出さない（spec §15）
+  it("トークンを画面に出さない", () => {
+    signedIn();
+
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(container.innerHTML).not.toContain("ghu_secret");
   });
 });

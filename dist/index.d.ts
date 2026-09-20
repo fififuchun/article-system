@@ -46,6 +46,7 @@ interface ArticleStudioClassNames {
     issues?: string;
     imagePane?: string;
     actions?: string;
+    login?: string;
 }
 /**
  * GitHub 連携の設定（spec §15）。
@@ -121,7 +122,13 @@ interface Props {
     /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15）。まだ未接続 */
     github?: GitHubConfig;
 }
-declare function ArticleStudio({ articles, storageKey, imageBasePath, dateLabel, classNames, articleClassNames, }: Props): react_jsx_runtime.JSX.Element;
+/**
+ * 記事を書く画面。
+ *
+ * `github` を渡すとログインが必須になり、ダウンロードの代わりに
+ * リポジトリへコミットします。渡さなければ挙動は変わりません（spec §15）。
+ */
+declare function ArticleStudio(props: Props): react_jsx_runtime.JSX.Element;
 
 /**
  * アイコン共通の props（spec §11）。

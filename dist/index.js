@@ -303,7 +303,7 @@ function ArticleList({
 }
 
 // src/components/ArticleStudio.tsx
-import { useEffect, useState } from "react";
+import { useEffect as useEffect2, useState as useState2 } from "react";
 
 // src/icons/DownloadIcon.tsx
 import { jsx as jsx4, jsxs as jsxs3 } from "react/jsx-runtime";
@@ -468,11 +468,279 @@ function loadDraft(storageKey) {
   }
 }
 
+// src/github/resolveConfig.ts
+function trimSlashes(path) {
+  return path.replace(/^\/+|\/+$/g, "");
+}
+function resolveGitHubConfig(config, location) {
+  return {
+    clientId: config.clientId,
+    repo: config.repo,
+    branch: config.branch || "main",
+    mdDir: trimSlashes(config.mdDir || "src/articles"),
+    imageDir: trimSlashes(config.imageDir || "public/article_imgs"),
+    // 既定はクエリとハッシュを含めない。`?code=` が残ったURLを登録すると
+    // 交換済みの code を再送してしまう
+    redirectUri: config.redirectUri || `${location.origin}${location.pathname}`
+  };
+}
+
+// src/github/useGitHubAuth.ts
+import { useEffect, useRef, useState } from "react";
+
+// src/github/pkce.ts
+function toBase64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function randomUrlSafeToken(byteLength = 32) {
+  return toBase64Url(crypto.getRandomValues(new Uint8Array(byteLength)));
+}
+function createCodeVerifier() {
+  return randomUrlSafeToken(32);
+}
+async function createCodeChallenge(verifier) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return toBase64Url(new Uint8Array(digest));
+}
+
+// src/github/authUrl.ts
+var GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
+function createState() {
+  return randomUrlSafeToken(16);
+}
+function buildAuthorizeUrl({
+  clientId,
+  redirectUri,
+  state,
+  codeChallenge
+}) {
+  const query = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256"
+  });
+  return `${GITHUB_AUTHORIZE_URL}?${query}`;
+}
+
+// src/github/exchangeCode.ts
+var GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
+async function exchangeCodeForToken({
+  clientId,
+  code,
+  redirectUri,
+  codeVerifier,
+  state,
+  expectedState
+}) {
+  if (!expectedState || state !== expectedState) {
+    throw new Error("\u8A8D\u53EF\u306E state \u304C\u4E00\u81F4\u3057\u307E\u305B\u3093\u3002\u30ED\u30B0\u30A4\u30F3\u3092\u3084\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
+  }
+  const response = await fetch(GITHUB_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      // 既定では HTML が返る
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      client_id: clientId,
+      code,
+      redirect_uri: redirectUri,
+      code_verifier: codeVerifier
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`GitHub \u306E\u30C8\u30FC\u30AF\u30F3\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F\uFF08HTTP ${response.status}\uFF09`);
+  }
+  const body = await response.json();
+  if (body.error) {
+    throw new Error(body.error_description || body.error);
+  }
+  if (!body.access_token) {
+    throw new Error("GitHub \u304B\u3089\u30C8\u30FC\u30AF\u30F3\u304C\u8FD4\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002");
+  }
+  if (typeof body.expires_in !== "number") {
+    throw new Error(
+      "GitHub App \u304C\u6709\u52B9\u671F\u9650\u4ED8\u304D\u30C8\u30FC\u30AF\u30F3\u3092\u8FD4\u3057\u3066\u3044\u307E\u305B\u3093\u3002App \u306E\u8A2D\u5B9A\u3067\u671F\u9650\u3092\u6709\u52B9\u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+    );
+  }
+  return {
+    accessToken: body.access_token,
+    expiresAt: Date.now() + body.expires_in * 1e3,
+    refreshToken: body.refresh_token,
+    refreshTokenExpiresAt: typeof body.refresh_token_expires_in === "number" ? Date.now() + body.refresh_token_expires_in * 1e3 : void 0
+  };
+}
+
+// src/github/navigate.ts
+function redirectTo(url) {
+  window.location.assign(url);
+}
+
+// src/github/tokenStorage.ts
+var PREFIX2 = "as-github-token";
+function tokenKey(storageKey = "default") {
+  return `${PREFIX2}:${storageKey}`;
+}
+function saveToken(storageKey, token) {
+  try {
+    sessionStorage.setItem(tokenKey(storageKey), JSON.stringify(token));
+  } catch {
+  }
+}
+function loadToken(storageKey) {
+  let raw = null;
+  try {
+    raw = sessionStorage.getItem(tokenKey(storageKey));
+  } catch {
+    return null;
+  }
+  if (raw === null) return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    clearToken(storageKey);
+    return null;
+  }
+  if (typeof parsed?.accessToken !== "string" || typeof parsed?.expiresAt !== "number") {
+    clearToken(storageKey);
+    return null;
+  }
+  if (parsed.expiresAt <= Date.now()) {
+    clearToken(storageKey);
+    return null;
+  }
+  return parsed;
+}
+function clearToken(storageKey) {
+  try {
+    sessionStorage.removeItem(tokenKey(storageKey));
+  } catch {
+  }
+}
+var PENDING_PREFIX = "as-github-pending";
+function pendingKey(storageKey = "default") {
+  return `${PENDING_PREFIX}:${storageKey}`;
+}
+function savePendingAuth(storageKey, pending) {
+  try {
+    sessionStorage.setItem(pendingKey(storageKey), JSON.stringify(pending));
+  } catch {
+  }
+}
+function loadPendingAuth(storageKey) {
+  let raw = null;
+  try {
+    raw = sessionStorage.getItem(pendingKey(storageKey));
+  } catch {
+    return null;
+  }
+  if (raw === null) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.state !== "string" || typeof parsed?.codeVerifier !== "string") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+function clearPendingAuth(storageKey) {
+  try {
+    sessionStorage.removeItem(pendingKey(storageKey));
+  } catch {
+  }
+}
+
+// src/github/useGitHubAuth.ts
+function readCallback() {
+  const query = new URLSearchParams(window.location.search);
+  const code = query.get("code");
+  const state = query.get("state");
+  return code === null ? null : { code, state: state ?? "" };
+}
+function stripCallbackQuery() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("code");
+  url.searchParams.delete("state");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+function useGitHubAuth(config, storageKey) {
+  const callback = useRef(readCallback()).current;
+  const [token, setToken] = useState(
+    () => callback ? null : loadToken(storageKey)?.accessToken ?? null
+  );
+  const [status, setStatus] = useState(() => {
+    if (callback) return "loading";
+    return loadToken(storageKey) ? "authenticated" : "anonymous";
+  });
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    if (!callback) return;
+    let cancelled = false;
+    const pending = loadPendingAuth(storageKey);
+    stripCallbackQuery();
+    clearPendingAuth(storageKey);
+    if (!pending) {
+      setStatus("error");
+      setError("\u30ED\u30B0\u30A4\u30F3\u306E\u9014\u4E2D\u7D4C\u904E\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u3082\u3046\u4E00\u5EA6\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
+      return;
+    }
+    exchangeCodeForToken({
+      clientId: config.clientId,
+      code: callback.code,
+      redirectUri: config.redirectUri,
+      codeVerifier: pending.codeVerifier,
+      state: callback.state,
+      expectedState: pending.state
+    }).then((stored) => {
+      if (cancelled) return;
+      saveToken(storageKey, stored);
+      setToken(stored.accessToken);
+      setStatus("authenticated");
+    }).catch((reason) => {
+      if (cancelled) return;
+      setStatus("error");
+      setError(reason instanceof Error ? reason.message : "\u30ED\u30B0\u30A4\u30F3\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [callback, config.clientId, config.redirectUri, storageKey]);
+  const login = async () => {
+    const codeVerifier = createCodeVerifier();
+    const state = createState();
+    savePendingAuth(storageKey, { state, codeVerifier });
+    redirectTo(
+      buildAuthorizeUrl({
+        clientId: config.clientId,
+        redirectUri: config.redirectUri,
+        state,
+        codeChallenge: await createCodeChallenge(codeVerifier)
+      })
+    );
+  };
+  const logout = () => {
+    clearToken(storageKey);
+    clearPendingAuth(storageKey);
+    setToken(null);
+    setError(null);
+    setStatus("anonymous");
+  };
+  return { status, token, error, login, logout };
+}
+
 // src/components/ArticleStudio.tsx
-import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+import { Fragment, jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
 var DRAFT_MARK = "#draft-preview";
 var LIST_PREVIEW_COUNT = 6;
-function ArticleStudio({
+function StudioEditor({
   articles,
   storageKey,
   imageBasePath,
@@ -480,12 +748,12 @@ function ArticleStudio({
   classNames = {},
   articleClassNames
 }) {
-  const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
-  const [tab, setTab] = useState("detail");
-  const [issues, setIssues] = useState([]);
-  const [images, setImages] = useState([]);
-  const [placementPending, setPlacementPending] = useState(false);
-  useEffect(() => {
+  const [raw, setRaw] = useState2(() => loadDraft(storageKey) ?? buildTemplate());
+  const [tab, setTab] = useState2("detail");
+  const [issues, setIssues] = useState2([]);
+  const [images, setImages] = useState2([]);
+  const [placementPending, setPlacementPending] = useState2(false);
+  useEffect2(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
   const draft = buildDraftArticle(raw, articles);
@@ -642,6 +910,21 @@ ${markdown}
       }
     ) })
   ] });
+}
+function GitHubGate({ github, ...props }) {
+  const config = resolveGitHubConfig(github, window.location);
+  const auth = useGitHubAuth(config, props.storageKey);
+  if (auth.status === "authenticated") {
+    return /* @__PURE__ */ jsx6(StudioEditor, { ...props });
+  }
+  return /* @__PURE__ */ jsx6("div", { className: cx("as-studio-login", props.classNames?.login), children: auth.status === "loading" ? /* @__PURE__ */ jsx6("p", { children: "GitHub \u3068\u901A\u4FE1\u3057\u3066\u3044\u307E\u3059\u2026" }) : /* @__PURE__ */ jsxs4(Fragment, { children: [
+    auth.error && /* @__PURE__ */ jsx6("p", { className: "as-studio-login-error", role: "alert", children: auth.error }),
+    /* @__PURE__ */ jsx6("p", { children: "\u8A18\u4E8B\u3092\u66F8\u304F\u306B\u306F GitHub \u306B\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002" }),
+    /* @__PURE__ */ jsx6("button", { type: "button", onClick: () => void auth.login(), children: "GitHub \u3067\u30ED\u30B0\u30A4\u30F3" })
+  ] }) });
+}
+function ArticleStudio(props) {
+  return props.github ? /* @__PURE__ */ jsx6(GitHubGate, { ...props, github: props.github }) : /* @__PURE__ */ jsx6(StudioEditor, { ...props });
 }
 
 // src/icons/ArrowIcon.tsx
