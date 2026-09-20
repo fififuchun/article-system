@@ -78,3 +78,59 @@ export function clearToken(storageKey?: string): void {
     // 消せないだけ。期限が来れば loadToken が弾く
   }
 }
+
+const PENDING_PREFIX = "as-github-pending";
+
+/** 認可画面へ飛ぶ前に預けておく値。戻ってきたときに突き合わせる */
+export interface PendingAuth {
+  state: string;
+  codeVerifier: string;
+}
+
+export function pendingKey(storageKey = "default"): string {
+  return `${PENDING_PREFIX}:${storageKey}`;
+}
+
+/**
+ * state と code_verifier を預ける。
+ *
+ * 認可画面へ遷移するとページが破棄されるため、メモリには残せません。
+ * sessionStorage なら同じタブに戻ってきたときだけ読めます。
+ */
+export function savePendingAuth(storageKey: string | undefined, pending: PendingAuth): void {
+  try {
+    sessionStorage.setItem(pendingKey(storageKey), JSON.stringify(pending));
+  } catch {
+    // 保存できなければ交換時に「やり直してください」で止まる
+  }
+}
+
+/** 預けた値を読む。無ければ `null` */
+export function loadPendingAuth(storageKey?: string): PendingAuth | null {
+  let raw: string | null = null;
+  try {
+    raw = sessionStorage.getItem(pendingKey(storageKey));
+  } catch {
+    return null;
+  }
+  if (raw === null) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as PendingAuth;
+    if (typeof parsed?.state !== "string" || typeof parsed?.codeVerifier !== "string") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/** 使い捨てなので、交換したら必ず消す */
+export function clearPendingAuth(storageKey?: string): void {
+  try {
+    sessionStorage.removeItem(pendingKey(storageKey));
+  } catch {
+    // 消せなくても state は毎回作り直すので使い回されない
+  }
+}
