@@ -177,14 +177,17 @@
 - [x] `github` を渡さないとき既存の挙動が一切変わらないことをテストで固定する（ボタン文言・ダウンロード・ログイン画面が出ないこと。テスト → グリーン）
 - [x] `GitHubConfig` 型を `src/types.ts` に足し、`ArticleStudio` の `github?` prop として受けるだけの状態にする（既定値 `branch: "main"` / `mdDir: "src/articles"` / `imageDir: "public/article_imgs"` を解決する純粋関数 `resolveGitHubConfig` とテスト）
 
-#### 9-2 認証（GitHub App + PKCE）
+#### 9-2 認証（Fine-grained PAT）
 
-- [x] `src/github/pkce.ts` — `code_verifier` 生成と `code_challenge`（S256）を作る。`crypto.subtle` を使う（テスト → 実装 → グリーン）
-- [x] `src/github/tokenStorage.ts` — sessionStorage への保存・読み出し・破棄。**トークンは戻り値以外に出さない**（テスト → 実装 → グリーン）
-- [x] `src/github/authUrl.ts` — 認可URLの組み立て（`client_id` / `redirect_uri` / `state` / `code_challenge` / `code_challenge_method=S256`）。テストは URL の中身を検証する（テスト → 実装 → グリーン）
-- [x] `src/github/exchangeCode.ts` — `POST /login/oauth/access_token` で code を交換する。`state` 不一致は例外。`fetch` をスタブしてテストする（テスト → 実装 → グリーン）
-- [x] `useGitHubAuth` フック — 上記をまとめ、`{ status, login, logout, token }` を返す。リダイレクト後の `?code=` を拾い、履歴から消す（テスト → 実装 → グリーン）
-- [x] 未ログイン時に編集画面を出さず、ログインボタンだけを出す（テスト → 実装 → グリーン）
+**GitHub App のログインは断念した。** `login/oauth/access_token` に CORS が無く、
+ブラウザから `code` を交換できない（SPA 対応は Preview / Paused）。詳細は spec §15。
+`api.github.com` は CORS 対応なので 9-3 以降はそのまま進められる。
+
+- [ ] GitHub App 用のコードを消す（`pkce.ts` / `authUrl.ts` / `exchangeCode.ts` / `navigate.ts` / `useGitHubAuth.ts` と各テスト）。`GitHubConfig` から `clientId` と `redirectUri` を外す
+- [ ] `tokenStorage` の `expiresAt` を任意にする（PAT には期限情報が無い。無期限扱いでタブを閉じるまで保つ。テスト → 実装 → グリーン）
+- [ ] `src/github/verifyToken.ts` — `GET /repos/{repo}` で読めることと `permissions.push` を確かめる。401 / 404 / 権限不足を区別する（テスト → 実装 → グリーン）
+- [ ] `useGitHubToken` フック — 貼り付け・検証・保存・破棄をまとめ、`{ status, token, error, submit, clear }` を返す（テスト → 実装 → グリーン）
+- [ ] トークンが無いとき編集画面を出さず、入力欄だけを出す（`type="password"`、保存後は再表示しない。テスト → 実装 → グリーン）
 
 #### 9-3 コミット（Git Data API）
 
@@ -204,8 +207,8 @@
 #### 9-5 仕上げ
 
 - [ ] `src/index.ts` から `GitHubConfig` 型を公開する
-- [ ] README に GitHub App の作り方（SPA リダイレクトURI、有効期限付きトークン、インストール先）と `github` prop の例を書く
-- [ ] `demo/` に「GitHub 連携」ページを足し、`clientId` と `repo` を画面から入力してログイン〜コミットまでを実地確認する（既存ページは `github` を渡さないまま）
+- [ ] README に fine-grained PAT の作り方（対象リポジトリのみ / Contents: Read and write）と `github` prop の例を書く
+- [ ] `demo/` に「GitHub 連携」ページを足し、トークンと `repo` を画面から入力してコミットまでを実地確認する（既存ページは `github` を渡さないまま）
 - [ ] バージョンを 0.3.0 に上げ、タグを打つ
 
 ---
@@ -219,5 +222,5 @@
 - `Article` に `filename` を足すと `createArticles` の戻り値の形が変わる。フェーズ6の Studio が `Article` を組み立てるときも `filename` が要る
 - フェーズ6で `ArticlePreview` を削除するのは**破壊的変更**。利用側プロジェクトの差し替えが必要になる
 - フェーズ9は `github` を渡さないときの挙動を**一切変えない**。9-1 の回帰テストを最初に置き、以降の周回で落ちないことを確認する
-- フェーズ9のテストは `fetch` と `crypto.subtle` をスタブする。**実際に GitHub を叩くテストは書かない**
-- GitHub App は利用側が作る。このリポジトリには `clientId` を持たせない
+- フェーズ9のテストは `fetch` をスタブする。**実際に GitHub を叩くテストは書かない**
+- トークンは利用者が貼る。このリポジトリにも利用側のコードにも秘密を持たせない

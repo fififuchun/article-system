@@ -826,8 +826,8 @@ npm i github:fififuchun/article-system
 - インストールはタグで固定すること
 - `styles.css` の import 方法と、読み込まない場合の挙動
 - 複数プロジェクトで使う場合は `storageKey` を指定すること
-- Studio を本番に置く場合、`github` を渡して GitHub ログインを必須にするか、ホスティング側で認証をかけること（§15）
-- `github` を使うには利用側で GitHub App を作り、リダイレクトURIを SPA として登録し、対象リポジトリにインストールする必要があること
+- Studio を本番に置く場合、`github` を渡して GitHub トークンを必須にするか、ホスティング側で認証をかけること（§15）
+- `github` を使うには fine-grained PAT（対象リポジトリのみ / Contents: Read and write）を発行する必要があること
 - `subsubheading`（`####`）が `classNames` に存在すること（現在の README に記載漏れ）
 - 一覧を新しい順にするには `[...articles].reverse()` が必要なこと
 
@@ -859,50 +859,50 @@ jsdom は純粋関数のテストより桁違いに遅いため、環境はフ�
 
 ```ts
 interface GitHubConfig {
-  clientId: string;   // GitHub App のクライアントID
   repo: string;       // "owner/name"
   branch?: string;    // 既定 "main"
   mdDir?: string;     // 既定 "src/articles"
   imageDir?: string;  // 既定 "public/article_imgs"
-  redirectUri?: string; // 既定は現在のページURL（origin + pathname）
 }
 ```
 
 既定値は §2 の構成に合わせています。`imageBasePath` は**表示用のURLパス**であり、リポジトリ上の置き場所とは別物です。両方を指定する必要があります。
 
-### ログインは必須
+### 認証は Fine-grained PAT
 
-`github` を渡した場合、**ログインするまで編集画面を出しません**。ログインボタンだけを出します。
+利用者が GitHub で発行した **fine-grained personal access token** を画面に貼ります。トークンが無ければ**編集画面を出しません**。
 
-これが §13 の「Studio を本番に置くならホスティング側の認証を強く推奨」の代わりになります。書き込み権限は GitHub 側（App のインストール先とユーザーの権限）で決まるため、ライブラリが認可を持つ必要がありません。
+これが §13 の「Studio を本番に置くならホスティング側の認証を強く推奨」の代わりになります。書き込み権限は GitHub 側（トークンのスコープ）で決まるため、ライブラリが認可を持つ必要がありません。
 
-### 認証は GitHub App（PAT ではない）
+利用者に用意してもらうトークン：
 
-- **GitHub App** を使います。OAuth App は SPA から使えません（`/access_token` に CORS が無く、client secret が要る）
-- GitHub App のリダイレクトURIを **SPA として登録**すると `/access_token` に CORS が付き、バックエンド無しで完結します
-- **PKCE は必須**、**有効期限付きトークンも必須**です（期限を無効化した App は SPA クライアントとして使えません）
-- **client secret はアプリに持たせません**
-- 利用側は自分で GitHub App を作り、対象リポジトリにインストールし、`clientId` を渡します
+- **Repository access** — 対象のリポジトリだけ
+- **Permissions → Contents: Read and write** — これだけで足ります
+- 有効期限は GitHub 側で設定してもらう
+
+### なぜ GitHub App のログインにしないのか ★調査済み
+
+`https://github.com/login/oauth/access_token`（`code` をトークンに交換するエンドポイント）に **CORS が無いため、ブラウザから叩けません**。GitHub App の SPA クライアント対応は Preview かつ **Paused** で、時期の見通しがありません。
+
+- GitHub ドキュメント: 「CORS pre-flight requests (OPTIONS) are not supported at this time」
+- GitHub 側の回答（2025-07-15）: PKCE は追加済み、CORS は作業中、client secret を外す予定は無い
+- ロードマップ [github/roadmap#1153](https://github.com/github/roadmap/issues/1153): Preview / Paused
+
+一方 **`api.github.com` は CORS 対応**（`Access-Control-Allow-Origin: *`）なので、**コミット処理はブラウザだけで完結します**。詰まるのはログインの1手だけでした。
+
+バックエンドを1つ持てばログイン方式にできますが、このライブラリは**利用側にサーバーを要求しない**方針を採ります。SPA 対応が再開したら乗り換えます（§16）。
 
 ### トークンの置き場所
 
-**sessionStorage** に置きます。リロードしてもログインし直さずに済み、タブを閉じれば消えます。トークンは画面に出しません。
+**sessionStorage** に置きます。リロードしてもう一度貼らずに済み、タブを閉じれば消えます。**トークンは画面に出しません** — 入力欄は `type="password"` にし、保存後は再表示しません。
 
 なお**下書き本文は localStorage に残ります**（§9）。トークンの寿命を短くしても、書きかけの記事が端末に残る点は変わりません。
 
-### リダイレクト先
+### 貼られたトークンは即座に確かめる
 
-GitHub は**事前に登録された Callback URL にしか戻しません**。登録していないURLに戻せてしまうと、別サイトがトークンを横取りできるためです。
+`GET /repos/{repo}` を1回叩き、**読めること**と `permissions.push` が真であること（＝書き込めること）を確かめてから受け入れます。
 
-既定では**現在のページURL**（`location.origin + location.pathname`）を使います。利用側は GitHub App の設定に同じURLを登録するだけで済みます。`redirectUri` を渡せば上書きできます。
-
-**末尾スラッシュの有無まで完全一致**が要ります。ずれていると GitHub 側で弾かれます。
-
-### 実地確認
-
-テストは `fetch` をスタブするため、**本物の GitHub と通信できることは証明しません**。`demo/` に「GitHub 連携」ページを置き、`clientId` と `repo` を画面から入力してログインからコミットまでを目で確かめます。リポジトリには秘密を置きません。
-
-デモの既存ページは `github` を渡さないままにします。既定の挙動を見せる場としての役割を変えないためです。
+確かめずに受け入れると、記事を書き終えてコミットを押した時点で初めて「権限がありません」と分かります。貼った直後なら、トークンを作り直すだけで済みます。
 
 ### コミットは Git Data API で1コミット
 
@@ -924,20 +924,21 @@ Git Data API なら blob → tree → commit → ref の順に組み立て、**�
 
 ### 失敗したとき
 
-通信エラー、トークン切れ、他人が先に push して ref が進んだ場合など。
+通信エラー、トークンの失効や取り消し（401）、他人が先に push して ref が進んだ場合など。
 
 - 検証エラー欄に理由を出します
 - 同じ場所に **「代わりにダウンロード」ボタン**を出します。書いたものを必ず持ち帰れるようにするためです
 - **黙ってダウンロードに落とすことはしません。** コミットされたと勘違いされます
+- 401 のときはトークンを破棄し、貼り直しを促します
 
 ### ボタンの出しわけ
 
-`github` 設定とログイン状態で**ラベルだけ**が変わります。ボタンの数と位置は変えません。
+`github` 設定とトークンの有無で**ラベルだけ**が変わります。ボタンの数と位置は変えません。
 
 | | 本番 | 下書き |
 | --- | --- | --- |
 | `github` なし | 本番ダウンロード | 下書きダウンロード |
-| `github` あり・ログイン済み | **本番コミット** | 下書きダウンロード |
+| `github` あり・トークンあり | **本番コミット** | 下書きダウンロード |
 
 **下書きはコミットしません。** 押すたびにコミットが積み上がり、公開リポジトリなら書きかけが誰でも読めるためです。下書きの保存は localStorage の自動保存が担います。
 
@@ -949,6 +950,12 @@ Git Data API なら blob → tree → commit → ref の順に組み立て、**�
 
 ただし**編集中の画像は依然としてブラウザ内の blob** です。コミット前にリロードすれば消えます（§17）。
 
+### 実地確認
+
+テストは `fetch` をスタブするため、**本物の GitHub と通信できることは証明しません**。`demo/` に「GitHub 連携」ページを置き、トークンと `repo` を画面から入力してコミットまでを目で確かめます。リポジトリには秘密を置きません。
+
+デモの既存ページは `github` を渡さないままにします。既定の挙動を見せる場としての役割を変えないためです。
+
 ---
 
 ## 16. 将来やること（v1 では実装しない）
@@ -956,6 +963,7 @@ Git Data API なら blob → tree → commit → ref の順に組み立て、**�
 | 項目 | 内容 |
 | --- | --- |
 | **既存記事の編集** | `articles` から選んで開き、`latestUpdate` を自動更新する |
+| **GitHub App のログイン** | SPA クライアント対応（現在 Preview / Paused）が再開したら、PAT の貼り付けをログインに置き換える（§15） |
 | **日付衝突の警告** | 既存記事より古い日付を検出して `id` のずれを警告する |
 | **Studio コードの分離** | `./studio` エントリポイントに分け、読者向けバンドルから外す |
 
