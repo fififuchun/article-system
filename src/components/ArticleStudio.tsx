@@ -3,6 +3,7 @@ import type {
   Article,
   ArticleDetailClassNames,
   ArticleStudioClassNames,
+  GitHubConfig,
 } from "../types";
 import { cx } from "../cx";
 import { validateArticle, type Issue } from "../validate";
@@ -48,6 +49,8 @@ interface Props {
   dateLabel?: string;
   classNames?: ArticleStudioClassNames;
   articleClassNames?: ArticleDetailClassNames;
+  /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15）。まだ未接続 */
+  github?: GitHubConfig;
 }
 
 export function ArticleStudio({

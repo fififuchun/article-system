@@ -49,3 +49,24 @@ export interface ArticleStudioClassNames {
   imagePane?: string;   // 仮登録した画像の一覧（名前とダウンロード）
   actions?: string;     // 本番DL / 下書きDL のボタン列
 }
+
+/**
+ * GitHub 連携の設定（spec §15）。
+ *
+ * 渡すと ArticleStudio がダウンロードではなくリポジトリへコミットします。
+ * 渡さなければ挙動は変わりません。
+ */
+export interface GitHubConfig {
+  /** GitHub App のクライアントID。App は利用側が作る */
+  clientId: string;
+  /** "owner/name" */
+  repo: string;
+  /** 既定 "main" */
+  branch?: string;
+  /** md の置き場所。既定 "src/articles" */
+  mdDir?: string;
+  /** 画像の置き場所。`imageBasePath`（表示用URL）とは別物。既定 "public/article_imgs" */
+  imageDir?: string;
+  /** 既定は現在のページURL。GitHub App に登録した Callback URL と完全一致させる */
+  redirectUri?: string;
+}

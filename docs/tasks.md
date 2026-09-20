@@ -175,7 +175,7 @@
 #### 9-1 土台
 
 - [x] `github` を渡さないとき既存の挙動が一切変わらないことをテストで固定する（ボタン文言・ダウンロード・ログイン画面が出ないこと。テスト → グリーン）
-- [ ] `GitHubConfig` 型を `src/types.ts` に足し、`ArticleStudio` の `github?` prop として受けるだけの状態にする（既定値 `branch: "main"` / `mdDir: "src/articles"` / `imageDir: "public/article_imgs"` を解決する純粋関数 `resolveGitHubConfig` とテスト）
+- [x] `GitHubConfig` 型を `src/types.ts` に足し、`ArticleStudio` の `github?` prop として受けるだけの状態にする（既定値 `branch: "main"` / `mdDir: "src/articles"` / `imageDir: "public/article_imgs"` を解決する純粋関数 `resolveGitHubConfig` とテスト）
 
 #### 9-2 認証（GitHub App + PKCE）
 
