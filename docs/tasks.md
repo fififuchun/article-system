@@ -184,7 +184,7 @@
 `api.github.com` は CORS 対応なので 9-3 以降はそのまま進められる。
 
 - [x] `tokenStorage` の `expiresAt` を任意にする（PAT には期限情報が無い。無期限扱いでタブを閉じるまで保つ。テスト → 実装 → グリーン）
-- [ ] `src/github/verifyToken.ts` — `GET /repos/{repo}` で読めることと `permissions.push` を確かめる。401 / 404 / 権限不足を区別する（テスト → 実装 → グリーン）
+- [x] `src/github/verifyToken.ts` — `GET /repos/{repo}` で読めることと `permissions.push` を確かめる。401 / 404 / 権限不足を区別する（テスト → 実装 → グリーン）
 - [ ] `useGitHubToken` フック — 貼り付け・検証・保存・破棄をまとめ、`{ status, token, error, submit, clear }` を返す（テスト → 実装 → グリーン）
 - [ ] 関門をトークン入力欄に差し替える（`type="password"`、保存後は再表示しない）。あわせて GitHub App 用のコード（`pkce` / `authUrl` / `exchangeCode` / `navigate` / `useGitHubAuth` と `tokenStorage` の PendingAuth）を消し、`GitHubConfig` から `clientId` と `redirectUri` を外す（テスト → 実装 → グリーン）
 
