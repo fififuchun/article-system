@@ -484,7 +484,7 @@ function resolveGitHubConfig(config) {
 // src/github/useGitHubToken.ts
 import { useState } from "react";
 
-// src/github/verifyToken.ts
+// src/github/api.ts
 var GITHUB_API_BASE = "https://api.github.com";
 var GITHUB_API_VERSION = "2022-11-28";
 function authHeaders(token) {
@@ -494,6 +494,8 @@ function authHeaders(token) {
     "X-GitHub-Api-Version": GITHUB_API_VERSION
   };
 }
+
+// src/github/verifyToken.ts
 async function verifyToken(token, repo) {
   let response;
   try {

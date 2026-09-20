@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { verifyToken, GITHUB_API_BASE } from "./verifyToken";
+import { verifyToken } from "./verifyToken";
+import { GITHUB_API_BASE } from "./api";
 
 const respond = (body: unknown, status = 200) =>
   vi.fn(async () => new Response(JSON.stringify(body), { status }));

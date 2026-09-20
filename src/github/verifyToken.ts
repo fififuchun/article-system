@@ -1,21 +1,8 @@
-/** REST API の入口。ここは CORS 対応なのでブラウザから叩ける（spec §15） */
-export const GITHUB_API_BASE = "https://api.github.com";
-
-/** 明示しないと、既定版が上がったときに黙って壊れる */
-export const GITHUB_API_VERSION = "2022-11-28";
+import { authHeaders, GITHUB_API_BASE } from "./api";
 
 interface RepoResponse {
   permissions?: { push?: boolean };
   message?: string;
-}
-
-/** 認証付きリクエストの共通ヘッダー。トークンはURLに載せない */
-export function authHeaders(token: string): Record<string, string> {
-  return {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": GITHUB_API_VERSION,
-  };
 }
 
 /**
