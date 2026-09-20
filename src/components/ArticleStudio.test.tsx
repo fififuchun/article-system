@@ -804,3 +804,86 @@ describe("ArticleStudio — id の予告", () => {
     expect(container.querySelector(".as-studio-id-preview")).toBeNull();
   });
 });
+
+// spec §15: GitHub 連携は `github` を渡したときだけ有効になる。
+// 渡さない利用側の挙動は一切変えない。フェーズ9でここが落ちたら
+// v1 の利用者を壊している
+describe("ArticleStudio — github を渡さないとき（spec §15）", () => {
+  let downloads: string[];
+  let fetchSpy: ReturnType<typeof vi.fn>;
+  let clickSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+    sessionStorage.clear();
+
+    // ダウンロードが実際に走ったかを download 属性で捕まえる
+    downloads = [];
+    clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloads.push(this.download);
+      });
+
+    // GitHub を叩かないことを確かめるため。呼ばれたら落ちる
+    fetchSpy = vi.fn(() => {
+      throw new Error("github を渡していないのに fetch が呼ばれた");
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+  });
+
+  afterEach(() => clickSpy.mockRestore());
+
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+  };
+
+  it("操作帯のボタンは3つで、文言が変わらない", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    const labels = Array.from(
+      container.querySelectorAll(".as-studio-actions button")
+    ).map((button) => button.textContent);
+
+    expect(labels).toEqual(["本番ダウンロード", "下書きダウンロード", "新しく書く"]);
+  });
+
+  it("ログインを促さず、編集画面をそのまま出す", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    expect(textarea()).toBeDefined();
+    expect(screen.queryByRole("button", { name: /ログイン/ })).toBeNull();
+  });
+
+  it("本番ボタンで md をダウンロードし、通信しない", async () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(downloads).toEqual(["2026-08-23-夏の更新.md"]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("下書きボタンで md をダウンロードし、通信しない", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    fireEvent.click(screen.getByRole("button", { name: /下書き/ }));
+
+    expect(downloads).toEqual(["_2026-08-23-夏の更新.md"]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("sessionStorage に何も書かない", async () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(sessionStorage.length).toBe(0);
+  });
+});
