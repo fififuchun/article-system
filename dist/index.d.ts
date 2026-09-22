@@ -157,4 +157,4 @@ declare function TagIcon({ className }: IconProps): react_jsx_runtime.JSX.Elemen
 
 declare function WarningIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
 
-export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };
+export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type GitHubConfig, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };

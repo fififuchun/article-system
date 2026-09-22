@@ -3,6 +3,7 @@ export type {
   ArticleDetailClassNames,
   ArticleListClassNames,
   ArticleStudioClassNames,
+  GitHubConfig,
 } from "./types";
 export type { Issue } from "./validate";
 export { createArticles } from "./createArticles";
