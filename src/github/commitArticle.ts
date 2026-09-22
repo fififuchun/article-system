@@ -54,6 +54,21 @@ export class MissingBranchError extends Error {
   }
 }
 
+/**
+ * トークンに権限が足りない（403）。
+ *
+ * GitHub は "Resource not accessible by personal access token" しか返さないため、
+ * どこで止まったかと、確かめるべき設定を添える。
+ */
+export class PermissionError extends Error {
+  constructor(step: string, repo: string) {
+    super(
+      `${step}が許可されませんでした（${repo}）。トークンの Repository access にこのリポジトリが含まれているか、Permissions → Contents が Read and write になっているかを確かめてください。組織のリポジトリなら、組織側で fine-grained token の許可も必要です。`
+    );
+    this.name = "PermissionError";
+  }
+}
+
 interface CommitParams {
   token: string;
   config: ResolvedGitHubConfig;
@@ -123,10 +138,25 @@ export async function commitArticle({
   const { repo, branch, mdDir } = config;
   const path = `${mdDir}/${filename}`;
 
+  // 403 だけは、どの段階で止まったかを添えて投げ直す。GitHub の文言だけでは
+  // 読み取りで落ちたのか書き込みで落ちたのかも分からない
+  const step = async <T>(label: string, run: () => Promise<T>): Promise<T> => {
+    try {
+      return await run();
+    } catch (reason: unknown) {
+      if (reason instanceof GitHubApiError && reason.status === 403) {
+        throw new PermissionError(label, repo);
+      }
+      throw reason;
+    }
+  };
+
   // 1. いまの先端
   let ref: RefResponse;
   try {
-    ref = await githubRequest<RefResponse>(token, `/repos/${repo}/git/ref/heads/${branch}`);
+    ref = await step("ブランチの読み取り", () =>
+      githubRequest<RefResponse>(token, `/repos/${repo}/git/ref/heads/${branch}`)
+    );
   } catch (reason: unknown) {
     // GitHub の文言（"Git Repository is empty." / "Not Found"）では
     // 何をすればよいか分からない
@@ -139,17 +169,15 @@ export async function commitArticle({
   const parentSha = ref.object.sha;
 
   // 2. その中身（base_tree に要る）
-  const parent = await githubRequest<CommitResponse>(
-    token,
-    `/repos/${repo}/git/commits/${parentSha}`
+  const parent = await step("コミットの読み取り", () =>
+    githubRequest<CommitResponse>(token, `/repos/${repo}/git/commits/${parentSha}`)
   );
   const baseTreeSha = parent.tree.sha;
 
   // 3. 衝突を確かめる。`articles` はビルド時のスナップショットなので、
   //    同じセッションで先にコミットした記事を黙って上書きしてしまう
-  const baseTree = await githubRequest<TreeResponse>(
-    token,
-    `/repos/${repo}/git/trees/${baseTreeSha}?recursive=1`
+  const baseTree = await step("ツリーの読み取り", () =>
+    githubRequest<TreeResponse>(token, `/repos/${repo}/git/trees/${baseTreeSha}?recursive=1`)
   );
   const taken = new Set(baseTree.tree.map((entry) => entry.path));
 
@@ -167,19 +195,23 @@ export async function commitArticle({
   }
 
   // 4. 中身を預ける。ここではまだどこにも現れない
-  const blob = await githubRequest<BlobResponse>(token, `/repos/${repo}/git/blobs`, {
-    method: "POST",
-    body: { content: markdown, encoding: "utf-8" },
-  });
+  const blob = await step("本文の預け入れ", () =>
+    githubRequest<BlobResponse>(token, `/repos/${repo}/git/blobs`, {
+      method: "POST",
+      body: { content: markdown, encoding: "utf-8" },
+    })
+  );
 
   // 画像も同じコミットに入れる。別コミットにすると、途中で失敗したとき
   // 画像だけがリポジトリに残る（spec §15）
   const imageEntries = await Promise.all(
     images.map(async (image) => {
-      const uploaded = await githubRequest<BlobResponse>(token, `/repos/${repo}/git/blobs`, {
-        method: "POST",
-        body: { content: await toBase64(image.file), encoding: "base64" },
-      });
+      const uploaded = await step("画像の預け入れ", async () =>
+        githubRequest<BlobResponse>(token, `/repos/${repo}/git/blobs`, {
+          method: "POST",
+          body: { content: await toBase64(image.file), encoding: "base64" },
+        })
+      );
 
       return {
         path: `${config.imageDir}/${image.name}`,
@@ -191,25 +223,31 @@ export async function commitArticle({
   );
 
   // 5. 置き場所を決めたツリー。base_tree を渡さないと既存のファイルが全部消える
-  const tree = await githubRequest<TreeResponse>(token, `/repos/${repo}/git/trees`, {
-    method: "POST",
-    body: {
-      base_tree: baseTreeSha,
-      tree: [{ path, mode: FILE_MODE, type: "blob", sha: blob.sha }, ...imageEntries],
-    },
-  });
+  const tree = await step("ツリーの作成", () =>
+    githubRequest<TreeResponse>(token, `/repos/${repo}/git/trees`, {
+      method: "POST",
+      body: {
+        base_tree: baseTreeSha,
+        tree: [{ path, mode: FILE_MODE, type: "blob", sha: blob.sha }, ...imageEntries],
+      },
+    })
+  );
 
   // 6. コミット。まだ枝は指していない
-  const commit = await githubRequest<CommitResponse>(token, `/repos/${repo}/git/commits`, {
-    method: "POST",
-    body: { message, tree: tree.sha, parents: [parentSha] },
-  });
+  const commit = await step("コミットの作成", () =>
+    githubRequest<CommitResponse>(token, `/repos/${repo}/git/commits`, {
+      method: "POST",
+      body: { message, tree: tree.sha, parents: [parentSha] },
+    })
+  );
 
   // 7. ここで初めて公開される。force は付けない — 付けると他人のコミットを消す
-  await githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
-    method: "PATCH",
-    body: { sha: commit.sha },
-  });
+  await step("ブランチの更新", () =>
+    githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
+      method: "PATCH",
+      body: { sha: commit.sha },
+    })
+  );
 
   return commit.sha;
 }

@@ -5,6 +5,7 @@ import {
   ImageExistsError,
   EmptyRepositoryError,
   MissingBranchError,
+  PermissionError,
 } from "./commitArticle";
 import { GitHubApiError } from "./api";
 
@@ -473,5 +474,86 @@ describe("commitArticle — 先端が取れないとき", () => {
 
     expect(error).toBeInstanceOf(GitHubApiError);
     expect((error as GitHubApiError).kind).toBe("unauthorized");
+  });
+});
+
+// 実地確認で踏んだ。GitHub の "Resource not accessible by personal access token"
+// では、どこで何が足りないのか分からない
+describe("commitArticle — 権限が足りないとき", () => {
+  /** 指定の呼び出しだけ 403 にする */
+  function stubForbiddenAt(match: (method: string, path: string) => boolean) {
+    calls = [];
+    const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
+      const path = url.replace("https://api.github.com", "");
+      const method = init.method ?? "GET";
+      calls.push([method, path]);
+
+      if (match(method, path)) {
+        return new Response(
+          JSON.stringify({ message: "Resource not accessible by personal access token" }),
+          { status: 403 }
+        );
+      }
+      if (path.includes("/git/ref/heads/")) {
+        return new Response(JSON.stringify({ object: { sha: "commit-old" } }), { status: 200 });
+      }
+      if (path.includes("/git/commits/")) {
+        return new Response(JSON.stringify({ tree: { sha: "tree-old" } }), { status: 200 });
+      }
+      if (path.includes("/git/trees/")) {
+        return new Response(JSON.stringify({ tree: [] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ sha: "new" }), { status: 201 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it("403 は権限の話だと分かる文言にする", async () => {
+    stubForbiddenAt((method) => method === "GET");
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(PermissionError);
+    expect((error as Error).message).toContain("Contents");
+    expect((error as Error).message).toContain("Read and write");
+  });
+
+  // 組織のリポジトリは、組織側の承認が別に要る
+  it("組織の承認にも触れる", async () => {
+    stubForbiddenAt((method) => method === "GET");
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect((error as Error).message).toContain("組織");
+  });
+
+  it("どの段階で止まったかを言う", async () => {
+    stubForbiddenAt((method, path) => method === "POST" && path.endsWith("/git/blobs"));
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect((error as Error).message).toContain("本文の預け入れ");
+  });
+
+  it("ref の更新で 403 でも、それまでに公開はされていない", async () => {
+    stubForbiddenAt((method) => method === "PATCH");
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(PermissionError);
+    expect((error as Error).message).toContain("ブランチの更新");
+  });
+
+  it("403 で止まったら以降は叩かない", async () => {
+    const fetchMock = stubForbiddenAt((method, path) =>
+      method === "POST" && path.endsWith("/git/blobs")
+    );
+
+    await commitArticle(params).catch(() => {});
+
+    expect(
+      fetchMock.mock.calls.some(([, init]) => (init as RequestInit).method === "PATCH")
+    ).toBe(false);
   });
 });

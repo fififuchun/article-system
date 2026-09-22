@@ -679,6 +679,14 @@ var MissingBranchError = class extends Error {
     this.name = "MissingBranchError";
   }
 };
+var PermissionError = class extends Error {
+  constructor(step, repo) {
+    super(
+      `${step}\u304C\u8A31\u53EF\u3055\u308C\u307E\u305B\u3093\u3067\u3057\u305F\uFF08${repo}\uFF09\u3002\u30C8\u30FC\u30AF\u30F3\u306E Repository access \u306B\u3053\u306E\u30EA\u30DD\u30B8\u30C8\u30EA\u304C\u542B\u307E\u308C\u3066\u3044\u308B\u304B\u3001Permissions \u2192 Contents \u304C Read and write \u306B\u306A\u3063\u3066\u3044\u308B\u304B\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002\u7D44\u7E54\u306E\u30EA\u30DD\u30B8\u30C8\u30EA\u306A\u3089\u3001\u7D44\u7E54\u5074\u3067 fine-grained token \u306E\u8A31\u53EF\u3082\u5FC5\u8981\u3067\u3059\u3002`
+    );
+    this.name = "PermissionError";
+  }
+};
 async function toBase64(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const CHUNK = 32768;
@@ -699,9 +707,22 @@ async function commitArticle({
 }) {
   const { repo, branch, mdDir } = config;
   const path = `${mdDir}/${filename}`;
+  const step = async (label, run) => {
+    try {
+      return await run();
+    } catch (reason) {
+      if (reason instanceof GitHubApiError && reason.status === 403) {
+        throw new PermissionError(label, repo);
+      }
+      throw reason;
+    }
+  };
   let ref;
   try {
-    ref = await githubRequest(token, `/repos/${repo}/git/ref/heads/${branch}`);
+    ref = await step(
+      "\u30D6\u30E9\u30F3\u30C1\u306E\u8AAD\u307F\u53D6\u308A",
+      () => githubRequest(token, `/repos/${repo}/git/ref/heads/${branch}`)
+    );
   } catch (reason) {
     if (reason instanceof GitHubApiError) {
       if (reason.status === 409) throw new EmptyRepositoryError(repo);
@@ -710,14 +731,14 @@ async function commitArticle({
     throw reason;
   }
   const parentSha = ref.object.sha;
-  const parent = await githubRequest(
-    token,
-    `/repos/${repo}/git/commits/${parentSha}`
+  const parent = await step(
+    "\u30B3\u30DF\u30C3\u30C8\u306E\u8AAD\u307F\u53D6\u308A",
+    () => githubRequest(token, `/repos/${repo}/git/commits/${parentSha}`)
   );
   const baseTreeSha = parent.tree.sha;
-  const baseTree = await githubRequest(
-    token,
-    `/repos/${repo}/git/trees/${baseTreeSha}?recursive=1`
+  const baseTree = await step(
+    "\u30C4\u30EA\u30FC\u306E\u8AAD\u307F\u53D6\u308A",
+    () => githubRequest(token, `/repos/${repo}/git/trees/${baseTreeSha}?recursive=1`)
   );
   const taken = new Set(baseTree.tree.map((entry) => entry.path));
   if (taken.has(path)) {
@@ -727,16 +748,22 @@ async function commitArticle({
   if (clashingImages.length > 0) {
     throw new ImageExistsError(clashingImages);
   }
-  const blob = await githubRequest(token, `/repos/${repo}/git/blobs`, {
-    method: "POST",
-    body: { content: markdown, encoding: "utf-8" }
-  });
+  const blob = await step(
+    "\u672C\u6587\u306E\u9810\u3051\u5165\u308C",
+    () => githubRequest(token, `/repos/${repo}/git/blobs`, {
+      method: "POST",
+      body: { content: markdown, encoding: "utf-8" }
+    })
+  );
   const imageEntries = await Promise.all(
     images.map(async (image) => {
-      const uploaded = await githubRequest(token, `/repos/${repo}/git/blobs`, {
-        method: "POST",
-        body: { content: await toBase64(image.file), encoding: "base64" }
-      });
+      const uploaded = await step(
+        "\u753B\u50CF\u306E\u9810\u3051\u5165\u308C",
+        async () => githubRequest(token, `/repos/${repo}/git/blobs`, {
+          method: "POST",
+          body: { content: await toBase64(image.file), encoding: "base64" }
+        })
+      );
       return {
         path: `${config.imageDir}/${image.name}`,
         mode: FILE_MODE,
@@ -745,21 +772,30 @@ async function commitArticle({
       };
     })
   );
-  const tree = await githubRequest(token, `/repos/${repo}/git/trees`, {
-    method: "POST",
-    body: {
-      base_tree: baseTreeSha,
-      tree: [{ path, mode: FILE_MODE, type: "blob", sha: blob.sha }, ...imageEntries]
-    }
-  });
-  const commit = await githubRequest(token, `/repos/${repo}/git/commits`, {
-    method: "POST",
-    body: { message, tree: tree.sha, parents: [parentSha] }
-  });
-  await githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
-    method: "PATCH",
-    body: { sha: commit.sha }
-  });
+  const tree = await step(
+    "\u30C4\u30EA\u30FC\u306E\u4F5C\u6210",
+    () => githubRequest(token, `/repos/${repo}/git/trees`, {
+      method: "POST",
+      body: {
+        base_tree: baseTreeSha,
+        tree: [{ path, mode: FILE_MODE, type: "blob", sha: blob.sha }, ...imageEntries]
+      }
+    })
+  );
+  const commit = await step(
+    "\u30B3\u30DF\u30C3\u30C8\u306E\u4F5C\u6210",
+    () => githubRequest(token, `/repos/${repo}/git/commits`, {
+      method: "POST",
+      body: { message, tree: tree.sha, parents: [parentSha] }
+    })
+  );
+  await step(
+    "\u30D6\u30E9\u30F3\u30C1\u306E\u66F4\u65B0",
+    () => githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
+      method: "PATCH",
+      body: { sha: commit.sha }
+    })
+  );
   return commit.sha;
 }
 
