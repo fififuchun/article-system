@@ -241,3 +241,75 @@ body {
   border-color: #4a90e2;
   color: #4a90e2;
 }
+
+/* GitHub 連携ページ（実地確認用） */
+.github-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 520px;
+  margin: 48px auto;
+  padding: 0 16px;
+}
+
+.github-setup h2 {
+  font-size: 18px;
+}
+
+.github-warning {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #8a4b00;
+  background: #fff7e6;
+  border: 1px solid #f0c98a;
+  padding: 12px 14px;
+  border-radius: 6px;
+}
+
+.github-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+}
+
+.github-field input {
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.github-setup button {
+  font: inherit;
+  font-size: 14px;
+  color: #fff;
+  background: #4a90e2;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.github-note {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #888;
+}
+
+.github-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #8a4b00;
+  background: #fff7e6;
+  border-bottom: 1px solid #f0c98a;
+  padding: 10px 16px;
+}
+
+.github-banner-button {
+  margin-bottom: 0;
+}

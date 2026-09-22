@@ -2,14 +2,16 @@ import { useState, useEffect } from "react";
 import { ArticleDetail, ArticleList, type Article } from "@fififuchun/article-system";
 import { articles } from "./lib/articles";
 import PreviewPage from "./pages/PreviewPage";
+import GitHubPage from "./pages/GitHubPage";
 import "./styles.css";
 import "@fififuchun/article-system/styles.css";
 
-type Route = "list" | "detail" | "preview";
+type Route = "list" | "detail" | "preview" | "github";
 
 function getRoute(): { route: Route; id?: number } {
   const hash = window.location.hash;
   if (hash === "#/preview") return { route: "preview" };
+  if (hash === "#/github") return { route: "github" };
   const m = hash.match(/^#\/article\/(\d+)$/);
   if (m) return { route: "detail", id: Number(m[1]) };
   return { route: "list" };
@@ -74,6 +76,13 @@ export default function App() {
           >
             プレビュー
           </a>
+          <a
+            href="#/github"
+            className={`nav-link${route === "github" ? " active" : ""}`}
+            onClick={() => navigate("#/github")}
+          >
+            GitHub 連携
+          </a>
           <button
             type="button"
             className="css-toggle"
@@ -84,8 +93,10 @@ export default function App() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: route === "preview" ? "none" : 840, margin: "0 auto", padding: route === "preview" ? 0 : "32px 16px" }}>
+      <main style={{ maxWidth: route === "preview" || route === "github" ? "none" : 840, margin: "0 auto", padding: route === "preview" ? 0 : "32px 16px" }}>
         {route === "preview" && <PreviewPage />}
+
+        {route === "github" && <GitHubPage />}
 
         {route === "detail" && selectedArticle && (
           <>
