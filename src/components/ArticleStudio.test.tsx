@@ -9,6 +9,7 @@ import {
   ArticleExistsError,
   ImageExistsError,
 } from "../github/commitArticle";
+import { GitHubApiError } from "../github/api";
 
 vi.mock("../github/verifyToken", () => ({ verifyToken: vi.fn() }));
 vi.mock("../github/commitArticle", async (importOriginal) => ({
@@ -1196,5 +1197,197 @@ describe("ArticleStudio — 衝突は最新ツリーで見る（spec §15）", (
 
     expect(vi.mocked(commitArticle)).not.toHaveBeenCalled();
     expect(issues(container)).not.toBe("");
+  });
+});
+
+// spec §15: 黙ってダウンロードに落とさない。書いたものは必ず持ち帰れるようにする
+describe("ArticleStudio — コミットに失敗したとき（spec §15）", () => {
+  const github = { repo: "me/blog" };
+  let downloads: string[];
+  let clickSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+
+    downloads = [];
+    clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloads.push(this.download);
+      });
+  });
+
+  afterEach(() => clickSpy.mockRestore());
+
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+  };
+
+  const write = () => fireEvent.change(textarea(), { target: { value: sampleMd } });
+  const fallbackButton = () => screen.queryByRole("button", { name: "代わりにダウンロード" });
+
+  it("通信できなければ理由を出す", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new GitHubApiError("GitHub に接続できませんでした。通信状態を確かめてください。", "network", 0)
+    );
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(container.querySelector(".as-studio-issues")?.textContent).toContain(
+      "接続できませんでした"
+    );
+  });
+
+  it("失敗したら「代わりにダウンロード」を出す", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new GitHubApiError("壊れました", "other", 500)
+    );
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(fallbackButton()).not.toBeNull();
+  });
+
+  it("そのボタンで md をダウンロードできる", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new GitHubApiError("壊れました", "other", 500)
+    );
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+    fireEvent.click(fallbackButton()!);
+
+    expect(downloads).toEqual(["2026-08-23-夏の更新.md"]);
+  });
+
+  // 黙って落とさない（spec §15）。コミットされたと勘違いされる
+  it("失敗しても自動ではダウンロードしない", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new GitHubApiError("壊れました", "other", 500)
+    );
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(downloads).toEqual([]);
+  });
+
+  it("成功したときは出さない", async () => {
+    vi.mocked(commitArticle).mockResolvedValue("commit-new");
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(fallbackButton()).toBeNull();
+  });
+
+  it("やり直して通ればボタンが消える", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new GitHubApiError("壊れました", "other", 500)
+    );
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+    vi.mocked(commitArticle).mockResolvedValue("commit-new");
+    await publish();
+
+    expect(fallbackButton()).toBeNull();
+  });
+});
+
+describe("ArticleStudio — トークンが失効したとき（spec §15）", () => {
+  const github = { repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    vi.mocked(commitArticle).mockRejectedValue(
+      new GitHubApiError("Bad credentials", "unauthorized", 401)
+    );
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+  };
+
+  const write = () => fireEvent.change(textarea(), { target: { value: sampleMd } });
+  const resetButton = () => screen.queryByRole("button", { name: "トークンを入れ直す" });
+
+  // GitHub の英語をそのまま出しても伝わらない
+  it("日本語で理由を伝える", async () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(container.querySelector(".as-studio-issues")?.textContent).toContain("トークン");
+  });
+
+  it("「トークンを入れ直す」を出す", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(resetButton()).not.toBeNull();
+  });
+
+  // 先に破棄すると、書いたものをダウンロードする機会が消える（spec §15）
+  it("押されるまでは編集画面のまま", async () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(container.querySelector(".as-studio-textarea")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "代わりにダウンロード" })).not.toBeNull();
+  });
+
+  it("押すと入力画面に戻る", async () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+    await act(async () => {
+      fireEvent.click(resetButton()!);
+    });
+
+    expect(container.querySelector(".as-studio-login")).not.toBeNull();
+    expect(container.querySelector(".as-studio-textarea")).toBeNull();
+  });
+
+  it("401 以外では出さない", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new GitHubApiError("壊れました", "other", 500)
+    );
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    write();
+    await publish();
+
+    expect(resetButton()).toBeNull();
   });
 });

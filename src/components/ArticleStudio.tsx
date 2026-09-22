@@ -22,6 +22,7 @@ import { loadDraft, saveDraft } from "../studio/draftStorage";
 import { resolveGitHubConfig } from "../github/resolveConfig";
 import { useGitHubToken } from "../github/useGitHubToken";
 import { commitArticle, type CommitImage } from "../github/commitArticle";
+import { GitHubApiError } from "../github/api";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
 interface DroppedImage {
@@ -62,14 +63,26 @@ interface Props {
  * StudioEditor に GitHub のことを知らせないための境界です。エディタ側は
  * 「文言」と「押されたら呼ぶもの」だけを受け取ります。
  */
+type PublishResult =
+  | { ok: true }
+  | {
+      ok: false;
+      message: string;
+      /** トークンが失効している。入れ直しを促す */
+      needsToken: boolean;
+    };
+
 interface Publisher {
   label: string;
+  /** 失敗も戻り値で返す。例外を境界の外に出さない */
   commit: (payload: {
     filename: string;
     markdown: string;
     title: string;
     images: CommitImage[];
-  }) => Promise<void>;
+  }) => Promise<PublishResult>;
+  /** トークンを捨てて入力画面に戻す */
+  reset: () => void;
 }
 
 interface EditorProps extends Props {
@@ -98,6 +111,8 @@ function StudioEditor({
   const [images, setImages] = useState<DroppedImage[]>([]);
   // 本番を出した後、仮登録の画像がまだリポジトリに置かれていない状態
   const [placementPending, setPlacementPending] = useState(false);
+  // コミットに失敗した。書いたものを持ち帰る手段を出す（spec §15）
+  const [fallback, setFallback] = useState<{ needsToken: boolean } | null>(null);
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -197,22 +212,21 @@ function StudioEditor({
 
     // github を渡された場合はダウンロードせずコミットする（spec §15）
     if (publisher) {
-      try {
-        await publisher.commit({
-          filename,
-          markdown: raw,
-          title: draft.title,
-          images: images.map((image) => ({ name: image.name, file: image.file })),
-        });
-      } catch (reason: unknown) {
-        setIssues([
-          {
-            level: "error",
-            message:
-              reason instanceof Error ? reason.message : "コミットに失敗しました。",
-          },
-        ]);
+      const result = await publisher.commit({
+        filename,
+        markdown: raw,
+        title: draft.title,
+        images: images.map((image) => ({ name: image.name, file: image.file })),
+      });
+
+      if (result.ok) {
+        setFallback(null);
+        return;
       }
+
+      // 黙ってダウンロードに落とさない。コミットされたと勘違いされる（spec §15）
+      setIssues([{ level: "error", message: result.message }]);
+      setFallback({ needsToken: result.needsToken });
       return;
     }
 
@@ -262,6 +276,25 @@ function StudioEditor({
                 </li>
               ))}
             </ul>
+
+            {/* 失敗しても書いたものは必ず持ち帰れるようにする（spec §15） */}
+            {fallback && (
+              <div className="as-studio-issue-actions">
+                <button
+                  type="button"
+                  onClick={() =>
+                    downloadMarkdown(buildFilename(draft.date, draft.title), raw)
+                  }
+                >
+                  代わりにダウンロード
+                </button>
+                {fallback.needsToken && (
+                  <button type="button" onClick={publisher?.reset}>
+                    トークンを入れ直す
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -360,15 +393,34 @@ function GitHubGate({ github, ...props }: Props & { github: GitHubConfig }) {
         {...props}
         publisher={{
           label: "本番コミット",
-          commit: async ({ filename, markdown, title, images }) =>
-            void (await commitArticle({
-              token,
-              config,
-              filename,
-              markdown,
-              message: `記事を追加: ${title}`,
-              images,
-            })),
+          reset: auth.clear,
+          commit: async ({ filename, markdown, title, images }) => {
+            try {
+              await commitArticle({
+                token,
+                config,
+                filename,
+                markdown,
+                message: `記事を追加: ${title}`,
+                images,
+              });
+              return { ok: true };
+            } catch (reason: unknown) {
+              const expired =
+                reason instanceof GitHubApiError && reason.kind === "unauthorized";
+
+              return {
+                ok: false,
+                // GitHub の "Bad credentials" をそのまま出しても伝わらない
+                message: expired
+                  ? "トークンが無効になりました。GitHub で作り直して入れ直してください。"
+                  : reason instanceof Error
+                    ? reason.message
+                    : "コミットに失敗しました。",
+                needsToken: expired,
+              };
+            }
+          },
         }}
       />
     );

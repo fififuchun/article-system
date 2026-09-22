@@ -759,6 +759,7 @@ function StudioEditor({
   const [issues, setIssues] = useState2([]);
   const [images, setImages] = useState2([]);
   const [placementPending, setPlacementPending] = useState2(false);
+  const [fallback, setFallback] = useState2(null);
   useEffect(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
@@ -824,21 +825,18 @@ ${markdown}
     setIssues(found);
     if (found.length > 0) return;
     if (publisher) {
-      try {
-        await publisher.commit({
-          filename,
-          markdown: raw,
-          title: draft.title,
-          images: images.map((image) => ({ name: image.name, file: image.file }))
-        });
-      } catch (reason) {
-        setIssues([
-          {
-            level: "error",
-            message: reason instanceof Error ? reason.message : "\u30B3\u30DF\u30C3\u30C8\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
-          }
-        ]);
+      const result = await publisher.commit({
+        filename,
+        markdown: raw,
+        title: draft.title,
+        images: images.map((image) => ({ name: image.name, file: image.file }))
+      });
+      if (result.ok) {
+        setFallback(null);
+        return;
       }
+      setIssues([{ level: "error", message: result.message }]);
+      setFallback({ needsToken: result.needsToken });
       return;
     }
     downloadMarkdown(filename, raw);
@@ -861,10 +859,23 @@ ${markdown}
         onDrop: handleDrop,
         onDragOver: (event) => event.preventDefault(),
         children: [
-          issues.length > 0 && /* @__PURE__ */ jsx6("div", { className: cx("as-studio-issues", classNames.issues), role: "alert", children: /* @__PURE__ */ jsx6("ul", { children: issues.map((issue, index) => /* @__PURE__ */ jsxs4("li", { children: [
-            /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
-            /* @__PURE__ */ jsx6("span", { children: issue.message })
-          ] }, index)) }) }),
+          issues.length > 0 && /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-issues", classNames.issues), role: "alert", children: [
+            /* @__PURE__ */ jsx6("ul", { children: issues.map((issue, index) => /* @__PURE__ */ jsxs4("li", { children: [
+              /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
+              /* @__PURE__ */ jsx6("span", { children: issue.message })
+            ] }, index)) }),
+            fallback && /* @__PURE__ */ jsxs4("div", { className: "as-studio-issue-actions", children: [
+              /* @__PURE__ */ jsx6(
+                "button",
+                {
+                  type: "button",
+                  onClick: () => downloadMarkdown(buildFilename(draft.date, draft.title), raw),
+                  children: "\u4EE3\u308F\u308A\u306B\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9"
+                }
+              ),
+              fallback.needsToken && /* @__PURE__ */ jsx6("button", { type: "button", onClick: publisher?.reset, children: "\u30C8\u30FC\u30AF\u30F3\u3092\u5165\u308C\u76F4\u3059" })
+            ] })
+          ] }),
           /* @__PURE__ */ jsx6(
             "textarea",
             {
@@ -947,14 +958,28 @@ function GitHubGate({ github, ...props }) {
         ...props,
         publisher: {
           label: "\u672C\u756A\u30B3\u30DF\u30C3\u30C8",
-          commit: async ({ filename, markdown, title, images }) => void await commitArticle({
-            token,
-            config,
-            filename,
-            markdown,
-            message: `\u8A18\u4E8B\u3092\u8FFD\u52A0: ${title}`,
-            images
-          })
+          reset: auth.clear,
+          commit: async ({ filename, markdown, title, images }) => {
+            try {
+              await commitArticle({
+                token,
+                config,
+                filename,
+                markdown,
+                message: `\u8A18\u4E8B\u3092\u8FFD\u52A0: ${title}`,
+                images
+              });
+              return { ok: true };
+            } catch (reason) {
+              const expired = reason instanceof GitHubApiError && reason.kind === "unauthorized";
+              return {
+                ok: false,
+                // GitHub の "Bad credentials" をそのまま出しても伝わらない
+                message: expired ? "\u30C8\u30FC\u30AF\u30F3\u304C\u7121\u52B9\u306B\u306A\u308A\u307E\u3057\u305F\u3002GitHub \u3067\u4F5C\u308A\u76F4\u3057\u3066\u5165\u308C\u76F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002" : reason instanceof Error ? reason.message : "\u30B3\u30DF\u30C3\u30C8\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002",
+                needsToken: expired
+              };
+            }
+          }
         }
       }
     );

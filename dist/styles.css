@@ -544,3 +544,18 @@
   color: var(--as-color-muted);
   line-height: 1.7;
 }
+:where(.as-studio-issue-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--as-space-sm);
+  margin-top: var(--as-space-md);
+}
+:where(.as-studio-issue-actions button) {
+  font: inherit;
+  font-size: var(--as-text-small);
+  color: var(--as-color-text);
+  background: var(--as-color-surface);
+  border: 1px solid var(--as-color-border);
+  padding: var(--as-space-sm) var(--as-space-lg);
+  cursor: pointer;
+}
