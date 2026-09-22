@@ -115,7 +115,7 @@ interface Props {
     dateLabel?: string;
     classNames?: ArticleStudioClassNames;
     articleClassNames?: ArticleDetailClassNames;
-    /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15）。まだ未接続 */
+    /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15） */
     github?: GitHubConfig;
 }
 /**

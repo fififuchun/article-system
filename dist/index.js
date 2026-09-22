@@ -494,6 +494,44 @@ function authHeaders(token) {
     "X-GitHub-Api-Version": GITHUB_API_VERSION
   };
 }
+var GitHubApiError = class extends Error {
+  constructor(message, kind, status) {
+    super(message);
+    this.name = "GitHubApiError";
+    this.kind = kind;
+    this.status = status;
+  }
+};
+function kindOf(status) {
+  if (status === 401) return "unauthorized";
+  if (status === 409 || status === 422) return "conflict";
+  return "other";
+}
+async function githubRequest(token, path, { method = "GET", body } = {}) {
+  let response;
+  try {
+    response = await fetch(`${GITHUB_API_BASE}${path}`, {
+      method,
+      headers: body ? { ...authHeaders(token), "Content-Type": "application/json" } : authHeaders(token),
+      body: body === void 0 ? void 0 : JSON.stringify(body)
+    });
+  } catch {
+    throw new GitHubApiError(
+      "GitHub \u306B\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u901A\u4FE1\u72B6\u614B\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002",
+      "network",
+      0
+    );
+  }
+  if (!response.ok) {
+    const failure = await response.json().catch(() => ({}));
+    throw new GitHubApiError(
+      failure.message || `GitHub \u3078\u306E\u8981\u6C42\u304C\u5931\u6557\u3057\u307E\u3057\u305F\uFF08HTTP ${response.status}\uFF09`,
+      kindOf(response.status),
+      response.status
+    );
+  }
+  return await response.json().catch(() => null);
+}
 
 // src/github/verifyToken.ts
 async function verifyToken(token, repo) {
@@ -608,11 +646,107 @@ function useGitHubToken(repo, storageKey) {
   return { status, token, error, submit, clear };
 }
 
+// src/github/commitArticle.ts
+var ArticleExistsError = class extends Error {
+  constructor(path) {
+    super(
+      `${path} \u306F GitHub \u306B\u65E2\u306B\u3042\u308A\u307E\u3059\u3002\u65E5\u4ED8\u304B\u30BF\u30A4\u30C8\u30EB\u3092\u5909\u3048\u3066\u304F\u3060\u3055\u3044\uFF08\u4E0A\u66F8\u304D\u3059\u308B\u3068\u5143\u306E\u8A18\u4E8B\u304C\u6D88\u3048\u307E\u3059\uFF09\u3002`
+    );
+    this.name = "ArticleExistsError";
+  }
+};
+var ImageExistsError = class extends Error {
+  constructor(names) {
+    super(
+      `${names.join("\u3001")} \u306F GitHub \u306B\u65E2\u306B\u3042\u308A\u307E\u3059\u3002Studio \u3067\u540D\u524D\u3092\u5909\u3048\u3066\u304B\u3089\u51FA\u3057\u76F4\u3057\u3066\u304F\u3060\u3055\u3044\uFF08\u4E0A\u66F8\u304D\u3059\u308B\u3068\u3001\u305D\u306E\u753B\u50CF\u3092\u4F7F\u3063\u3066\u3044\u308B\u5225\u306E\u8A18\u4E8B\u304C\u58CA\u308C\u307E\u3059\uFF09\u3002`
+    );
+    this.name = "ImageExistsError";
+  }
+};
+async function toBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const CHUNK = 32768;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+var FILE_MODE = "100644";
+async function commitArticle({
+  token,
+  config,
+  filename,
+  markdown,
+  message,
+  images = []
+}) {
+  const { repo, branch, mdDir } = config;
+  const path = `${mdDir}/${filename}`;
+  const ref = await githubRequest(
+    token,
+    `/repos/${repo}/git/ref/heads/${branch}`
+  );
+  const parentSha = ref.object.sha;
+  const parent = await githubRequest(
+    token,
+    `/repos/${repo}/git/commits/${parentSha}`
+  );
+  const baseTreeSha = parent.tree.sha;
+  const baseTree = await githubRequest(
+    token,
+    `/repos/${repo}/git/trees/${baseTreeSha}?recursive=1`
+  );
+  const taken = new Set(baseTree.tree.map((entry) => entry.path));
+  if (taken.has(path)) {
+    throw new ArticleExistsError(path);
+  }
+  const clashingImages = images.filter((image) => taken.has(`${config.imageDir}/${image.name}`)).map((image) => image.name);
+  if (clashingImages.length > 0) {
+    throw new ImageExistsError(clashingImages);
+  }
+  const blob = await githubRequest(token, `/repos/${repo}/git/blobs`, {
+    method: "POST",
+    body: { content: markdown, encoding: "utf-8" }
+  });
+  const imageEntries = await Promise.all(
+    images.map(async (image) => {
+      const uploaded = await githubRequest(token, `/repos/${repo}/git/blobs`, {
+        method: "POST",
+        body: { content: await toBase64(image.file), encoding: "base64" }
+      });
+      return {
+        path: `${config.imageDir}/${image.name}`,
+        mode: FILE_MODE,
+        type: "blob",
+        sha: uploaded.sha
+      };
+    })
+  );
+  const tree = await githubRequest(token, `/repos/${repo}/git/trees`, {
+    method: "POST",
+    body: {
+      base_tree: baseTreeSha,
+      tree: [{ path, mode: FILE_MODE, type: "blob", sha: blob.sha }, ...imageEntries]
+    }
+  });
+  const commit = await githubRequest(token, `/repos/${repo}/git/commits`, {
+    method: "POST",
+    body: { message, tree: tree.sha, parents: [parentSha] }
+  });
+  await githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
+    method: "PATCH",
+    body: { sha: commit.sha }
+  });
+  return commit.sha;
+}
+
 // src/components/ArticleStudio.tsx
 import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
 var DRAFT_MARK = "#draft-preview";
 var LIST_PREVIEW_COUNT = 6;
 function StudioEditor({
+  publisher,
   articles,
   storageKey,
   imageBasePath,
@@ -689,12 +823,30 @@ ${markdown}
     const found = [...validateArticle(raw, { articles, filename }), ...missing];
     setIssues(found);
     if (found.length > 0) return;
+    if (publisher) {
+      try {
+        await publisher.commit({
+          filename,
+          markdown: raw,
+          title: draft.title,
+          images: images.map((image) => ({ name: image.name, file: image.file }))
+        });
+      } catch (reason) {
+        setIssues([
+          {
+            level: "error",
+            message: reason instanceof Error ? reason.message : "\u30B3\u30DF\u30C3\u30C8\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+          }
+        ]);
+      }
+      return;
+    }
     downloadMarkdown(filename, raw);
     setPlacementPending(images.length > 0);
   };
   return /* @__PURE__ */ jsxs4("div", { className: cx("as-studio", classNames.wrapper), children: [
     /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-actions", classNames.actions), children: [
-      /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
+      /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadForPublish, children: publisher?.label ?? "\u672C\u756A\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
       /* @__PURE__ */ jsx6("button", { type: "button", onClick: downloadDraft, children: "\u4E0B\u66F8\u304D\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }),
       /* @__PURE__ */ jsx6("button", { type: "button", onClick: startNewArticle, children: "\u65B0\u3057\u304F\u66F8\u304F" })
     ] }),
@@ -788,7 +940,24 @@ function GitHubGate({ github, ...props }) {
   const auth = useGitHubToken(config.repo, props.storageKey);
   const [draftToken, setDraftToken] = useState2("");
   if (auth.status === "ready") {
-    return /* @__PURE__ */ jsx6(StudioEditor, { ...props });
+    const token = auth.token;
+    return /* @__PURE__ */ jsx6(
+      StudioEditor,
+      {
+        ...props,
+        publisher: {
+          label: "\u672C\u756A\u30B3\u30DF\u30C3\u30C8",
+          commit: async ({ filename, markdown, title, images }) => void await commitArticle({
+            token,
+            config,
+            filename,
+            markdown,
+            message: `\u8A18\u4E8B\u3092\u8FFD\u52A0: ${title}`,
+            images
+          })
+        }
+      }
+    );
   }
   const submit = async (event) => {
     event.preventDefault();

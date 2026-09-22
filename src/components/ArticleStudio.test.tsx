@@ -4,7 +4,13 @@ import { render, screen, cleanup, fireEvent, act } from "@testing-library/react"
 import { saveToken } from "../github/tokenStorage";
 import { verifyToken } from "../github/verifyToken";
 
+import { commitArticle } from "../github/commitArticle";
+
 vi.mock("../github/verifyToken", () => ({ verifyToken: vi.fn() }));
+vi.mock("../github/commitArticle", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../github/commitArticle")>()),
+  commitArticle: vi.fn(),
+}));
 import { ArticleStudio } from "./ArticleStudio";
 import type { Article } from "../types";
 
@@ -1000,5 +1006,116 @@ describe("ArticleStudio — github を渡したとき（spec §15）", () => {
     await paste("github_pat_secret");
 
     expect(container.innerHTML).not.toContain("github_pat_secret");
+  });
+});
+
+// spec §15: トークンがあるとき、本番はダウンロードではなくコミットになる
+describe("ArticleStudio — 本番コミット（spec §15）", () => {
+  const github = { repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    vi.mocked(commitArticle).mockResolvedValue("commit-new");
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const publishButton = () => screen.getByRole("button", { name: /本番/ });
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(publishButton());
+    });
+  };
+
+  it("本番ボタンの文言がコミットに変わる", () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(publishButton().textContent).toBe("本番コミット");
+  });
+
+  // 下書きはコミットしない（spec §15）
+  it("下書きボタンはダウンロードのまま", () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(screen.getByRole("button", { name: /下書き/ }).textContent).toBe(
+      "下書きダウンロード"
+    );
+  });
+
+  it("押すとコミットする", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(vi.mocked(commitArticle)).toHaveBeenCalledOnce();
+  });
+
+  it("ファイル名と本文とメッセージを渡す", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    const payload = vi.mocked(commitArticle).mock.calls[0][0];
+    expect(payload.filename).toBe("2026-08-23-夏の更新.md");
+    expect(payload.markdown).toBe(sampleMd);
+    expect(payload.message).toBe("記事を追加: 夏の更新");
+  });
+
+  it("トークンと解決済みの設定を渡す", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    const payload = vi.mocked(commitArticle).mock.calls[0][0];
+    expect(payload.token).toBe("github_pat_secret");
+    expect(payload.config).toEqual({
+      repo: "me/blog",
+      branch: "main",
+      mdDir: "src/articles",
+      imageDir: "public/article_imgs",
+    });
+  });
+
+  // 検証を通らないものはコミットしない（spec §9）
+  it("検証で止まればコミットしない", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: "---\ntitle:\n---\n\n本文" } });
+    await publish();
+
+    expect(vi.mocked(commitArticle)).not.toHaveBeenCalled();
+  });
+
+  // 消したいときは消せばよい（spec §9）
+  it("コミットしても編集内容はそのまま残る", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(textarea().value).toBe(sampleMd);
+  });
+
+  it("コミットのときは md をダウンロードしない", async () => {
+    const clicked: string[] = [];
+    const spy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        clicked.push(this.download);
+      });
+
+    render(<ArticleStudio articles={[]} github={github} />);
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(clicked).toEqual([]);
+    spy.mockRestore();
   });
 });

@@ -21,6 +21,7 @@ import { findMissingImages } from "../studio/probeImages";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
 import { resolveGitHubConfig } from "../github/resolveConfig";
 import { useGitHubToken } from "../github/useGitHubToken";
+import { commitArticle, type CommitImage } from "../github/commitArticle";
 
 /** ドロップして仮登録した画像。アップロードはしない（spec §9） */
 interface DroppedImage {
@@ -51,21 +52,42 @@ interface Props {
   dateLabel?: string;
   classNames?: ArticleStudioClassNames;
   articleClassNames?: ArticleDetailClassNames;
-  /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15）。まだ未接続 */
+  /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15） */
   github?: GitHubConfig;
+}
+
+/**
+ * 本番を出す先。`github` を渡したときだけ GitHubGate から降りてくる（spec §15）。
+ *
+ * StudioEditor に GitHub のことを知らせないための境界です。エディタ側は
+ * 「文言」と「押されたら呼ぶもの」だけを受け取ります。
+ */
+interface Publisher {
+  label: string;
+  commit: (payload: {
+    filename: string;
+    markdown: string;
+    title: string;
+    images: CommitImage[];
+  }) => Promise<void>;
+}
+
+interface EditorProps extends Props {
+  publisher?: Publisher;
 }
 
 /**
  * Studio の本体。`github` を渡した場合は、ログインを通ったときだけ描画される。
  */
 function StudioEditor({
+  publisher,
   articles,
   storageKey,
   imageBasePath,
   dateLabel,
   classNames = {},
   articleClassNames,
-}: Props) {
+}: EditorProps) {
   // 生の md を1枚の textarea で編集する。フォーム化しないことで
   // エディタとのコピーペーストが自由に行き来できる（spec §9）
   // 復帰する下書きがあればテンプレートを出さない。出すと保存内容を上書きしてしまう。
@@ -173,6 +195,27 @@ function StudioEditor({
 
     if (found.length > 0) return;
 
+    // github を渡された場合はダウンロードせずコミットする（spec §15）
+    if (publisher) {
+      try {
+        await publisher.commit({
+          filename,
+          markdown: raw,
+          title: draft.title,
+          images: images.map((image) => ({ name: image.name, file: image.file })),
+        });
+      } catch (reason: unknown) {
+        setIssues([
+          {
+            level: "error",
+            message:
+              reason instanceof Error ? reason.message : "コミットに失敗しました。",
+          },
+        ]);
+      }
+      return;
+    }
+
     downloadMarkdown(filename, raw);
     // 編集内容はそのまま残す。消したいときは消せばよい
     // ドロップした画像はアップロードしていないので、置いてもらう必要がある（spec §9）
@@ -184,7 +227,7 @@ function StudioEditor({
       {/* 操作は上端の帯にまとめる。狭い画面では CSS で各ペインの側に戻す（spec §9） */}
       <div className={cx("as-studio-actions", classNames.actions)}>
         <button type="button" onClick={downloadForPublish}>
-          本番ダウンロード
+          {publisher?.label ?? "本番ダウンロード"}
         </button>
         <button type="button" onClick={downloadDraft}>
           下書きダウンロード
@@ -310,7 +353,25 @@ function GitHubGate({ github, ...props }: Props & { github: GitHubConfig }) {
   const [draftToken, setDraftToken] = useState("");
 
   if (auth.status === "ready") {
-    return <StudioEditor {...props} />;
+    const token = auth.token as string;
+
+    return (
+      <StudioEditor
+        {...props}
+        publisher={{
+          label: "本番コミット",
+          commit: async ({ filename, markdown, title, images }) =>
+            void (await commitArticle({
+              token,
+              config,
+              filename,
+              markdown,
+              message: `記事を追加: ${title}`,
+              images,
+            })),
+        }}
+      />
+    );
   }
 
   const submit = async (event: React.FormEvent) => {
