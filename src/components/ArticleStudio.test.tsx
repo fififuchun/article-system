@@ -4,7 +4,11 @@ import { render, screen, cleanup, fireEvent, act } from "@testing-library/react"
 import { saveToken } from "../github/tokenStorage";
 import { verifyToken } from "../github/verifyToken";
 
-import { commitArticle } from "../github/commitArticle";
+import {
+  commitArticle,
+  ArticleExistsError,
+  ImageExistsError,
+} from "../github/commitArticle";
 
 vi.mock("../github/verifyToken", () => ({ verifyToken: vi.fn() }));
 vi.mock("../github/commitArticle", async (importOriginal) => ({
@@ -1117,5 +1121,80 @@ describe("ArticleStudio — 本番コミット（spec §15）", () => {
 
     expect(clicked).toEqual([]);
     spy.mockRestore();
+  });
+});
+
+// spec §15: articles はビルド時のスナップショットなので、同じセッションで
+// 先にコミットした記事は載っていない。最新ツリー由来の衝突を必ず見せる
+describe("ArticleStudio — 衝突は最新ツリーで見る（spec §15）", () => {
+  const github = { repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const issues = (container: HTMLElement) =>
+    container.querySelector(".as-studio-issues")?.textContent ?? "";
+
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+  };
+
+  it("articles に無くてもツリーにあれば理由を出す", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new ArticleExistsError("src/articles/2026-08-23-夏の更新.md")
+    );
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(issues(container)).toContain("2026-08-23-夏の更新.md");
+    expect(issues(container)).toContain("既にあります");
+  });
+
+  it("画像の衝突も理由を出す", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(new ImageExistsError(["IMG_1234.jpg"]));
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(issues(container)).toContain("IMG_1234.jpg");
+  });
+
+  it("衝突しても編集内容は残る", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(
+      new ArticleExistsError("src/articles/2026-08-23-夏の更新.md")
+    );
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(textarea().value).toBe(sampleMd);
+  });
+
+  // articles でも先に捕まえる。こちらは通信する前に止められる（spec §6）
+  it("articles で捕まえられるならコミットまで行かない", async () => {
+    const existing2 = existing("2026-08-23", "夏の更新");
+    existing2.filename = "2026-08-23-夏の更新.md";
+    const { container } = render(
+      <ArticleStudio articles={[existing2]} github={github} />
+    );
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(vi.mocked(commitArticle)).not.toHaveBeenCalled();
+    expect(issues(container)).not.toBe("");
   });
 });
