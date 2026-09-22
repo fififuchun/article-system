@@ -1503,3 +1503,60 @@ describe("ArticleStudio — 画像の存在確認（回帰）", () => {
     expect(container.querySelector(".as-studio-issues")).toBeNull();
   });
 });
+
+// トークンの作り方が分からないと何もできない。関門画面で案内する
+describe("ArticleStudio — トークンの作り方の案内", () => {
+  const github = { repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  const steps = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll(".as-studio-login-steps li")).map(
+      (item) => item.textContent ?? ""
+    );
+
+  it("発行ページへのリンクを置く", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    const link = container.querySelector(
+      'a[href="https://github.com/settings/personal-access-tokens/new"]'
+    );
+
+    expect(link).not.toBeNull();
+  });
+
+  // 書きかけを残したまま遷移されると、戻ってくる保証がない
+  it("リンクは別のタブで開く", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    const link = container.querySelector(".as-studio-login-steps a") as HTMLAnchorElement;
+
+    expect(link.target).toBe("_blank");
+    expect(link.rel).toContain("noopener");
+  });
+
+  it("番号付きの手順にする", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(container.querySelector("ol.as-studio-login-steps")).not.toBeNull();
+    expect(steps(container).length).toBeGreaterThanOrEqual(4);
+  });
+
+  // どのリポジトリを選ぶのか分からないと間違える
+  it("手順の中に対象リポジトリ名を出す", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    expect(steps(container).join("")).toContain("me/blog");
+  });
+
+  it("必要な権限を手順に書く", () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    const text = steps(container).join("");
+    expect(text).toContain("Contents");
+    expect(text).toContain("Read and write");
+  });
+});

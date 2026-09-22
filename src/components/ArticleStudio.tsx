@@ -33,6 +33,9 @@ interface DroppedImage {
   file: File;
 }
 
+/** fine-grained PAT の発行ページ（spec §15） */
+const TOKEN_SETTINGS_URL = "https://github.com/settings/personal-access-tokens/new";
+
 /** 一覧プレビューで編集中の記事を見分けるための印 */
 const DRAFT_MARK = "#draft-preview";
 
@@ -447,6 +450,28 @@ function GitHubGate({ github, ...props }: Props & { github: GitHubConfig }) {
           </p>
         )}
 
+        {/* 作り方が分からないと何もできない。手順を先に置く */}
+        <ol className="as-studio-login-steps">
+          <li>
+            <a
+              href={TOKEN_SETTINGS_URL}
+              // 書きかけを残したまま遷移されると、戻ってくる保証がない
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub のトークン発行ページ
+            </a>
+            を開く
+          </li>
+          <li>
+            <strong>Repository access</strong> で <code>{config.repo}</code> だけを選ぶ
+          </li>
+          <li>
+            <strong>Permissions → Contents</strong> を <strong>Read and write</strong> にする
+          </li>
+          <li>できたトークンを下に貼る</li>
+        </ol>
+
         <label className="as-studio-login-label">
           <span>GitHub トークン</span>
           {/* 肩越しに見られても読めないようにする（spec §15） */}
@@ -464,14 +489,13 @@ function GitHubGate({ github, ...props }: Props & { github: GitHubConfig }) {
         </button>
 
         <p className="as-studio-login-note">
-          GitHub の Settings → Developer settings → Personal access tokens →
-          Fine-grained tokens で、対象を {config.repo} だけにし、Contents を
-          Read and write にして作ります。
+          トークンはこのタブを閉じるまで保持します。画面には表示しません。
         </p>
       </form>
     </div>
   );
 }
+
 /**
  * 記事を書く画面。
  *

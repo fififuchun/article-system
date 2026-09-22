@@ -356,11 +356,13 @@ export default function BlogStudio() {
 
 `github` を渡すと、**トークンを入れるまで執筆画面が出ません。** これが認証の代わりになります。
 
-GitHub の **Settings → Developer settings → Personal access tokens → Fine-grained tokens** で発行します。
+作り方は関門画面にも手順として出ますが、先に用意しておくこともできます。
 
-- **Repository access** — 対象のリポジトリだけを選ぶ
-- **Permissions → Contents** — **Read and write**（これだけで足ります）
-- **Expiration** — 短めを推奨します
+1. <https://github.com/settings/personal-access-tokens/new> を開く
+2. **Repository access** で対象のリポジトリだけを選ぶ
+3. **Permissions → Contents** を **Read and write** にする（これだけで足ります）
+4. **Expiration** は短めを推奨します
+5. 発行されたトークンを Studio の入力欄に貼る
 
 トークンは sessionStorage に入ります。**タブを閉じれば消えます。** 画面には表示しません。
 

@@ -559,3 +559,16 @@
   padding: var(--as-space-sm) var(--as-space-lg);
   cursor: pointer;
 }
+:where(.as-studio-login-steps) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--as-space-sm);
+  margin: 0;
+  padding-left: var(--as-space-xl);
+  list-style: decimal;
+  line-height: 1.8;
+}
+:where(.as-studio-login-steps code) {
+  background: var(--as-color-surface-muted);
+  padding: 0 var(--as-space-xs);
+}

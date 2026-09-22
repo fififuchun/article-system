@@ -743,6 +743,7 @@ async function commitArticle({
 
 // src/components/ArticleStudio.tsx
 import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+var TOKEN_SETTINGS_URL = "https://github.com/settings/personal-access-tokens/new";
 var DRAFT_MARK = "#draft-preview";
 var LIST_PREVIEW_COUNT = 6;
 function StudioEditor({
@@ -998,6 +999,33 @@ function GitHubGate({ github, ...props }) {
       /* @__PURE__ */ jsx6(WarningIcon, { className: "as-studio-issue-icon" }),
       /* @__PURE__ */ jsx6("span", { children: auth.error })
     ] }),
+    /* @__PURE__ */ jsxs4("ol", { className: "as-studio-login-steps", children: [
+      /* @__PURE__ */ jsxs4("li", { children: [
+        /* @__PURE__ */ jsx6(
+          "a",
+          {
+            href: TOKEN_SETTINGS_URL,
+            target: "_blank",
+            rel: "noopener noreferrer",
+            children: "GitHub \u306E\u30C8\u30FC\u30AF\u30F3\u767A\u884C\u30DA\u30FC\u30B8"
+          }
+        ),
+        "\u3092\u958B\u304F"
+      ] }),
+      /* @__PURE__ */ jsxs4("li", { children: [
+        /* @__PURE__ */ jsx6("strong", { children: "Repository access" }),
+        " \u3067 ",
+        /* @__PURE__ */ jsx6("code", { children: config.repo }),
+        " \u3060\u3051\u3092\u9078\u3076"
+      ] }),
+      /* @__PURE__ */ jsxs4("li", { children: [
+        /* @__PURE__ */ jsx6("strong", { children: "Permissions \u2192 Contents" }),
+        " \u3092 ",
+        /* @__PURE__ */ jsx6("strong", { children: "Read and write" }),
+        " \u306B\u3059\u308B"
+      ] }),
+      /* @__PURE__ */ jsx6("li", { children: "\u3067\u304D\u305F\u30C8\u30FC\u30AF\u30F3\u3092\u4E0B\u306B\u8CBC\u308B" })
+    ] }),
     /* @__PURE__ */ jsxs4("label", { className: "as-studio-login-label", children: [
       /* @__PURE__ */ jsx6("span", { children: "GitHub \u30C8\u30FC\u30AF\u30F3" }),
       /* @__PURE__ */ jsx6(
@@ -1012,11 +1040,7 @@ function GitHubGate({ github, ...props }) {
       )
     ] }),
     /* @__PURE__ */ jsx6("button", { type: "submit", disabled: auth.status === "verifying", children: auth.status === "verifying" ? "\u78BA\u8A8D\u3057\u3066\u3044\u307E\u3059\u2026" : "\u4FDD\u5B58\u3057\u3066\u59CB\u3081\u308B" }),
-    /* @__PURE__ */ jsxs4("p", { className: "as-studio-login-note", children: [
-      "GitHub \u306E Settings \u2192 Developer settings \u2192 Personal access tokens \u2192 Fine-grained tokens \u3067\u3001\u5BFE\u8C61\u3092 ",
-      config.repo,
-      " \u3060\u3051\u306B\u3057\u3001Contents \u3092 Read and write \u306B\u3057\u3066\u4F5C\u308A\u307E\u3059\u3002"
-    ] })
+    /* @__PURE__ */ jsx6("p", { className: "as-studio-login-note", children: "\u30C8\u30FC\u30AF\u30F3\u306F\u3053\u306E\u30BF\u30D6\u3092\u9589\u3058\u308B\u307E\u3067\u4FDD\u6301\u3057\u307E\u3059\u3002\u753B\u9762\u306B\u306F\u8868\u793A\u3057\u307E\u305B\u3093\u3002" })
   ] }) });
 }
 function ArticleStudio(props) {

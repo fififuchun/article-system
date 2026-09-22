@@ -77,9 +77,7 @@ export default function GitHubPage() {
       <button type="submit">次へ</button>
 
       <p className="github-note">
-        次の画面でトークンを聞かれます。GitHub の Settings → Developer settings →
-        Personal access tokens → Fine-grained tokens で、対象を上のリポジトリだけにし、
-        Contents を Read and write にして発行してください。
+        次の画面でトークンを聞かれます。作り方もそこに出ます。
         <br />
         既定では <code>src/articles</code> に md、<code>public/article_imgs</code> に画像を置きます。
       </p>
