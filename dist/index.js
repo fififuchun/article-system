@@ -512,6 +512,9 @@ async function githubRequest(token, path, { method = "GET", body } = {}) {
   try {
     response = await fetch(`${GITHUB_API_BASE}${path}`, {
       method,
+      // ブラウザに応答を再利用させない。古い先端の上にコミットを作ると
+      // ref を早送りできず、最新ツリーによる衝突検出も効かなくなる
+      cache: "no-store",
       headers: body ? { ...authHeaders(token), "Content-Type": "application/json" } : authHeaders(token),
       body: body === void 0 ? void 0 : JSON.stringify(body)
     });
@@ -538,7 +541,8 @@ async function verifyToken(token, repo) {
   let response;
   try {
     response = await fetch(`${GITHUB_API_BASE}/repos/${repo}`, {
-      headers: authHeaders(token)
+      headers: authHeaders(token),
+      cache: "no-store"
     });
   } catch {
     throw new Error("GitHub \u306B\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u901A\u4FE1\u72B6\u614B\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002");
@@ -569,7 +573,8 @@ async function verifyContentsAccess(token, repo) {
   let response;
   try {
     response = await fetch(`${GITHUB_API_BASE}/repos/${repo}/commits?per_page=1`, {
-      headers: authHeaders(token)
+      headers: authHeaders(token),
+      cache: "no-store"
     });
   } catch {
     throw new Error("GitHub \u306B\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u901A\u4FE1\u72B6\u614B\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002");
@@ -712,6 +717,14 @@ var PermissionError = class extends Error {
     this.name = "PermissionError";
   }
 };
+var NotFastForwardError = class extends Error {
+  constructor(branch) {
+    super(
+      `${branch} \u304C\u9032\u3093\u3067\u3044\u308B\u305F\u3081\u53CD\u6620\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u4F55\u3082\u66F8\u304D\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u3082\u3046\u4E00\u5EA6\u300C\u672C\u756A\u30B3\u30DF\u30C3\u30C8\u300D\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
+    );
+    this.name = "NotFastForwardError";
+  }
+};
 async function toBase64(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const CHUNK = 32768;
@@ -814,13 +827,20 @@ async function commitArticle({
       body: { message, tree: tree.sha, parents: [parentSha] }
     })
   );
-  await step(
-    "\u30D6\u30E9\u30F3\u30C1\u306E\u66F4\u65B0",
-    () => githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
-      method: "PATCH",
-      body: { sha: commit.sha }
-    })
-  );
+  try {
+    await step(
+      "\u30D6\u30E9\u30F3\u30C1\u306E\u66F4\u65B0",
+      () => githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
+        method: "PATCH",
+        body: { sha: commit.sha }
+      })
+    );
+  } catch (reason) {
+    if (reason instanceof GitHubApiError && reason.status === 422) {
+      throw new NotFastForwardError(branch);
+    }
+    throw reason;
+  }
   return commit.sha;
 }
 

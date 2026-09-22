@@ -69,6 +69,20 @@ export class PermissionError extends Error {
   }
 }
 
+/**
+ * ref を早送りできなかった（422）。読み取った先端より枝が進んでいる。
+ *
+ * 何も公開されていないので、やり直せば通る見込みがあります。
+ */
+export class NotFastForwardError extends Error {
+  constructor(branch: string) {
+    super(
+      `${branch} が進んでいるため反映できませんでした。何も書き込まれていません。もう一度「本番コミット」を押してください。`
+    );
+    this.name = "NotFastForwardError";
+  }
+}
+
 interface CommitParams {
   token: string;
   config: ResolvedGitHubConfig;
@@ -242,12 +256,20 @@ export async function commitArticle({
   );
 
   // 7. ここで初めて公開される。force は付けない — 付けると他人のコミットを消す
-  await step("ブランチの更新", () =>
-    githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
-      method: "PATCH",
-      body: { sha: commit.sha },
-    })
-  );
+  try {
+    await step("ブランチの更新", () =>
+      githubRequest(token, `/repos/${repo}/git/refs/heads/${branch}`, {
+        method: "PATCH",
+        body: { sha: commit.sha },
+      })
+    );
+  } catch (reason: unknown) {
+    // "Update is not a fast forward" では何をすればよいか分からない
+    if (reason instanceof GitHubApiError && reason.status === 422) {
+      throw new NotFastForwardError(branch);
+    }
+    throw reason;
+  }
 
   return commit.sha;
 }

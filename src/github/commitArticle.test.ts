@@ -6,6 +6,7 @@ import {
   EmptyRepositoryError,
   MissingBranchError,
   PermissionError,
+  NotFastForwardError,
 } from "./commitArticle";
 import { GitHubApiError } from "./api";
 
@@ -555,5 +556,61 @@ describe("commitArticle — 権限が足りないとき", () => {
     expect(
       fetchMock.mock.calls.some(([, init]) => (init as RequestInit).method === "PATCH")
     ).toBe(false);
+  });
+});
+
+// "Update is not a fast forward" では何をすればよいか分からない
+describe("commitArticle — 早送りできないとき", () => {
+  function stubNotFastForward() {
+    calls = [];
+    const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
+      const path = url.replace("https://api.github.com", "");
+      const method = init.method ?? "GET";
+      calls.push([method, path]);
+
+      if (method === "PATCH") {
+        return new Response(JSON.stringify({ message: "Update is not a fast forward" }), {
+          status: 422,
+        });
+      }
+      if (path.includes("/git/ref/heads/")) {
+        return new Response(JSON.stringify({ object: { sha: "commit-old" } }), { status: 200 });
+      }
+      if (path.includes("/git/commits/")) {
+        return new Response(JSON.stringify({ tree: { sha: "tree-old" } }), { status: 200 });
+      }
+      if (path.includes("/git/trees/")) {
+        return new Response(JSON.stringify({ tree: [] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ sha: "new" }), { status: 201 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it("やり直せば通ることを伝える", async () => {
+    stubNotFastForward();
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(NotFastForwardError);
+    expect((error as Error).message).toContain("もう一度");
+  });
+
+  it("ブランチ名を出す", async () => {
+    stubNotFastForward();
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect((error as Error).message).toContain("main");
+  });
+
+  // 失敗しているので公開されていない
+  it("ref は進んでいない", async () => {
+    stubNotFastForward();
+
+    await commitArticle(params).catch(() => {});
+
+    expect(calls.filter(([method]) => method === "PATCH")).toHaveLength(1);
   });
 });

@@ -153,3 +153,31 @@ describe("githubRequest — エラーの文言", () => {
     expect(error.message).not.toContain("github_pat_secret");
   });
 });
+
+// ★実地確認で踏んだ。GitHub の応答がブラウザに再利用されると、
+// 古い先端の上にコミットを作って「Update is not a fast forward」になる。
+// 最新ツリーによる衝突検出も古いまま返って効かなくなる
+describe("githubRequest — キャッシュを通さない", () => {
+  it("HTTP キャッシュを使わない", async () => {
+    const fetchMock = respond({});
+    vi.stubGlobal("fetch", fetchMock);
+
+    await call();
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.cache).toBe("no-store");
+  });
+
+  it("書き込みでも同じ", async () => {
+    const fetchMock = respond({});
+    vi.stubGlobal("fetch", fetchMock);
+
+    await githubRequest("github_pat_secret", "/repos/me/blog/git/blobs", {
+      method: "POST",
+      body: { content: "abc" },
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.cache).toBe("no-store");
+  });
+});

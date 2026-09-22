@@ -174,3 +174,16 @@ describe("verifyToken — Contents 権限まで確かめる", () => {
     await expect(verifyToken("github_pat_secret", "me/blog")).rejects.toThrow(/無効/);
   });
 });
+
+describe("verifyToken — キャッシュを通さない", () => {
+  it("どちらの読み取りもキャッシュを使わない", async () => {
+    const fetchMock = respond(writable);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await verifyToken("github_pat_secret", "me/blog");
+
+    for (const [, init] of fetchMock.mock.calls) {
+      expect((init as RequestInit).cache).toBe("no-store");
+    }
+  });
+});

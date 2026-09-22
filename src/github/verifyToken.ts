@@ -18,6 +18,7 @@ export async function verifyToken(token: string, repo: string): Promise<void> {
   try {
     response = await fetch(`${GITHUB_API_BASE}/repos/${repo}`, {
       headers: authHeaders(token),
+      cache: "no-store",
     });
   } catch {
     // ネットワーク断のほか、CORS で弾かれた場合もここに来る
@@ -69,6 +70,7 @@ async function verifyContentsAccess(token: string, repo: string): Promise<void> 
   try {
     response = await fetch(`${GITHUB_API_BASE}/repos/${repo}/commits?per_page=1`, {
       headers: authHeaders(token),
+      cache: "no-store",
     });
   } catch {
     throw new Error("GitHub に接続できませんでした。通信状態を確かめてください。");

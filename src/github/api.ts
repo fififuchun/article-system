@@ -67,6 +67,9 @@ export async function githubRequest<T>(
   try {
     response = await fetch(`${GITHUB_API_BASE}${path}`, {
       method,
+      // ブラウザに応答を再利用させない。古い先端の上にコミットを作ると
+      // ref を早送りできず、最新ツリーによる衝突検出も効かなくなる
+      cache: "no-store",
       headers: body
         ? { ...authHeaders(token), "Content-Type": "application/json" }
         : authHeaders(token),
