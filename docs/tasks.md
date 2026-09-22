@@ -207,7 +207,7 @@
 #### 9-5 仕上げ
 
 - [x] `src/index.ts` から `GitHubConfig` 型を公開する
-- [ ] README に fine-grained PAT の作り方（対象リポジトリのみ / Contents: Read and write）と `github` prop の例を書く
+- [x] README に fine-grained PAT の作り方（対象リポジトリのみ / Contents: Read and write）と `github` prop の例を書く
 - [ ] `demo/` に「GitHub 連携」ページを足し、トークンと `repo` を画面から入力してコミットまでを実地確認する（既存ページは `github` を渡さないまま）
 - [ ] バージョンを 0.3.0 に上げ、タグを打つ
 

@@ -127,8 +127,20 @@ validateArticle(raw, { articles?: Article[]; filename?: string })
 | `dateLabel` | `string` | | `"最終更新日時"` |
 | `classNames` | `ArticleStudioClassNames` | | `{}` |
 | `articleClassNames` | `ArticleDetailClassNames` | | `{}` |
+| `github` | `GitHubConfig` | | — |
 
 `articles` は必須です。渡さないとファイル名の衝突を検出できず、既存記事が上書きで消えます。
+
+`github` を渡すと、ダウンロードの代わりにリポジトリへ直接コミットします。トークンを入れるまで執筆画面は出ません（spec §15）。
+
+```ts
+interface GitHubConfig {
+  repo: string;       // "owner/name"
+  branch?: string;    // 既定 "main"
+  mdDir?: string;     // 既定 "src/articles"
+  imageDir?: string;  // 既定 "public/article_imgs"
+}
+```
 
 ---
 
