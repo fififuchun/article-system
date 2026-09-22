@@ -560,7 +560,32 @@ async function verifyToken(token, repo) {
   const repository = await response.json();
   if (!repository.permissions?.push) {
     throw new Error(
-      "\u3053\u306E\u30C8\u30FC\u30AF\u30F3\u306B\u306F\u66F8\u304D\u8FBC\u307F\u6A29\u9650\u304C\u3042\u308A\u307E\u305B\u3093\u3002Contents \u3092 Read and write \u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+      "\u3053\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u306F\u3053\u306E\u30EA\u30DD\u30B8\u30C8\u30EA\u3078\u306E\u66F8\u304D\u8FBC\u307F\u6A29\u9650\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+    );
+  }
+  await verifyContentsAccess(token, repo);
+}
+async function verifyContentsAccess(token, repo) {
+  let response;
+  try {
+    response = await fetch(`${GITHUB_API_BASE}/repos/${repo}/commits?per_page=1`, {
+      headers: authHeaders(token)
+    });
+  } catch {
+    throw new Error("GitHub \u306B\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u901A\u4FE1\u72B6\u614B\u3092\u78BA\u304B\u3081\u3066\u304F\u3060\u3055\u3044\u3002");
+  }
+  if (response.status === 409) return;
+  if (response.status === 401) {
+    throw new Error("\u30C8\u30FC\u30AF\u30F3\u304C\u7121\u52B9\u3067\u3059\u3002GitHub \u3067\u4F5C\u308A\u76F4\u3057\u3066\u8CBC\u308A\u76F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
+  }
+  if (response.status === 403) {
+    throw new Error(
+      "\u3053\u306E\u30C8\u30FC\u30AF\u30F3\u306B Contents \u306E\u6A29\u9650\u304C\u3042\u308A\u307E\u305B\u3093\u3002Permissions \u2192 Contents \u3092 Read and write \u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u7D44\u7E54\u306E\u30EA\u30DD\u30B8\u30C8\u30EA\u306A\u3089\u3001\u7D44\u7E54\u5074\u3067 fine-grained token \u306E\u8A31\u53EF\u3082\u5FC5\u8981\u3067\u3059\u3002"
+    );
+  }
+  if (!response.ok) {
+    throw new Error(
+      `\u30C8\u30FC\u30AF\u30F3\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF08HTTP ${response.status}\uFF09\u3002`
     );
   }
 }

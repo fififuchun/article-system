@@ -10,13 +10,12 @@ const writable = { permissions: { push: true, pull: true } };
 afterEach(() => vi.unstubAllGlobals());
 
 describe("verifyToken — 送るもの", () => {
-  it("対象リポジトリを1回だけ読む", async () => {
+  it("まず対象リポジトリを読む", async () => {
     const fetchMock = respond(writable);
     vi.stubGlobal("fetch", fetchMock);
 
     await verifyToken("github_pat_secret", "me/blog");
 
-    expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0][0]).toBe(`${GITHUB_API_BASE}/repos/me/blog`);
   });
 
@@ -62,16 +61,20 @@ describe("verifyToken — 通す場合", () => {
 
 describe("verifyToken — 断る場合", () => {
   // 書き終えてから「権限がありません」では遅い（spec §15）
-  it("push 権限が無ければ断る", async () => {
+  it("アカウントに書き込み権限が無ければ断る", async () => {
     vi.stubGlobal("fetch", respond({ permissions: { push: false, pull: true } }));
 
-    await expect(verifyToken("github_pat_secret", "me/blog")).rejects.toThrow(/Contents/);
+    await expect(verifyToken("github_pat_secret", "me/blog")).rejects.toThrow(
+      /書き込み権限がありません/
+    );
   });
 
   it("permissions が返らなくても断る", async () => {
     vi.stubGlobal("fetch", respond({}));
 
-    await expect(verifyToken("github_pat_secret", "me/blog")).rejects.toThrow(/Contents/);
+    await expect(verifyToken("github_pat_secret", "me/blog")).rejects.toThrow(
+      /書き込み権限がありません/
+    );
   });
 
   it("401 ならトークンが無効だと伝える", async () => {
@@ -116,5 +119,58 @@ describe("verifyToken — 断る場合", () => {
     const error = await verifyToken("github_pat_secret", "me/blog").catch((e: Error) => e);
 
     expect((error as Error).message).not.toContain("github_pat_secret");
+  });
+});
+
+// ★実地確認で分かった穴。GET /repos が返す permissions は
+// 「トークンの権限」ではなく「所有者のリポジトリ権限」を映す。
+// Contents を付け忘れたトークンでも push: true で通ってしまっていた
+describe("verifyToken — Contents 権限まで確かめる", () => {
+  /** 1回目は /repos、2回目は /commits を返す */
+  function stubTwo(second: { body: unknown; status: number }) {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith("/commits?per_page=1")) {
+        return new Response(JSON.stringify(second.body), { status: second.status });
+      }
+      return new Response(JSON.stringify(writable), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it("Contents が読めるかを実際に確かめる", async () => {
+    const fetchMock = stubTwo({ body: [{ sha: "abc" }], status: 200 });
+
+    await verifyToken("github_pat_secret", "me/blog");
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `${GITHUB_API_BASE}/repos/me/blog`,
+      `${GITHUB_API_BASE}/repos/me/blog/commits?per_page=1`,
+    ]);
+  });
+
+  it("Contents が無ければ貼り付けの時点で断る", async () => {
+    stubTwo({
+      body: { message: "Resource not accessible by personal access token" },
+      status: 403,
+    });
+
+    const error = await verifyToken("github_pat_secret", "me/blog").catch((e: Error) => e);
+
+    expect((error as Error).message).toContain("Contents");
+    expect((error as Error).message).toContain("組織");
+  });
+
+  // 空のリポジトリは 409 を返す。トークン自体は通っている
+  it("空のリポジトリでもトークンは受け入れる", async () => {
+    stubTwo({ body: { message: "Git Repository is empty." }, status: 409 });
+
+    await expect(verifyToken("github_pat_secret", "me/blog")).resolves.toBeUndefined();
+  });
+
+  it("2回目が 401 ならトークンが無効だと伝える", async () => {
+    stubTwo({ body: { message: "Bad credentials" }, status: 401 });
+
+    await expect(verifyToken("github_pat_secret", "me/blog")).rejects.toThrow(/無効/);
   });
 });
