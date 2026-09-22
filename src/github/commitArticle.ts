@@ -17,6 +17,19 @@ export interface CommitImage {
   file: Blob;
 }
 
+/**
+ * 同名の画像が既にある。上書きすると、その画像を使っている**別の記事**が
+ * 壊れる（spec §15）。
+ */
+export class ImageExistsError extends Error {
+  constructor(names: string[]) {
+    super(
+      `${names.join("、")} は GitHub に既にあります。Studio で名前を変えてから出し直してください（上書きすると、その画像を使っている別の記事が壊れます）。`
+    );
+    this.name = "ImageExistsError";
+  }
+}
+
 interface CommitParams {
   token: string;
   config: ResolvedGitHubConfig;
@@ -106,8 +119,19 @@ export async function commitArticle({
     token,
     `/repos/${repo}/git/trees/${baseTreeSha}?recursive=1`
   );
-  if (baseTree.tree.some((entry) => entry.path === path)) {
+  const taken = new Set(baseTree.tree.map((entry) => entry.path));
+
+  if (taken.has(path)) {
     throw new ArticleExistsError(path);
+  }
+
+  // md の衝突を先に出す。日付を変えれば画像の話はそもそも起きない
+  const clashingImages = images
+    .filter((image) => taken.has(`${config.imageDir}/${image.name}`))
+    .map((image) => image.name);
+
+  if (clashingImages.length > 0) {
+    throw new ImageExistsError(clashingImages);
   }
 
   // 4. 中身を預ける。ここではまだどこにも現れない

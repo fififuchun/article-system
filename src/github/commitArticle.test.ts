@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { commitArticle, ArticleExistsError } from "./commitArticle";
+import { commitArticle, ArticleExistsError, ImageExistsError } from "./commitArticle";
 import { GitHubApiError } from "./api";
 
 const config = {
@@ -338,5 +338,77 @@ describe("commitArticle — どの手順で失敗しても ref を進めない",
     await commitArticle(params);
 
     expect(calls.filter(([method]) => method === "PATCH")).toHaveLength(1);
+  });
+});
+
+// spec §15: 上書きすると、その画像を使っている別の記事が壊れる
+describe("commitArticle — 画像の衝突", () => {
+  const images = [
+    { name: "art_0.webp", file: new Blob([new Uint8Array([104])]) },
+    { name: "IMG_1234.jpg", file: new Blob([new Uint8Array([105])]) },
+  ];
+
+  it("同名の画像があれば止める", async () => {
+    stubGitHub(["public/article_imgs/IMG_1234.jpg"]);
+
+    await expect(commitArticle({ ...params, images })).rejects.toBeInstanceOf(
+      ImageExistsError
+    );
+  });
+
+  it("止めるときは blob を1つも作らない", async () => {
+    const fetchMock = stubGitHub(["public/article_imgs/IMG_1234.jpg"]);
+
+    await commitArticle({ ...params, images }).catch(() => {});
+
+    expect(
+      fetchMock.mock.calls.some(([url]) => (url as string).endsWith("/git/blobs"))
+    ).toBe(false);
+  });
+
+  it("どの画像が衝突したかを文言に入れる", async () => {
+    stubGitHub(["public/article_imgs/IMG_1234.jpg"]);
+
+    const error = await commitArticle({ ...params, images }).catch((e: Error) => e);
+
+    expect((error as Error).message).toContain("IMG_1234.jpg");
+    expect((error as Error).message).not.toContain("art_0.webp");
+  });
+
+  it("衝突が複数あればすべて挙げる", async () => {
+    stubGitHub([
+      "public/article_imgs/IMG_1234.jpg",
+      "public/article_imgs/art_0.webp",
+    ]);
+
+    const error = await commitArticle({ ...params, images }).catch((e: Error) => e);
+
+    expect((error as Error).message).toContain("IMG_1234.jpg");
+    expect((error as Error).message).toContain("art_0.webp");
+  });
+
+  it("別の名前の画像があるだけなら通す", async () => {
+    stubGitHub(["public/article_imgs/art_9.webp"]);
+
+    await expect(commitArticle({ ...params, images })).resolves.toBe("commit-new");
+  });
+
+  // 同じ名前でも別のディレクトリなら関係ない
+  it("imageDir の外にある同名ファイルは無視する", async () => {
+    stubGitHub(["docs/IMG_1234.jpg"]);
+
+    await expect(commitArticle({ ...params, images })).resolves.toBe("commit-new");
+  });
+
+  // md の衝突のほうが先に出る。日付を変えれば画像の話はそもそも起きない
+  it("md も画像も衝突していれば md を先に伝える", async () => {
+    stubGitHub([
+      "src/articles/2026-08-23-夏の更新.md",
+      "public/article_imgs/IMG_1234.jpg",
+    ]);
+
+    await expect(commitArticle({ ...params, images })).rejects.toBeInstanceOf(
+      ArticleExistsError
+    );
   });
 });
