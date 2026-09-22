@@ -1391,3 +1391,115 @@ describe("ArticleStudio — トークンが失効したとき（spec §15）", (
     expect(resetButton()).toBeNull();
   });
 });
+
+// spec §15: 画像は同じコミットに入るので、置いてもらう必要がない
+describe("ArticleStudio — コミット後の画像の扱い（spec §15）", () => {
+  const github = { repo: "me/blog" };
+
+  // 画像を入れると名前の入力欄が増えるので、textbox ロールでは一意に取れない
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  const drop = () => {
+    const file = new File(["x"], "art_0.webp", { type: "image/webp" });
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [file] },
+    });
+  };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    vi.mocked(commitArticle).mockResolvedValue("commit-new");
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+  };
+
+  it("ドロップした画像をコミットに渡す", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    drop();
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    const payload = vi.mocked(commitArticle).mock.calls[0][0];
+    expect(payload.images?.map((image) => image.name)).toEqual(["art_0.webp"]);
+  });
+
+  it("配置をお願いする案内を出さない", async () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    drop();
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(container.querySelector(".as-studio-images-note")).toBeNull();
+    expect(container.querySelector(".as-studio-image-pending")).toBeNull();
+  });
+
+  // github を渡さない場合は今までどおり案内する（spec §9）
+  it("github を渡さなければ今までどおり案内する", async () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    drop();
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(container.querySelector(".as-studio-images-note")).not.toBeNull();
+  });
+});
+
+// spec §6: ドロップした画像はサーバーに無くて当然。存在確認の対象にしない
+describe("ArticleStudio — 画像の存在確認（回帰）", () => {
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const drop = (name: string) => {
+    const file = new File(["x"], name, { type: "image/webp" });
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [file] },
+    });
+  };
+
+  it("ドロップした画像は存在を確かめない", async () => {
+    const probed: string[] = [];
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(value: string) {
+          probed.push(value);
+          queueMicrotask(() => this.onload?.());
+        }
+      }
+    );
+
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    drop("art_0.webp");
+    fireEvent.change(md(), {
+      target: { value: sampleMd.replace("thumbnail: art_0.webp", "thumbnail: art_0.webp") },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+
+    expect(probed.some((src) => src.includes("art_0.webp"))).toBe(false);
+    expect(container.querySelector(".as-studio-issues")).toBeNull();
+  });
+});
