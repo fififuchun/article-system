@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { commitArticle, ArticleExistsError, ImageExistsError } from "./commitArticle";
+import {
+  commitArticle,
+  ArticleExistsError,
+  ImageExistsError,
+  EmptyRepositoryError,
+  MissingBranchError,
+} from "./commitArticle";
 import { GitHubApiError } from "./api";
 
 const config = {
@@ -410,5 +416,62 @@ describe("commitArticle — 画像の衝突", () => {
     await expect(commitArticle({ ...params, images })).rejects.toBeInstanceOf(
       ArticleExistsError
     );
+  });
+});
+
+// 実地確認で踏んだ。GitHub の "Git Repository is empty." では何をすればよいか分からない
+describe("commitArticle — 先端が取れないとき", () => {
+  /** 先端の取得だけを失敗させる */
+  function stubRefFailure(status: number, message: string) {
+    calls = [];
+    const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
+      const path = url.replace("https://api.github.com", "");
+      calls.push([init.method ?? "GET", path]);
+
+      if (path.includes("/git/ref/heads/")) {
+        return new Response(JSON.stringify({ message }), { status });
+      }
+      return new Response(JSON.stringify({ sha: "x" }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it("コミットが1つも無ければ、最初のコミットを促す", async () => {
+    stubRefFailure(409, "Git Repository is empty.");
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(EmptyRepositoryError);
+    expect((error as Error).message).toContain("me/blog");
+    expect((error as Error).message).toContain("コミットが1つもありません");
+  });
+
+  it("ブランチが無ければ、ブランチ名と branch 設定を示す", async () => {
+    stubRefFailure(404, "Not Found");
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(MissingBranchError);
+    expect((error as Error).message).toContain("main");
+    expect((error as Error).message).toContain("branch");
+  });
+
+  it("どちらの場合も何も書かない", async () => {
+    const fetchMock = stubRefFailure(409, "Git Repository is empty.");
+
+    await commitArticle(params).catch(() => {});
+
+    expect(fetchMock.mock.calls).toHaveLength(1);
+  });
+
+  // 401 などはそのまま通す。トークンの入れ直しに回したい
+  it("それ以外の失敗はそのまま投げる", async () => {
+    stubRefFailure(401, "Bad credentials");
+
+    const error = await commitArticle(params).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(GitHubApiError);
+    expect((error as GitHubApiError).kind).toBe("unauthorized");
   });
 });

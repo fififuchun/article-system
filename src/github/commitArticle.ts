@@ -1,4 +1,4 @@
-import { githubRequest } from "./api";
+import { githubRequest, GitHubApiError } from "./api";
 import type { ResolvedGitHubConfig } from "./resolveConfig";
 
 /** 同名のファイルが既にある。コミットすれば消してしまう（spec §6 / §15） */
@@ -27,6 +27,30 @@ export class ImageExistsError extends Error {
       `${names.join("、")} は GitHub に既にあります。Studio で名前を変えてから出し直してください（上書きすると、その画像を使っている別の記事が壊れます）。`
     );
     this.name = "ImageExistsError";
+  }
+}
+
+/**
+ * リポジトリにコミットが1つも無い。空のリポジトリには既定ブランチも存在しない。
+ *
+ * GitHub は "Git Repository is empty." を返すが、それでは何をすればよいか分からない。
+ */
+export class EmptyRepositoryError extends Error {
+  constructor(repo: string) {
+    super(
+      `${repo} にまだコミットが1つもありません。GitHub で README などを1つコミットしてから出し直してください。`
+    );
+    this.name = "EmptyRepositoryError";
+  }
+}
+
+/** 指定のブランチが無い。既定は main なので、master などだと踏む */
+export class MissingBranchError extends Error {
+  constructor(repo: string, branch: string) {
+    super(
+      `${repo} に ${branch} ブランチがありません。既定は main です。違う名前なら github の branch に指定してください。`
+    );
+    this.name = "MissingBranchError";
   }
 }
 
@@ -100,10 +124,18 @@ export async function commitArticle({
   const path = `${mdDir}/${filename}`;
 
   // 1. いまの先端
-  const ref = await githubRequest<RefResponse>(
-    token,
-    `/repos/${repo}/git/ref/heads/${branch}`
-  );
+  let ref: RefResponse;
+  try {
+    ref = await githubRequest<RefResponse>(token, `/repos/${repo}/git/ref/heads/${branch}`);
+  } catch (reason: unknown) {
+    // GitHub の文言（"Git Repository is empty." / "Not Found"）では
+    // 何をすればよいか分からない
+    if (reason instanceof GitHubApiError) {
+      if (reason.status === 409) throw new EmptyRepositoryError(repo);
+      if (reason.status === 404) throw new MissingBranchError(repo, branch);
+    }
+    throw reason;
+  }
   const parentSha = ref.object.sha;
 
   // 2. その中身（base_tree に要る）

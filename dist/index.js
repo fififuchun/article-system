@@ -663,6 +663,22 @@ var ImageExistsError = class extends Error {
     this.name = "ImageExistsError";
   }
 };
+var EmptyRepositoryError = class extends Error {
+  constructor(repo) {
+    super(
+      `${repo} \u306B\u307E\u3060\u30B3\u30DF\u30C3\u30C8\u304C1\u3064\u3082\u3042\u308A\u307E\u305B\u3093\u3002GitHub \u3067 README \u306A\u3069\u30921\u3064\u30B3\u30DF\u30C3\u30C8\u3057\u3066\u304B\u3089\u51FA\u3057\u76F4\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
+    );
+    this.name = "EmptyRepositoryError";
+  }
+};
+var MissingBranchError = class extends Error {
+  constructor(repo, branch) {
+    super(
+      `${repo} \u306B ${branch} \u30D6\u30E9\u30F3\u30C1\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u65E2\u5B9A\u306F main \u3067\u3059\u3002\u9055\u3046\u540D\u524D\u306A\u3089 github \u306E branch \u306B\u6307\u5B9A\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
+    );
+    this.name = "MissingBranchError";
+  }
+};
 async function toBase64(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const CHUNK = 32768;
@@ -683,10 +699,16 @@ async function commitArticle({
 }) {
   const { repo, branch, mdDir } = config;
   const path = `${mdDir}/${filename}`;
-  const ref = await githubRequest(
-    token,
-    `/repos/${repo}/git/ref/heads/${branch}`
-  );
+  let ref;
+  try {
+    ref = await githubRequest(token, `/repos/${repo}/git/ref/heads/${branch}`);
+  } catch (reason) {
+    if (reason instanceof GitHubApiError) {
+      if (reason.status === 409) throw new EmptyRepositoryError(repo);
+      if (reason.status === 404) throw new MissingBranchError(repo, branch);
+    }
+    throw reason;
+  }
   const parentSha = ref.object.sha;
   const parent = await githubRequest(
     token,
