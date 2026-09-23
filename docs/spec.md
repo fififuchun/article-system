@@ -81,8 +81,8 @@ import { Routes, Route } from "react-router-dom";
 <Routes>
   <Route path="/blog" element={<BlogList />} />
   <Route path="/article/preview" element={<BlogStudio />} />
-  {/* :id より前に定義する */}
-  <Route path="/blog/:id" element={<BlogDetail />} />
+  {/* :slug より前に定義する */}
+  <Route path="/blog/:slug" element={<BlogDetail />} />
 </Routes>
 ```
 
@@ -102,7 +102,7 @@ Studio を本番に置くかどうかは利用側が決めます。ライブラ�
 
 ```ts
 interface Article {
-  id: number;           // date 昇順ソート後の index（0始まり）
+  slug: string;         // URL に使う識別子。記事の身元
   filename: string;     // 拡張子付きファイル名
   title: string;
   date: string;         // "YYYY-MM-DD" 公開日
@@ -113,7 +113,26 @@ interface Article {
 }
 ```
 
-`filename` はファイル名衝突の検出と、将来の既存記事編集に使います。**URL には使いません**（識別子は `id`）。あくまで参考情報です。
+**`id` は廃止しました。** 日付昇順の index を URL に使っていたため、**既存記事より古い日付の記事を後から足すと、以降のすべての URL が別の記事を指していました**。エラーも警告も出ずに静かにずれるため、いちばん重い問題でした。
+
+並び順が必要なときは配列の位置を使ってください。`createArticles` は `date` 昇順で返します。
+
+### slug の決まり方
+
+1. フロントマターに `slug` があればそれを使う
+2. 無ければ**ファイル名から拡張子を除いたもの**を使う
+
+```
+src/articles/2026-08-23-夏の更新.md   → slug = "2026-08-23-夏の更新"
+```
+
+既存記事を書き換える必要はありません。**URL を変えたい記事だけ** `slug:` を書けば上書きできます。
+
+**slug は記事の身元です。** 変えると公開済みの URL が切れます。ファイル名を変えるときは、URL を保つために `slug:` を明示してください。
+
+日本語をそのまま使えます。URL に載せるときは利用側で `encodeURIComponent` を通してください。
+
+**同じ slug の記事が2つあると、片方が開けません。** `createArticles` が `console.warn` で知らせます（例外は投げません — 記事が読めなくなるわけではないため。spec §5）。
 
 ### フロントマター
 
@@ -131,33 +150,31 @@ thumbnail: art_0.webp
 本文...
 ```
 
-| フィールド | 型 | 意味 |
-| --- | --- | --- |
-| `title` | string | 記事タイトル |
-| `date` | YYYY-MM-DD | **公開日**。並び順と `id` の採番に使う |
-| `latestUpdate` | YYYY-MM-DD | **最終編集日**。一覧カードに表示される |
-| `staff` | string | 担当者名 |
-| `thumbnail` | string | サムネイル画像のファイル名 |
+| フィールド | 型 | 必須 | 意味 |
+| --- | --- | --- | --- |
+| `title` | string | ✔ | 記事タイトル |
+| `date` | YYYY-MM-DD | ✔ | **公開日**。並び順に使う |
+| `latestUpdate` | YYYY-MM-DD | ✔ | **最終編集日**。一覧カードに表示される |
+| `staff` | string | ✔ | 担当者名 |
+| `thumbnail` | string | ✔ | サムネイル画像のファイル名 |
+| `slug` | string | | URL に使う識別子。省略するとファイル名から作る |
 
-すべて必須です。欠けると検証で止まります。
+`slug` 以外は必須です。欠けると検証で止まります。
 
 **新規作成時は `date` と `latestUpdate` の両方が今日になります。** 既存記事を編集したときだけ `latestUpdate` が動きます（v2 の機能）。
 
 **未来日も許可します。** 静的サイトは再ビルドしないと内容が変わらないため予約投稿にはなりませんが、書くこと自体は止めません。
 
-### id の採番
+### slug に使えない文字
 
-`date` 昇順にソートした後の index です。
+URL のパスとして成立しない文字は検証で止めます。
 
-```
-id=0  2026-03-15   ← 最も古い
-id=1  2026-08-20
-id=2  2026-08-23   ← 最も新しい
-```
+- `/` — パスが割れる
+- `?` `#` — クエリとフラグメントの区切り
+- 空白
+- 前後の `.`、`.` だけ、`..` だけ
 
-**既知のリスク**: 既存記事より古い日付の記事を後から追加すると、以降の `id` がすべてずれて公開済みURLが別の記事を指します。
-
-**対処**: Studio が `date` の初期値を常に今日にします。新しい記事は必ず末尾に付くため、既存の `id` は動きません。
+ファイル名から作る場合はこれらが入りません（`buildFilename` が除いています）。手で `slug:` を書いたときのための検証です。
 
 ### フロントマターのパース仕様
 
@@ -251,7 +268,7 @@ function createArticles(rawFiles: Record<string, string>): Article[]
 3. 各ファイルの フロントマターをパースする
 4. 検証を行い、問題があれば `console.warn` で出す
 5. `date` 昇順（古い順）でソートする
-6. ソート後の index を `id` として採番する
+6. `slug` を決める（フロントマター優先、無ければファイル名から）。重複していれば console.warn
 
 ### 実装上の注意
 
@@ -272,7 +289,7 @@ function createArticles(rawFiles: Record<string, string>): Article[]
 <ArticleList articles={[...articles].reverse()} … />
 ```
 
-`.reverse()` は破壊的なのでスプレッドでコピーしてから呼びます。`id` は保持されるので URL は壊れません。
+`.reverse()` は破壊的なのでスプレッドでコピーしてから呼びます。`slug` は並び順に依存しないので URL は壊れません。
 
 ---
 
@@ -302,7 +319,7 @@ function validateArticle(
 | --- | --- | --- |
 | 必須項目の欠落 | `latestUpdate` がない | `0年undefined月undefined日` と表示される |
 | キー名の typo | `lastUpdate` と書いた | 同上。無言で通過する |
-| 日付の形式違反 | `date: 2026/08/23` | ソートが壊れ、`id` の採番まで連鎖して崩れる |
+| 日付の形式違反 | `date: 2026/08/23` | 並び順が壊れる |
 | 引用符付きの値 | `title: "記事"` | 引用符ごと値に入る |
 | フロントマターの閉じ忘れ | `---` が片方だけ | 全文が本文として扱われる |
 | 更新日が投稿日より前 | `latestUpdate < date` | 論理矛盾 |
@@ -449,7 +466,7 @@ CSR では動きますが、React 開発モードで `validateDOMNesting` 警告
 <ArticleList
   articles={articles}
   imageBasePath="/article_imgs/"
-  getArticleUrl={(article) => `/blog/${article.id}`}
+  getArticleUrl={(article) => `/blog/${encodeURIComponent(article.slug)}`}
   renderLink={(url, children, key) => <Link key={key} to={url}>{children}</Link>}
   classNames={{ ... }}
 />
@@ -602,7 +619,7 @@ Ctrl+A で全消しして空になっても、**テンプレートは自動で�
 | **詳細** | `ArticleDetail` をそのまま描画 |
 | **一覧** | `ArticleList` に**直近6件**を渡す。日付の新しい順。**編集中の記事は必ず含める**（過去日を書いても消えないように） |
 
-一覧プレビューは既存記事に混ぜて表示します。隣の記事と並べることで、タイトルの折り返しやサムネイルの雰囲気を比較できます。**編集中の記事のカードには `id` の予告を出します。** 既存記事の間に入る場合は以降の `id` がずれるため、その場で気づけます（spec §3 の既知のリスク）。
+一覧プレビューは既存記事に混ぜて表示します。隣の記事と並べることで、タイトルの折り返しやサムネイルの雰囲気を比較できます。**編集中の記事のカードには URL の予告を出します。** 出したあとどの URL で公開されるかが、書いている最中に分かります。
 
 タイトルの折り返しやサムネイルのトリミングは**詳細プレビューでは絶対に気づけない**ため、両方を確認できるようにします。
 
@@ -990,9 +1007,9 @@ Git Data API なら blob → tree → commit → ref の順に組み立て、**�
 
 | 項目 | 内容 |
 | --- | --- |
-| **既存記事の編集** | `articles` から選んで開き、`latestUpdate` を自動更新する |
+| **既存記事の編集** | `articles` から選んで開き、`latestUpdate` を自動更新して同じファイルにコミットを重ねる |
+| **ファイル名の自動連番** | 同名のときに `-2` を付けて通す。いまは止める（§6） |
 | **GitHub App のログイン** | SPA クライアント対応（現在 Preview / Paused）が再開したら、PAT の貼り付けをログインに置き換える（§15） |
-| **日付衝突の警告** | 既存記事より古い日付を検出して `id` のずれを警告する |
 | **Studio コードの分離** | `./studio` エントリポイントに分け、読者向けバンドルから外す |
 
 ---
