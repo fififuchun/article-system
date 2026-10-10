@@ -9,7 +9,7 @@ description: docs/tasks.md の未完了タスクを先頭から1件だけ進め�
 1. `docs/tasks.md` を読み、`- [ ]` が付いた**いちばん上のタスク1件**を対象にする。それ以外のタスクには着手しない
 2. 対象タスクが参照している `docs/spec.md` の章を読む。仕様はすべて spec が持っている
 3. 実装する
-4. `npm test && npm run build` を実行する
+4. `npm test && npm run build` を実行する（`npm test` は `tsc --noEmit` を含む。tsup は型を見ない）
 5. `src/` を変更したなら、ビルド後の `dist/` もステージに含める（spec §12。コミット忘れが利用側の不具合になる）
 6. `docs/tasks.md` の対象タスクを `- [x]` に変える
 7. 実装・`dist/`・`docs/tasks.md` を**1つのコミット**にまとめる
