@@ -242,7 +242,7 @@
 利用側に `BlogStudio.tsx` と `<Route>` を書かせない。`App.tsx` に1行置けば
 `#/studio` で全画面の Studio が開く形にする。読者向けの一覧・詳細は実パスのまま。
 
-- [ ] `src/studio/hashRoute.ts` — ハッシュを読んで一致を判定し、`hashchange` を購読する純粋な部分（テスト → 実装 → グリーン）
+- [x] `src/studio/hashRoute.ts` — ハッシュを読んで一致を判定し、`hashchange` を購読する純粋な部分（テスト → 実装 → グリーン）
 - [ ] `ArticleStudioRoute` — 一致しないとき `null`、一致したとき `<dialog>` を `showModal()` で開く（テスト → 実装 → グリーン）
 - [ ] Esc と × で閉じたときにハッシュを戻す（戻さないと URL と画面が食い違う。テスト → 実装 → グリーン）
 - [ ] `hashPath` prop で入り口を変えられるようにする（既定 `#/studio`。テスト → 実装 → グリーン）
