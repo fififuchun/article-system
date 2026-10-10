@@ -8,12 +8,13 @@ import "@fififuchun/article-system/styles.css";
 
 type Route = "list" | "detail" | "preview" | "github";
 
-function getRoute(): { route: Route; id?: number } {
+function getRoute(): { route: Route; slug?: string } {
   const hash = window.location.hash;
   if (hash === "#/preview") return { route: "preview" };
   if (hash === "#/github") return { route: "github" };
-  const m = hash.match(/^#\/article\/(\d+)$/);
-  if (m) return { route: "detail", id: Number(m[1]) };
+  const m = hash.match(/^#\/article\/(.+)$/);
+  // ハッシュは percent-encoding されるのでデコードして突き合わせる
+  if (m) return { route: "detail", slug: decodeURIComponent(m[1]) };
   return { route: "list" };
 }
 
@@ -41,7 +42,7 @@ const listClassNames = {
 };
 
 export default function App() {
-  const [{ route, id }, setRouteState] = useState(getRoute);
+  const [{ route, slug }, setRouteState] = useState(getRoute);
   const [useCustomCss, setUseCustomCss] = useState(false);
 
   useEffect(() => {
@@ -55,7 +56,9 @@ export default function App() {
   };
 
   const selectedArticle: Article | undefined =
-    route === "detail" && id !== undefined ? articles[id] : undefined;
+    route === "detail" && slug !== undefined
+      ? articles.find((article) => article.slug === slug)
+      : undefined;
 
   return (
     <div style={{ fontFamily: "sans-serif", minHeight: "100vh", background: "#f5f5f5" }}>
@@ -119,7 +122,9 @@ export default function App() {
           <ArticleList
             articles={articles}
             imageBasePath="https://placehold.co/400x240/e8e8e8/999999?text="
-            getArticleUrl={(article) => `#/article/${article.id}`}
+            getArticleUrl={(article) =>
+              `#/article/${encodeURIComponent(article.slug)}`
+            }
             classNames={useCustomCss ? listClassNames : undefined}
             renderLink={(url, children, key) => (
               <a key={key} href={url}>
