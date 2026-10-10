@@ -422,11 +422,20 @@ function toDateString(date) {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
-function buildTemplate(today = /* @__PURE__ */ new Date()) {
+function pickSlug(date, existingSlugs) {
+  const taken = new Set(existingSlugs);
+  if (!taken.has(date)) return date;
+  for (let suffix = 2; ; suffix += 1) {
+    const candidate = `${date}-${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
+function buildTemplate(today = /* @__PURE__ */ new Date(), existingSlugs = []) {
   const date = toDateString(today);
   return [
     "---",
     "title:",
+    `slug: ${pickSlug(date, existingSlugs)}`,
     `date: ${date}`,
     `latestUpdate: ${date}`,
     "staff:",
@@ -897,7 +906,10 @@ function StudioEditor({
   classNames = {},
   articleClassNames
 }) {
-  const [raw, setRaw] = useState2(() => loadDraft(storageKey) ?? buildTemplate());
+  const existingSlugs = articles.map((article) => article.slug);
+  const [raw, setRaw] = useState2(
+    () => loadDraft(storageKey) ?? buildTemplate(/* @__PURE__ */ new Date(), existingSlugs)
+  );
   const [tab, setTab] = useState2("detail");
   const [issues, setIssues] = useState2([]);
   const [images, setImages] = useState2([]);
@@ -919,7 +931,7 @@ function StudioEditor({
   };
   const startNewArticle = () => {
     if (!window.confirm("\u7DE8\u96C6\u4E2D\u306E\u5185\u5BB9\u3092\u6D88\u3057\u3066\u65B0\u3057\u304F\u66F8\u304D\u59CB\u3081\u307E\u3059\u3002\u3088\u308D\u3057\u3044\u3067\u3059\u304B\uFF1F")) return;
-    setRaw(buildTemplate());
+    setRaw(buildTemplate(/* @__PURE__ */ new Date(), existingSlugs));
     setIssues([]);
   };
   const downloadImage = (image) => {

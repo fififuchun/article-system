@@ -156,6 +156,7 @@ URL とは切り離されているので影響しません。
 ```markdown
 ---
 title: 記事タイトル
+slug: 2026-08-23
 date: 2026-08-23
 latestUpdate: 2026-08-23
 staff: 田中 花子

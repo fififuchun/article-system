@@ -1560,3 +1560,37 @@ describe("ArticleStudio — トークンの作り方の案内", () => {
     expect(text).toContain("Read and write");
   });
 });
+
+// spec §3: 同じ日に2本目を書くとき連番が付く
+describe("ArticleStudio — 雛形の slug", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+  const today = new Date().toISOString().slice(0, 10);
+
+  it("雛形に slug が入る", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    expect(md().value).toContain(`slug: ${today}`);
+  });
+
+  // URL に日本語が入らない既定にするため（spec §3）
+  it("既定の slug に日本語を含まない", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    const slug = md().value.match(/^slug: (.*)$/m)?.[1] ?? "";
+    expect(slug).toMatch(/^[\x20-\x7e]+$/);
+  });
+
+  it("既存記事と同じ日なら連番を付ける", () => {
+    const taken = existing(today, "先に書いた記事");
+    taken.slug = today;
+
+    render(<ArticleStudio articles={[taken]} />);
+
+    expect(md().value).toContain(`slug: ${today}-2`);
+  });
+});

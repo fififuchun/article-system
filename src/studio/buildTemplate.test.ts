@@ -11,6 +11,7 @@ describe("buildTemplate", () => {
 
     expect(Object.keys(data)).toEqual([
       "title",
+      "slug",
       "date",
       "latestUpdate",
       "staff",
@@ -66,5 +67,47 @@ describe("buildTemplate", () => {
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     expect(data.date).toBe(today);
+  });
+});
+
+// spec §3: 既定を日付にすることで、何もしなくても URL に日本語が入らない
+describe("buildTemplate — slug", () => {
+  const slugOf = (raw: string) => parseFrontmatter(raw).data.slug;
+
+  it("既定は日付になる", () => {
+    expect(slugOf(buildTemplate(aug23))).toBe("2026-08-23");
+  });
+
+  it("日本語を含まない", () => {
+    expect(slugOf(buildTemplate(aug23))).toMatch(/^[\x20-\x7e]+$/);
+  });
+
+  it("既存に無ければ連番を付けない", () => {
+    expect(slugOf(buildTemplate(aug23, ["2026-01-01"]))).toBe("2026-08-23");
+  });
+
+  // 同じ日に2本目を書くとき
+  it("同じ日の slug があれば -2 にする", () => {
+    expect(slugOf(buildTemplate(aug23, ["2026-08-23"]))).toBe("2026-08-23-2");
+  });
+
+  it("-2 も埋まっていれば -3 にする", () => {
+    expect(slugOf(buildTemplate(aug23, ["2026-08-23", "2026-08-23-2"]))).toBe(
+      "2026-08-23-3"
+    );
+  });
+
+  it("飛んでいても空いている最小の番号を選ぶ", () => {
+    expect(slugOf(buildTemplate(aug23, ["2026-08-23", "2026-08-23-3"]))).toBe(
+      "2026-08-23-2"
+    );
+  });
+
+  // 雛形は検証を通る値でなければならない（spec §9）
+  it("入れた slug が検証を通る", () => {
+    const raw = buildTemplate(aug23, ["2026-08-23"]);
+    const slugIssues = validateArticle(raw).filter((issue) => issue.field === "slug");
+
+    expect(slugIssues).toEqual([]);
   });
 });

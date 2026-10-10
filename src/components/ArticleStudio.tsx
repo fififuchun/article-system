@@ -108,7 +108,11 @@ function StudioEditor({
   // エディタとのコピーペーストが自由に行き来できる（spec §9）
   // 復帰する下書きがあればテンプレートを出さない。出すと保存内容を上書きしてしまう。
   // ?? を使うのは空文字を「下書きなし」と扱わないため（spec §9）
-  const [raw, setRaw] = useState(() => loadDraft(storageKey) ?? buildTemplate());
+  // 既存の slug を渡すことで、同じ日の2本目に連番が付く（spec §3）
+  const existingSlugs = articles.map((article) => article.slug);
+  const [raw, setRaw] = useState(
+    () => loadDraft(storageKey) ?? buildTemplate(new Date(), existingSlugs)
+  );
   const [tab, setTab] = useState<"detail" | "list">("detail");
   const [issues, setIssues] = useState<Issue[]>([]);
   const [images, setImages] = useState<DroppedImage[]>([]);
@@ -145,7 +149,7 @@ function StudioEditor({
   // 自動では決して消さない。押されたときだけ、確認を取ってから戻す（spec §9）
   const startNewArticle = () => {
     if (!window.confirm("編集中の内容を消して新しく書き始めます。よろしいですか？")) return;
-    setRaw(buildTemplate());
+    setRaw(buildTemplate(new Date(), existingSlugs));
     setIssues([]);
   };
 
