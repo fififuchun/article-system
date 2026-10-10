@@ -249,7 +249,7 @@
 - [x] `::backdrop` と全画面レイアウトの CSS を足す（`:where()` で詳細度0）
 - [x] `src/index.ts` から `ArticleStudioRoute` を公開する
 - [x] `demo/` を `ArticleStudioRoute` に差し替え、ナビの2ページ（プレビュー / GitHub 連携）を畳む
-- [ ] README に「設置は1行」を書き、`ArticleStudio` を直接使う道も残すことを明記する
+- [x] README に「設置は1行」を書き、`ArticleStudio` を直接使う道も残すことを明記する
 - [ ] バージョンを 0.3.0 に上げ、タグを打つ（フェーズ10と11は破壊的変更。移行手順を書いてから打つ）
 
 ---

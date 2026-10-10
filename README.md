@@ -299,8 +299,12 @@ export default function BlogDetail() {
 
 書く・確認する・検証する・md として取り出す、までを1画面で行います。
 
+> **ふつうは `<ArticleStudioRoute>` を使ってください。**（後述）1行置くだけで `#/studio` に
+> 全画面で開きます。`<ArticleStudio>` を直接使うのは、自分のレイアウトの中に埋め込みたい
+> 場合だけです。
+
 ```tsx
-// src/pages/BlogStudio.tsx
+// 自分のページに埋め込む場合
 import { ArticleStudio } from "@fififuchun/article-system";
 import { articles } from "../lib/articles";
 
@@ -393,41 +397,113 @@ export default function BlogStudio() {
 - 下書きはデバイス間で同期しません
 - 画像はリポジトリに自分で配置する必要があります。本番ダウンロード後、画像欄に「未配置」と出ます（`github` を渡した場合は同じコミットに入るので不要です）
 
+### `<ArticleStudioRoute>` — 執筆画面を1行で置く
+
+`App.tsx` に1行置くだけで、`#/studio` を開いたときに執筆画面が全画面で出ます。**ページファイルも `<Route>` の定義も要りません。**
+
+```tsx
+// src/App.tsx
+import { ArticleStudioRoute } from "@fififuchun/article-system";
+import { articles } from "./lib/articles";
+
+export default function App() {
+  return (
+    <>
+      <YourRoutes />
+      <ArticleStudioRoute articles={articles} github={{ repo: "me/blog" }} />
+    </>
+  );
+}
+```
+
+| prop | 型 | 必須 | 既定値 |
+| --- | --- | --- | --- |
+| `hashPath` | `string` | | `"#/studio"` |
+
+ほかの prop は `<ArticleStudio>` と同じものをそのまま渡せます。
+
+#### 置き場所はどこでもかまいません
+
+**ハッシュが一致しないときは何も描画しません。** だから `<main>` の外でも中でも、レイアウトのどこに書いても結果は同じです。
+
+#### なぜハッシュなのか
+
+`#` より後ろは**サーバーに送られず、`react-router` の `<Route path>` も見ません**。だから**あなたのルーティング設定に手を入れる必要がありません。** これが「追加1行」の理由です。
+
+読者向けの一覧・詳細は実パスのままにしてください。ハッシュだと検索エンジンから見て全ページが同じ1ページになり、記事ごとに検索結果へ載りません。
+
+#### 入り口は変えられます
+
+```tsx
+<ArticleStudioRoute articles={articles} hashPath="#/write" />
+```
+
+`"#/write"` / `"/write"` / `"write"` のどの書き方でも同じに扱います。
+
+#### 閉じ方
+
+右上の × か **Esc** で閉じます。閉じるとハッシュが戻り、元の画面に帰ります。
+
+#### 最前面を取ります
+
+`<dialog>` を `showModal()` で開いています。**トップレイヤー**という専用の層に乗るため、利用側がどんなに大きい `z-index` を使っていても Studio が前に出ます。背後はクリックも Tab 移動もできません。
+
+逆に言うと**ライブラリが最前面を取る**ので、Studio より手前に何かを出すことはできません。
+
+#### 本番に残してかまいません
+
+誰でも `#/studio` を開けますが、**`github` を渡していればトークンが無い限り編集画面は出ません。** スマホから書けるようにするため、環境変数で落とすことは勧めていません。
+
+#### 自分のルーティングに埋め込みたい場合
+
+`<ArticleStudio>` を直接使えます。その場合は上に出る自分のナビの高さを CSS 変数で伝えてください。
+
+```css
+:root { --as-studio-header-top: 52px; }
+```
+
+<br>
+<br>
+
 ### ルーティング
 
-上記3つのページをルーティングに登録します（React Router の例）。
+**読者向けの2ページだけ**をルーティングに登録します。執筆画面は `<ArticleStudioRoute>` が
+ハッシュで開くので、ここには書きません。
 
 ```tsx
 // src/App.tsx
 import { Routes, Route } from "react-router-dom";
+import { ArticleStudioRoute } from "@fififuchun/article-system";
+import { articles } from "./lib/articles";
 import BlogList from "./pages/BlogList";
 import BlogDetail from "./pages/BlogDetail";
-import BlogStudio from "./pages/BlogStudio";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/blog" element={<BlogList />} />
-      <Route path="/blog/studio" element={<BlogStudio />} />
-      {/* :slug より前に定義する */}
-      <Route path="/blog/:slug" element={<BlogDetail />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/blog" element={<BlogList />} />
+        {/* :slug より前に定義する */}
+        <Route path="/blog/:slug" element={<BlogDetail />} />
+      </Routes>
+
+      {/* 執筆画面。#/studio のときだけ全画面で開く */}
+      <ArticleStudioRoute articles={articles} github={{ repo: "me/blog" }} />
+    </>
   );
 }
 ```
 
 #### Studio を本番に置く場合
 
-**`github` を渡すか、ホスティング側で認証をかけてください。** ライブラリ自体は認証を持ちません。誰でも開ける場所に置くと、記事の下書きや執筆画面が公開されます。
+**`github` を渡すか、ホスティング側で認証をかけてください。** ライブラリ自体は認証を
+持ちません。誰でも `#/studio` を開けます。
 
-`github` を渡せばトークンを入れるまで執筆画面が出ないため、それ自体が鍵になります。
+`github` を渡せば**トークンを入れるまで執筆画面が出ない**ため、それ自体が鍵になります。
 
-開発時だけ有効にするなら、環境変数でルートごと切り離せます。
+スマホから書けるようにするなら、環境変数で落とさずそのまま残してください。落とすと
+本番環境では書けなくなります。
 
-```tsx
-{import.meta.env.VITE_STUDIO === "1" && (
-  <Route path="/blog/studio" element={<BlogStudio />} />
-)}
 ```
 
 <br>
