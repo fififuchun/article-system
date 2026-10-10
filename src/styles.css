@@ -767,6 +767,10 @@
   --as-studio-header-top: 0px;
 }
 
+/*
+ * 既定では画面を完全に覆うため、この背面は1ピクセルも見えない。
+ * `classNames.dialog` でダイアログを小さくしたときだけ効く。
+ */
 :where(.as-studio-dialog)::backdrop {
   background: rgb(0 0 0 / 0.5);
 }
