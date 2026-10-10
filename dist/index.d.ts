@@ -53,6 +53,7 @@ interface ArticleStudioClassNames {
     imagePane?: string;
     actions?: string;
     login?: string;
+    dialog?: string;
 }
 /**
  * GitHub 連携の設定（spec §15）。
