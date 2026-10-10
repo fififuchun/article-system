@@ -1090,9 +1090,9 @@ ${markdown}
         renderLink: (url, children, key) => url === DRAFT_MARK ? (
           // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
           /* @__PURE__ */ jsxs4("div", { className: "as-studio-draft-card", children: [
-            /* @__PURE__ */ jsxs4("span", { className: "as-studio-id-preview", children: [
-              "id \u306F ",
-              draft.id,
+            /* @__PURE__ */ jsxs4("span", { className: "as-studio-slug-preview", children: [
+              "URL \u306F ",
+              draft.slug,
               " \u306B\u306A\u308A\u307E\u3059"
             ] }),
             children

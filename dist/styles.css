@@ -453,7 +453,7 @@
 :where(.as-studio-draft-card) {
   position: relative;
 }
-:where(.as-studio-id-preview) {
+:where(.as-studio-slug-preview) {
   position: absolute;
   top: var(--as-space-sm);
   left: var(--as-space-sm);

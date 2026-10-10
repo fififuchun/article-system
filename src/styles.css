@@ -582,12 +582,12 @@
   flex: none;
 }
 
-/* 編集中の記事のカードに重ねる id の予告。カードの高さを崩さない */
+/* 編集中の記事のカードに重ねる URL の予告。カードの高さを崩さない */
 :where(.as-studio-draft-card) {
   position: relative;
 }
 
-:where(.as-studio-id-preview) {
+:where(.as-studio-slug-preview) {
   position: absolute;
   top: var(--as-space-sm);
   left: var(--as-space-sm);

@@ -755,39 +755,41 @@ describe("ArticleStudio — 編集中の記事を一覧から落とさない", (
   });
 });
 
-describe("ArticleStudio — id の予告", () => {
+// spec §9: 出したあとどの URL で公開されるかを、書いている最中に見せる
+describe("ArticleStudio — URL の予告", () => {
   const openList = () => fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
   const badge = (container: HTMLElement) =>
-    container.querySelector(".as-studio-id-preview")?.textContent;
+    container.querySelector(".as-studio-slug-preview")?.textContent;
 
-  it("編集中の記事のカードに id を出す", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("編集中の記事のカードに slug を出す", () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     openList();
 
-    expect(badge(container)).toContain("0");
+    expect(badge(container)).toContain("2026-08-23-夏の更新");
   });
 
-  it("既存記事の末尾に付くなら件数と同じ id になる", () => {
-    const articles = [existing("2026-01-01", "A"), existing("2026-02-01", "B")];
-    const { container } = render(<ArticleStudio articles={articles} />);
+  it("フロントマターの slug を出す", () => {
+    const withSlug = sampleMd.replace("title: 夏の更新", "title: 夏の更新\nslug: summer-update");
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: withSlug } });
+    openList();
+
+    expect(badge(container)).toContain("summer-update");
+  });
+
+  // id の番号ではなく URL になることが伝わる文言にする
+  it("URL だと分かる文言にする", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     openList();
 
-    expect(badge(container)).toContain("2");
-  });
-
-  // spec §3: 既存記事より古い日付を入れると以降の id がずれる
-  it("既存記事の間に入るなら挿入位置の id を出す", () => {
-    const articles = [existing("2026-01-01", "A"), existing("2026-12-01", "B")];
-    const { container } = render(<ArticleStudio articles={articles} />);
-
-    fireEvent.change(textarea(), { target: { value: sampleMd } });
-    openList();
-
-    expect(badge(container)).toContain("1");
+    expect(badge(container)).toContain("URL");
   });
 
   it("既存記事のカードには出さない", () => {
@@ -797,18 +799,18 @@ describe("ArticleStudio — id の予告", () => {
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     openList();
 
-    expect(container.querySelectorAll(".as-studio-id-preview")).toHaveLength(1);
+    expect(container.querySelectorAll(".as-studio-slug-preview")).toHaveLength(1);
   });
 
-  it("既存記事と id が重なっても編集中の記事にだけ出す", () => {
+  it("既存記事と slug が重なっても編集中の記事にだけ出す", () => {
     const clashing = existing("2026-01-01", "A");
-    clashing.id = 1; // 編集中の記事と同じ番号になる
+    clashing.slug = "2026-08-23-夏の更新"; // 編集中の記事と同じになる
     const { container } = render(<ArticleStudio articles={[clashing]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     openList();
 
-    expect(container.querySelectorAll(".as-studio-id-preview")).toHaveLength(1);
+    expect(container.querySelectorAll(".as-studio-slug-preview")).toHaveLength(1);
   });
 
   it("詳細タブには出さない", () => {
@@ -816,7 +818,7 @@ describe("ArticleStudio — id の予告", () => {
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
 
-    expect(container.querySelector(".as-studio-id-preview")).toBeNull();
+    expect(container.querySelector(".as-studio-slug-preview")).toBeNull();
   });
 });
 

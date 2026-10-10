@@ -366,7 +366,9 @@ function StudioEditor({
               url === DRAFT_MARK ? (
                 // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
                 <div key={key} className="as-studio-draft-card">
-                  <span className="as-studio-id-preview">id は {draft.id} になります</span>
+                  <span className="as-studio-slug-preview">
+                    URL は {draft.slug} になります
+                  </span>
                   {children}
                 </div>
               ) : (

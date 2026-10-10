@@ -232,7 +232,7 @@
 - [x] `buildTemplate` が `slug:` を日付で埋める（同じ日に既存があれば `-2`。URL に日本語が入らない既定にする。テスト → 実装 → グリーン）
 - [x] `buildDraftArticle` を `slug` に合わせる（テスト → 実装 → グリーン）
 - [x] `ArticleList` の React key を `slug` にする（テスト → 実装 → グリーン）
-- [ ] Studio の「`id` の予告」を「URL の予告」に差し替える（テスト → 実装 → グリーン）
+- [x] Studio の「`id` の予告」を「URL の予告」に差し替える（テスト → 実装 → グリーン）
 - [ ] `Article` から `id` を消す（参照がすべて `slug` に移った後。型エラーが残りを教えてくれる。テスト → 実装 → グリーン）
 - [ ] `demo/` のルーティングを `slug` に変え、日本語URLで開けることを目視確認する
 - [ ] README / `docs/` を `slug` に合わせ、**移行手順**を書く（`article.id` → `article.slug`、`:id` → `:slug`、`encodeURIComponent`）
