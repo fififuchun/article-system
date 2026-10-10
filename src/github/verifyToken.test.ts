@@ -2,8 +2,11 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import { verifyToken } from "./verifyToken";
 import { GITHUB_API_BASE } from "./api";
 
+// 引数の型を書くのは mock.calls を型付きで読むため（書かないと [] になる）
 const respond = (body: unknown, status = 200) =>
-  vi.fn(async () => new Response(JSON.stringify(body), { status }));
+  vi.fn(async (_url: string, _init?: RequestInit) =>
+    new Response(JSON.stringify(body), { status })
+  );
 
 const writable = { permissions: { push: true, pull: true } };
 

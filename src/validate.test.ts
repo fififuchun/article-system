@@ -270,7 +270,9 @@ describe("validateArticle — 更新日と投稿日の前後関係", () => {
 
 describe("validateArticle — キー名の typo", () => {
   it("lastUpdate と書いたら latestUpdate の誤りだと提案する", () => {
-    const front = { ...complete, lastUpdate: "2026-08-24" };
+    // Record<string, string> を明示する。スプレッドだけだと
+    // index signature が落ちて latestUpdate を消せない
+    const front: Record<string, string> = { ...complete, lastUpdate: "2026-08-24" };
     delete front.latestUpdate;
 
     const issues = validateArticle(md(front));
@@ -281,7 +283,7 @@ describe("validateArticle — キー名の typo", () => {
   });
 
   it("typo の提案と欠落の報告を両方返す", () => {
-    const front = { ...complete, lastUpdate: "2026-08-24" };
+    const front: Record<string, string> = { ...complete, lastUpdate: "2026-08-24" };
     delete front.latestUpdate;
 
     const issues = validateArticle(md(front));

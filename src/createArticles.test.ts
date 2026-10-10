@@ -383,7 +383,8 @@ describe("createArticles — slug の重複", () => {
   });
   afterEach(() => warn.mockRestore());
 
-  const warnings = () => warn.mock.calls.map((call) => String(call[0])).join("\n");
+  const warnings = () =>
+    warn.mock.calls.map((call: unknown[]) => String(call[0])).join("\n");
 
   it("重複していれば警告する", () => {
     createArticles({
