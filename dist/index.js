@@ -1200,9 +1200,12 @@ function ArticleStudio(props) {
   return props.github ? /* @__PURE__ */ jsx6(GitHubGate, { ...props, github: props.github }) : /* @__PURE__ */ jsx6(StudioEditor, { ...props });
 }
 
-// src/icons/ArrowIcon.tsx
+// src/components/ArticleStudioRoute.tsx
+import { useEffect as useEffect2, useRef, useState as useState3 } from "react";
+
+// src/icons/CloseIcon.tsx
 import { jsx as jsx7 } from "react/jsx-runtime";
-function ArrowIcon({ className }) {
+function CloseIcon({ className }) {
   return /* @__PURE__ */ jsx7(
     "svg",
     {
@@ -1211,49 +1214,90 @@ function ArrowIcon({ className }) {
       fill: "currentColor",
       "aria-hidden": "true",
       className,
-      children: /* @__PURE__ */ jsx7("path", { d: "M4 11h12.17l-3.58-3.59L14 6l6 6-6 6-1.41-1.41L16.17 13H4z" })
+      children: /* @__PURE__ */ jsx7("path", { d: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" })
     }
   );
 }
 
-// src/icons/CloseIcon.tsx
-import { jsx as jsx8 } from "react/jsx-runtime";
-function CloseIcon({ className }) {
-  return /* @__PURE__ */ jsx8(
-    "svg",
-    {
-      xmlns: "http://www.w3.org/2000/svg",
-      viewBox: "0 0 24 24",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      className,
-      children: /* @__PURE__ */ jsx8("path", { d: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" })
-    }
-  );
+// src/studio/hashRoute.ts
+function normalizeHashPath(hashPath) {
+  const withoutHash = hashPath.replace(/^#/, "");
+  const withSlash = withoutHash.startsWith("/") ? withoutHash : `/${withoutHash}`;
+  return `#${withSlash}`;
+}
+function trimTrailingSlash(hash) {
+  return hash.length > 2 ? hash.replace(/\/+$/, "") : hash;
+}
+function matchesHash(hashPath) {
+  return trimTrailingSlash(window.location.hash) === trimTrailingSlash(normalizeHashPath(hashPath));
+}
+function clearHash() {
+  const { pathname, search } = window.location;
+  window.history.replaceState({}, "", `${pathname}${search}`);
+}
+function subscribeToHash(onChange) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
 }
 
-// src/icons/CopyIcon.tsx
-import { jsx as jsx9, jsxs as jsxs5 } from "react/jsx-runtime";
-function CopyIcon({ className }) {
+// src/components/ArticleStudioRoute.tsx
+import { jsx as jsx8, jsxs as jsxs5 } from "react/jsx-runtime";
+var DEFAULT_HASH_PATH = "#/studio";
+function ArticleStudioRoute({ hashPath = DEFAULT_HASH_PATH, ...props }) {
+  const [open, setOpen] = useState3(() => matchesHash(hashPath));
+  const dialog = useRef(null);
+  useEffect2(() => subscribeToHash(() => setOpen(matchesHash(hashPath))), [hashPath]);
+  useEffect2(() => {
+    if (open && dialog.current && !dialog.current.open) {
+      dialog.current.showModal();
+    }
+  }, [open]);
+  if (!open) return null;
   return /* @__PURE__ */ jsxs5(
-    "svg",
+    "dialog",
     {
-      xmlns: "http://www.w3.org/2000/svg",
-      viewBox: "0 0 24 24",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      className,
+      ref: dialog,
+      className: cx("as-studio-dialog", props.classNames?.dialog),
+      onClose: () => {
+        clearHash();
+        setOpen(false);
+      },
       children: [
-        /* @__PURE__ */ jsx9("path", { d: "M8 2h10a2 2 0 012 2v10h-2V4H8z" }),
-        /* @__PURE__ */ jsx9("path", { fillRule: "evenodd", d: "M4 6h12v14H4V6zm2 2v10h8V8z" })
+        /* @__PURE__ */ jsx8(
+          "button",
+          {
+            type: "button",
+            className: "as-studio-dialog-close",
+            "aria-label": "\u57F7\u7B46\u753B\u9762\u3092\u9589\u3058\u308B",
+            onClick: () => dialog.current?.close(),
+            children: /* @__PURE__ */ jsx8(CloseIcon, {})
+          }
+        ),
+        /* @__PURE__ */ jsx8(ArticleStudio, { ...props })
       ]
     }
   );
 }
 
-// src/icons/ExternalLinkIcon.tsx
+// src/icons/ArrowIcon.tsx
+import { jsx as jsx9 } from "react/jsx-runtime";
+function ArrowIcon({ className }) {
+  return /* @__PURE__ */ jsx9(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: "0 0 24 24",
+      fill: "currentColor",
+      "aria-hidden": "true",
+      className,
+      children: /* @__PURE__ */ jsx9("path", { d: "M4 11h12.17l-3.58-3.59L14 6l6 6-6 6-1.41-1.41L16.17 13H4z" })
+    }
+  );
+}
+
+// src/icons/CopyIcon.tsx
 import { jsx as jsx10, jsxs as jsxs6 } from "react/jsx-runtime";
-function ExternalLinkIcon({ className }) {
+function CopyIcon({ className }) {
   return /* @__PURE__ */ jsxs6(
     "svg",
     {
@@ -1263,16 +1307,16 @@ function ExternalLinkIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx10("path", { d: "M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42L17.59 5H14z" }),
-        /* @__PURE__ */ jsx10("path", { d: "M19 13v6H5V5h6V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-6z" })
+        /* @__PURE__ */ jsx10("path", { d: "M8 2h10a2 2 0 012 2v10h-2V4H8z" }),
+        /* @__PURE__ */ jsx10("path", { fillRule: "evenodd", d: "M4 6h12v14H4V6zm2 2v10h8V8z" })
       ]
     }
   );
 }
 
-// src/icons/ImageIcon.tsx
+// src/icons/ExternalLinkIcon.tsx
 import { jsx as jsx11, jsxs as jsxs7 } from "react/jsx-runtime";
-function ImageIcon({ className }) {
+function ExternalLinkIcon({ className }) {
   return /* @__PURE__ */ jsxs7(
     "svg",
     {
@@ -1282,17 +1326,16 @@ function ImageIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx11("path", { fillRule: "evenodd", d: "M2 4h20v16H2V4zm2 2v12h16V6H4z" }),
-        /* @__PURE__ */ jsx11("circle", { cx: "8", cy: "10", r: "1.75" }),
-        /* @__PURE__ */ jsx11("path", { d: "M5 17l4-5 3 3.5L15 12l4 5H5z" })
+        /* @__PURE__ */ jsx11("path", { d: "M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42L17.59 5H14z" }),
+        /* @__PURE__ */ jsx11("path", { d: "M19 13v6H5V5h6V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-6z" })
       ]
     }
   );
 }
 
-// src/icons/PersonIcon.tsx
+// src/icons/ImageIcon.tsx
 import { jsx as jsx12, jsxs as jsxs8 } from "react/jsx-runtime";
-function PersonIcon({ className }) {
+function ImageIcon({ className }) {
   return /* @__PURE__ */ jsxs8(
     "svg",
     {
@@ -1302,17 +1345,18 @@ function PersonIcon({ className }) {
       "aria-hidden": "true",
       className,
       children: [
-        /* @__PURE__ */ jsx12("circle", { cx: "12", cy: "7.5", r: "3.75" }),
-        /* @__PURE__ */ jsx12("path", { d: "M12 13.5c-4.14 0-7.5 2.35-7.5 5.25V20h15v-1.25c0-2.9-3.36-5.25-7.5-5.25z" })
+        /* @__PURE__ */ jsx12("path", { fillRule: "evenodd", d: "M2 4h20v16H2V4zm2 2v12h16V6H4z" }),
+        /* @__PURE__ */ jsx12("circle", { cx: "8", cy: "10", r: "1.75" }),
+        /* @__PURE__ */ jsx12("path", { d: "M5 17l4-5 3 3.5L15 12l4 5H5z" })
       ]
     }
   );
 }
 
-// src/icons/TagIcon.tsx
-import { jsx as jsx13 } from "react/jsx-runtime";
-function TagIcon({ className }) {
-  return /* @__PURE__ */ jsx13(
+// src/icons/PersonIcon.tsx
+import { jsx as jsx13, jsxs as jsxs9 } from "react/jsx-runtime";
+function PersonIcon({ className }) {
+  return /* @__PURE__ */ jsxs9(
     "svg",
     {
       xmlns: "http://www.w3.org/2000/svg",
@@ -1320,7 +1364,26 @@ function TagIcon({ className }) {
       fill: "currentColor",
       "aria-hidden": "true",
       className,
-      children: /* @__PURE__ */ jsx13(
+      children: [
+        /* @__PURE__ */ jsx13("circle", { cx: "12", cy: "7.5", r: "3.75" }),
+        /* @__PURE__ */ jsx13("path", { d: "M12 13.5c-4.14 0-7.5 2.35-7.5 5.25V20h15v-1.25c0-2.9-3.36-5.25-7.5-5.25z" })
+      ]
+    }
+  );
+}
+
+// src/icons/TagIcon.tsx
+import { jsx as jsx14 } from "react/jsx-runtime";
+function TagIcon({ className }) {
+  return /* @__PURE__ */ jsx14(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: "0 0 24 24",
+      fill: "currentColor",
+      "aria-hidden": "true",
+      className,
+      children: /* @__PURE__ */ jsx14(
         "path",
         {
           fillRule: "evenodd",
@@ -1335,6 +1398,7 @@ export {
   ArticleDetail,
   ArticleList,
   ArticleStudio,
+  ArticleStudioRoute,
   ClockIcon,
   CloseIcon,
   CopyIcon,

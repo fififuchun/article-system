@@ -11,6 +11,7 @@ export { validateArticle } from "./validate";
 export { ArticleDetail } from "./components/ArticleDetail";
 export { ArticleList } from "./components/ArticleList";
 export { ArticleStudio } from "./components/ArticleStudio";
+export { ArticleStudioRoute } from "./components/ArticleStudioRoute";
 export type { IconProps } from "./icons/types";
 export { ArrowIcon } from "./icons/ArrowIcon";
 export { ClockIcon } from "./icons/ClockIcon";

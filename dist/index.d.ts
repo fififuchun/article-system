@@ -91,24 +91,24 @@ declare function validateArticle(raw: string, context?: ValidateContext): Issue[
 
 declare function createArticles(rawFiles: Record<string, string>): Article[];
 
-interface Props$2 {
+interface Props$3 {
     article: Article;
     imageBasePath?: string;
     classNames?: ArticleDetailClassNames;
     dateLabel?: string;
 }
-declare function ArticleDetail({ article, imageBasePath, classNames, dateLabel, }: Props$2): react_jsx_runtime.JSX.Element;
+declare function ArticleDetail({ article, imageBasePath, classNames, dateLabel, }: Props$3): react_jsx_runtime.JSX.Element;
 
-interface Props$1 {
+interface Props$2 {
     articles: Article[];
     imageBasePath?: string;
     getArticleUrl: (article: Article) => string;
     classNames?: ArticleListClassNames;
     renderLink: (url: string, children: React.ReactNode, key: string) => React.ReactNode;
 }
-declare function ArticleList({ articles, imageBasePath, getArticleUrl, classNames, renderLink, }: Props$1): react_jsx_runtime.JSX.Element;
+declare function ArticleList({ articles, imageBasePath, getArticleUrl, classNames, renderLink, }: Props$2): react_jsx_runtime.JSX.Element;
 
-interface Props {
+interface Props$1 {
     /**
      * 既存記事。**必須です。**
      *
@@ -131,7 +131,32 @@ interface Props {
  * `github` を渡すとトークンが必須になり、ダウンロードの代わりに
  * リポジトリへコミットします。渡さなければ挙動は変わりません（spec §15）。
  */
-declare function ArticleStudio(props: Props): react_jsx_runtime.JSX.Element;
+declare function ArticleStudio(props: Props$1): react_jsx_runtime.JSX.Element;
+
+interface Props {
+    articles: Article[];
+    storageKey?: string;
+    imageBasePath?: string;
+    dateLabel?: string;
+    classNames?: ArticleStudioClassNames;
+    articleClassNames?: ArticleDetailClassNames;
+    github?: GitHubConfig;
+    /** 入り口のハッシュ。既定 `#/studio` */
+    hashPath?: string;
+}
+/**
+ * 執筆画面をハッシュで開く（spec §9 設置方法）。
+ *
+ * `App.tsx` に1行置けば `#/studio` で全画面の Studio が開きます。利用側が
+ * ページを作って `<Route>` を定義する必要がありません。
+ *
+ * **一致しないときは何も描画しません。** だから置き場所はどこでも構いません。
+ *
+ * `<dialog>` を `showModal()` で開くのは、`z-index` の数字で殴らずに
+ * トップレイヤーで最前面を取るためです。Esc で閉じられ、背後が `inert` に
+ * なるのも付いてきます。
+ */
+declare function ArticleStudioRoute({ hashPath, ...props }: Props): react_jsx_runtime.JSX.Element | null;
 
 /**
  * アイコン共通の props（spec §11）。
@@ -164,4 +189,4 @@ declare function TagIcon({ className }: IconProps): react_jsx_runtime.JSX.Elemen
 
 declare function WarningIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
 
-export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type GitHubConfig, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };
+export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ArticleStudioRoute, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type GitHubConfig, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, createArticles, validateArticle };

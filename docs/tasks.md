@@ -247,7 +247,7 @@
 - [x] Esc と × で閉じたときにハッシュを戻す（戻さないと URL と画面が食い違う。テスト → 実装 → グリーン）
 - [x] `hashPath` prop で入り口を変えられるようにする（既定 `#/studio`。テスト → 実装 → グリーン）
 - [x] `::backdrop` と全画面レイアウトの CSS を足す（`:where()` で詳細度0）
-- [ ] `src/index.ts` から `ArticleStudioRoute` を公開する
+- [x] `src/index.ts` から `ArticleStudioRoute` を公開する
 - [ ] `demo/` を `ArticleStudioRoute` に差し替え、ナビの2ページ（プレビュー / GitHub 連携）を畳む
 - [ ] README に「設置は1行」を書き、`ArticleStudio` を直接使う道も残すことを明記する
 - [ ] バージョンを 0.3.0 に上げ、タグを打つ（フェーズ10と11は破壊的変更。移行手順を書いてから打つ）
