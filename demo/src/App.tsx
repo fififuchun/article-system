@@ -1,17 +1,20 @@
 import { useState, useEffect } from "react";
-import { ArticleDetail, ArticleList, type Article } from "@fififuchun/article-system";
+import {
+  ArticleDetail,
+  ArticleList,
+  ArticleStudioRoute,
+  type Article,
+} from "@fififuchun/article-system";
 import { articles } from "./lib/articles";
-import PreviewPage from "./pages/PreviewPage";
-import GitHubPage from "./pages/GitHubPage";
+import SettingsPage, { loadRepo } from "./pages/SettingsPage";
 import "./styles.css";
 import "@fififuchun/article-system/styles.css";
 
-type Route = "list" | "detail" | "preview" | "github";
+type Route = "list" | "detail" | "settings";
 
 function getRoute(): { route: Route; slug?: string } {
   const hash = window.location.hash;
-  if (hash === "#/preview") return { route: "preview" };
-  if (hash === "#/github") return { route: "github" };
+  if (hash === "#/settings") return { route: "settings" };
   const m = hash.match(/^#\/article\/(.+)$/);
   // ハッシュは percent-encoding されるのでデコードして突き合わせる
   if (m) return { route: "detail", slug: decodeURIComponent(m[1]) };
@@ -44,6 +47,7 @@ const listClassNames = {
 export default function App() {
   const [{ route, slug }, setRouteState] = useState(getRoute);
   const [useCustomCss, setUseCustomCss] = useState(false);
+  const [repo, setRepo] = useState(loadRepo);
 
   useEffect(() => {
     const handler = () => setRouteState(getRoute());
@@ -72,19 +76,16 @@ export default function App() {
           >
             記事一覧
           </a>
-          <a
-            href="#/preview"
-            className={`nav-link${route === "preview" ? " active" : ""}`}
-            onClick={() => navigate("#/preview")}
-          >
-            プレビュー
+          {/* ArticleStudioRoute がこのハッシュを見て全画面で開く */}
+          <a href="#/studio" className="nav-link" onClick={() => navigate("#/studio")}>
+            執筆
           </a>
           <a
-            href="#/github"
-            className={`nav-link${route === "github" ? " active" : ""}`}
-            onClick={() => navigate("#/github")}
+            href="#/settings"
+            className={`nav-link${route === "settings" ? " active" : ""}`}
+            onClick={() => navigate("#/settings")}
           >
-            GitHub 連携
+            GitHub 設定
           </a>
           <button
             type="button"
@@ -96,17 +97,12 @@ export default function App() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: route === "preview" || route === "github" ? "none" : 840, margin: "0 auto", padding: route === "preview" ? 0 : "32px 16px" }}>
-        {route === "preview" && <PreviewPage />}
-
-        {route === "github" && <GitHubPage />}
+      <main style={{ maxWidth: 840, margin: "0 auto", padding: "32px 16px" }}>
+        {route === "settings" && <SettingsPage repo={repo} onChange={setRepo} />}
 
         {route === "detail" && selectedArticle && (
           <>
-            <button
-              onClick={() => navigate("#/")}
-              className="back-button"
-            >
+            <button onClick={() => navigate("#/")} className="back-button">
               ← 一覧に戻る
             </button>
             <ArticleDetail
@@ -122,9 +118,7 @@ export default function App() {
           <ArticleList
             articles={articles}
             imageBasePath="https://placehold.co/400x240/e8e8e8/999999?text="
-            getArticleUrl={(article) =>
-              `#/article/${encodeURIComponent(article.slug)}`
-            }
+            getArticleUrl={(article) => `#/article/${encodeURIComponent(article.slug)}`}
             classNames={useCustomCss ? listClassNames : undefined}
             renderLink={(url, children, key) => (
               <a key={key} href={url}>
@@ -134,6 +128,18 @@ export default function App() {
           />
         )}
       </main>
+
+      {/*
+        設置はこの1行だけ。#/studio のときだけ全画面で開き、それ以外では
+        何も描画しない。<main> の幅制限の外に置く必要も無い（spec §9 設置方法）
+      */}
+      <ArticleStudioRoute
+        articles={articles}
+        storageKey="article-system-demo"
+        imageBasePath="https://placehold.co/800x400/e8e8e8/999999?text="
+        dateLabel="最終更新日時"
+        github={repo ? { repo } : undefined}
+      />
     </div>
   );
 }

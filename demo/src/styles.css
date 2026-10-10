@@ -299,17 +299,3 @@ body {
   color: #888;
 }
 
-.github-banner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  color: #8a4b00;
-  background: #fff7e6;
-  border-bottom: 1px solid #f0c98a;
-  padding: 10px 16px;
-}
-
-.github-banner-button {
-  margin-bottom: 0;
-}
