@@ -23,7 +23,7 @@ CSS は `@fififuchun/article-system/styles.css` として別に読み込みま�
 
 ```ts
 interface Article {
-  id: number;           // date 昇順ソート後の index（0始まり）
+  slug: string;         // URL に使う識別子。記事の身元
   filename: string;     // 拡張子付きファイル名
   title: string;
   date: string;         // "YYYY-MM-DD" 公開日
@@ -34,7 +34,7 @@ interface Article {
 }
 ```
 
-`filename` は衝突検出に使います。**URL には使いません**（識別子は `id`）。
+`filename` は衝突検出に使います。**URL には使いません**（識別子は `slug`）。
 
 ### `Issue`
 
@@ -75,7 +75,8 @@ interface IconProps {
 `import.meta.glob` の戻り値から記事一覧を作ります。
 
 - `_` 始まりのファイル名を見つけたら**例外を投げます**（下書きの漏洩を知らせる警報）
-- `date` を**文字列比較**で昇順ソートし、その index を `id` にします
+- `date` を**文字列比較**で昇順ソートします
+- `slug` を決めます（フロントマター優先、無ければファイル名から拡張子を除く）。重複していれば `console.warn`
 - 各記事を検証し、問題があれば `console.warn` で報告します
 
 ### `validateArticle(raw, context?): Issue[]`

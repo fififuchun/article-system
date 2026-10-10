@@ -12,7 +12,7 @@ Record<パス, 中身>
       ├─ parseFrontmatter
       ├─ validateArticle → 問題があれば console.warn
       ├─ date 昇順ソート（文字列比較）
-      └─ index を id として採番
+      └─ slug を決定（フロントマター優先 / ファイル名）
       ▼
 Article[]  ──→ ArticleList / ArticleDetail（読者向け）
            └─→ ArticleStudio（書き手向け。プレビューと衝突検出に使う）
@@ -23,7 +23,7 @@ Studio 側は逆向きに流れます。
 ```
 textarea の md 文字列
       ├─ draftStorage        入力のたび localStorage へ保存
-      ├─ buildDraftArticle   → Article（プレビュー用。id は挿入位置の予告）
+      ├─ buildDraftArticle   → Article（プレビュー用。slug は URL の予告）
       │        └─ ArticleDetail / ArticleList をそのまま描画
       └─ ダウンロードボタン
              ├─ validateArticle    フロントマターの検証

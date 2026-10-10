@@ -56,7 +56,7 @@ your-project/
         └── 2025-06-10-second-post.md
 ```
 
-ファイル名は記事の識別に使われません。フォルダを見て分かりやすくするためのものです。実際に効くのはフロントマターの `date` です。
+ファイル名は並び順には使われません（効くのはフロントマターの `date` です）。ただし **`slug:` を書いていない記事では、ファイル名がそのまま URL になります**。
 
 ### 3. マークダウンファイルを作成する
 
@@ -65,6 +65,7 @@ your-project/
 ```markdown
 ---
 title: 記事タイトル
+slug: 2025-06-01
 date: 2025-06-01
 latestUpdate: 2025-06-01
 staff: 担当者名
@@ -85,12 +86,15 @@ thumbnail: art_0.webp
 | フィールド     | 型                   | 説明                         |
 | -------------- | -------------------- | ---------------------------- |
 | `title`        | string               | 記事タイトル                 |
-| `date`         | string（YYYY-MM-DD） | 投稿日。並び順・IDに使われる |
+| `date`         | string（YYYY-MM-DD） | 投稿日。並び順に使われる     |
+| `slug`         | string（任意）       | URL に使う識別子。省略するとファイル名から作る |
 | `latestUpdate` | string（YYYY-MM-DD） | 最終更新日。一覧カードに表示される |
 | `staff`        | string               | 担当者名                     |
 | `thumbnail`    | string               | サムネイル画像のファイル名   |
 
-**すべて必須です。** 書き忘れると例外は出ませんが、画面に `0年undefined月undefined日` のような表示が出ます。
+**`slug` 以外はすべて必須です。** 書き忘れると例外は出ませんが、画面に `0年undefined月undefined日` のような表示が出ます。
+
+`slug` は URL になります。Studio で新しく書くと**日付が自動で入る**ため、URL に日本語が入りません。英語の URL にしたい記事だけ `slug: summer-update` のように書き換えてください。**一度公開した記事の `slug` を変えると、そのURLは切れます。**
 
 フロントマターは YAML ではなく自前のパーサで読んでいます。以下に注意してください。
 
@@ -195,7 +199,7 @@ export default function BlogList() {
     <ArticleList
       articles={[...articles].reverse()}
       imageBasePath="/article_imgs/"
-      getArticleUrl={(article) => `/blog/${article.id}`}
+      getArticleUrl={(article) => `/blog/${encodeURIComponent(article.slug)}`}
       classNames={{
         grid: "blog-grid",
         card: "blog-card",
@@ -214,7 +218,7 @@ export default function BlogList() {
 }
 ```
 
-> **`articles` は古い順に並んでいます。** 新しい記事を先頭にしたい場合は上記のように `[...articles].reverse()` を渡してください。`.reverse()` は破壊的なのでスプレッドでコピーしてから呼びます。`id` は保持されるので URL は壊れません。
+> **`articles` は古い順に並んでいます。** 新しい記事を先頭にしたい場合は上記のように `[...articles].reverse()` を渡してください。`.reverse()` は破壊的なのでスプレッドでコピーしてから呼びます。`slug` は並び順に依存しないので URL は壊れません。
 
 カードに表示される日付は `latestUpdate` です。
 
@@ -222,7 +226,7 @@ export default function BlogList() {
 
 ### `<ArticleDetail>` — 記事詳細
 
-URLの `:id` パラメータから記事を特定して渡します。`article.id` は `0` 始まりの連番です。
+URLの `:slug` パラメータから記事を特定して渡します。`article.slug` は記事の身元で、**記事を足しても変わりません**。
 
 ```tsx
 // src/pages/BlogDetail.tsx
@@ -231,8 +235,9 @@ import { articles } from "../lib/articles";
 import { useParams } from "react-router-dom"; // 使用しているルーターに合わせて変更してください
 
 export default function BlogDetail() {
-  const { id } = useParams();
-  const article = articles[Number(id)];
+  const { slug } = useParams();
+  // パラメータは percent-encoding されているのでデコードして突き合わせる
+  const article = articles.find((a) => a.slug === decodeURIComponent(slug ?? ""));
 
   if (!article) return <p>記事が見つかりません</p>;
 
@@ -404,8 +409,8 @@ export default function App() {
     <Routes>
       <Route path="/blog" element={<BlogList />} />
       <Route path="/blog/studio" element={<BlogStudio />} />
-      {/* :id より前に定義する */}
-      <Route path="/blog/:id" element={<BlogDetail />} />
+      {/* :slug より前に定義する */}
+      <Route path="/blog/:slug" element={<BlogDetail />} />
     </Routes>
   );
 }
@@ -477,7 +482,7 @@ interface Issue {
 
 ```ts
 interface Article {
-  id: number;          // 0始まり（古い順）
+  slug: string;        // URL に使う識別子。記事の身元
   filename: string;    // 拡張子付きファイル名
   title: string;
   date: string;        // "YYYY-MM-DD"
@@ -488,7 +493,7 @@ interface Article {
 }
 ```
 
-`filename` は衝突検出などに使う参考情報です。**URL には使いません**（識別子は `id`）。
+`filename` は衝突検出などに使う参考情報です。**URL には使いません**（識別子は `slug`）。
 
 すべてのフィールドが必須の型になっていますが、`createArticles` はフロントマターに欠けている項目を空文字で埋めます。**型は「存在すること」しか保証せず、「空でないこと」は保証しません。**
 
@@ -501,9 +506,67 @@ interface Article {
 src/articles/ に .md ファイルを追加するだけ
 ```
 
-`createArticles` が自動でソート・ID採番するため、他のファイルを変更する必要はありません。
+`createArticles` が自動でソートするため、他のファイルを変更する必要はありません。
 
-> **注意：`id` は `date` 昇順の連番です。** 既存の記事より古い日付の記事を後から追加すると、それ以降の記事の `id` がすべてずれ、**公開済みのURLが別の記事を指すようになります**。新しい記事は既存より新しい日付で追加してください。
+> **`slug` は記事の身元です。** 古い日付の記事を後から追加しても、既存の記事の URL は変わりません。ファイル名を変えると（`slug:` を書いていない記事では）URL が変わるので、URL を保ちたいときはフロントマターに `slug:` を明示してください。
+
+<br>
+<br>
+
+## 0.2.0 から 0.3.0 への移行
+
+**破壊的変更です。** `Article.id` が無くなり、`Article.slug` に替わりました。
+
+### なぜ変えたか
+
+`id` は `date` 昇順に並べた位置の番号でした。それを URL に使っていたため、
+**既存より古い日付の記事を後から足すと、以降のすべての URL が別の記事を指しました。**
+エラーも警告も出ず、静かにずれます。`slug` は記事に紐づくので動きません。
+
+### 直す箇所は3つ
+
+**1. リンクの生成**
+
+```diff
+- getArticleUrl={(article) => `/blog/${article.id}`}
++ getArticleUrl={(article) => `/blog/${encodeURIComponent(article.slug)}`}
+```
+
+**2. ルート定義**
+
+```diff
+- <Route path="/blog/:id" element={<BlogDetail />} />
++ <Route path="/blog/:slug" element={<BlogDetail />} />
+```
+
+**3. 記事の特定**
+
+```diff
+- const { id } = useParams();
+- const article = articles[Number(id)];
++ const { slug } = useParams();
++ const article = articles.find((a) => a.slug === decodeURIComponent(slug ?? ""));
+```
+
+`decodeURIComponent` を忘れると、日本語を含む slug の記事が見つかりません。
+
+### 記事ファイルの書き換えは不要です
+
+`slug:` を書いていない記事は、**ファイル名から拡張子を除いたもの**が slug になります。
+
+```
+src/articles/2026-08-23-夏の更新.md  →  slug = "2026-08-23-夏の更新"
+```
+
+### 公開済みURLは変わります
+
+`/blog/0` のような番号のURLは使えなくなります。すでに外部からリンクされている場合は、
+ホスティング側でリダイレクトを設定してください。
+
+### `renderLink` の key の型が変わりました
+
+第3引数が `number` から `string`（`article.slug`）になりました。そのまま
+`key={key}` に渡していれば修正は不要です。
 
 <br>
 <br>
