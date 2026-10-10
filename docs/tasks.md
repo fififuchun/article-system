@@ -228,7 +228,7 @@
 - [x] `Article` に `slug` を足す（`createArticles`：フロントマター優先、無ければファイル名から拡張子を除く。`id` はまだ残す。テスト → 実装 → グリーン）
 - [x] **ゲートに `tsc --noEmit` を足す**（`npm run build` は型を見ていない。`Article` に `slug` を足したとき `buildDraftArticle` の型エラーを素通りさせた）
 - [ ] テストファイルも型検査の対象に含める（いま `tsconfig` の `exclude` に入っている。含めると24件出るが、うち3件は本物の `Article` 構築漏れ。残りは `vi.fn()` のタプル型と `lib` 設定の雑音）
-- [ ] `createArticles` が `slug` の重複を `console.warn` で知らせる（片方が開けなくなる。テスト → 実装 → グリーン）
+- [x] `createArticles` が `slug` の重複を `console.warn` で知らせる（片方が開けなくなる。テスト → 実装 → グリーン）
 - [ ] `buildTemplate` が `slug:` を日付で埋める（同じ日に既存があれば `-2`。URL に日本語が入らない既定にする。テスト → 実装 → グリーン）
 - [x] `buildDraftArticle` を `slug` に合わせる（テスト → 実装 → グリーン）
 - [ ] `ArticleList` の React key を `slug` にする（テスト → 実装 → グリーン）

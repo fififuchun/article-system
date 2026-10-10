@@ -2,10 +2,37 @@ import { parseFrontmatter } from "./parser";
 import { validateArticle } from "./validate";
 import type { Article } from "./types";
 
+/**
+ * 同じ slug の記事を見つけて知らせる（spec §3）。
+ *
+ * 例外は投げません。記事そのものは読めるため、サイトを壊すほどではない
+ * と判断しています（spec §5）。ただし**片方は URL で辿れません**。
+ */
+function warnDuplicateSlugs(articles: Article[]): void {
+  const bySlug = new Map<string, string[]>();
+
+  for (const article of articles) {
+    const files = bySlug.get(article.slug) ?? [];
+    files.push(article.filename);
+    bySlug.set(article.slug, files);
+  }
+
+  for (const [slug, files] of bySlug) {
+    if (files.length < 2) continue;
+
+    console.warn(
+      `[article-system] slug "${slug}" が ${files.length} 件の記事で重複しています:\n` +
+        files.map((file) => `  - ${file}`).join("\n") +
+        `\nURL は1つしか指せないため、1件しか開けません。` +
+        `フロントマターの slug を書き分けてください。`
+    );
+  }
+}
+
 export function createArticles(
   rawFiles: Record<string, string>
 ): Article[] {
-  return Object.entries(rawFiles)
+  const articles = Object.entries(rawFiles)
     .map(([path, raw]) => {
       const filename = path.split("/").pop() ?? path;
 
@@ -46,4 +73,8 @@ export function createArticles(
     // NaN が返り、sort の結果が仕様上保証されなくなる（spec §5）
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .map((article, index) => ({ ...article, id: index }));
+
+  warnDuplicateSlugs(articles);
+
+  return articles;
 }

@@ -141,8 +141,24 @@ function validateArticle(raw, context = {}) {
 }
 
 // src/createArticles.ts
+function warnDuplicateSlugs(articles) {
+  const bySlug = /* @__PURE__ */ new Map();
+  for (const article of articles) {
+    const files = bySlug.get(article.slug) ?? [];
+    files.push(article.filename);
+    bySlug.set(article.slug, files);
+  }
+  for (const [slug, files] of bySlug) {
+    if (files.length < 2) continue;
+    console.warn(
+      `[article-system] slug "${slug}" \u304C ${files.length} \u4EF6\u306E\u8A18\u4E8B\u3067\u91CD\u8907\u3057\u3066\u3044\u307E\u3059:
+` + files.map((file) => `  - ${file}`).join("\n") + `
+URL \u306F1\u3064\u3057\u304B\u6307\u305B\u306A\u3044\u305F\u3081\u30011\u4EF6\u3057\u304B\u958B\u3051\u307E\u305B\u3093\u3002\u30D5\u30ED\u30F3\u30C8\u30DE\u30BF\u30FC\u306E slug \u3092\u66F8\u304D\u5206\u3051\u3066\u304F\u3060\u3055\u3044\u3002`
+    );
+  }
+}
 function createArticles(rawFiles) {
-  return Object.entries(rawFiles).map(([path, raw]) => {
+  const articles = Object.entries(rawFiles).map(([path, raw]) => {
     const filename = path.split("/").pop() ?? path;
     if (filename.startsWith("_")) {
       throw new Error(
@@ -172,6 +188,8 @@ function createArticles(rawFiles) {
       content
     };
   }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0).map((article, index) => ({ ...article, id: index }));
+  warnDuplicateSlugs(articles);
+  return articles;
 }
 
 // src/components/ArticleDetail.tsx

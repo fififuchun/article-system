@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createArticles } from "./createArticles";
 
 // createArticles は問題のある記事を console.warn で報告する（spec §5）。
@@ -362,5 +362,94 @@ describe("createArticles — slug", () => {
     });
 
     expect(articles.map((article) => article.slug)).toEqual(["winter", "autumn"]);
+  });
+});
+
+// spec §3: 同じ slug が2つあると片方が開けない。例外は投げない（記事は読める）
+describe("createArticles — slug の重複", () => {
+  const body = [
+    "title: 記事",
+    "date: 2026-08-23",
+    "latestUpdate: 2026-08-23",
+    "staff: 田中 花子",
+    "thumbnail: art_0.webp",
+  ];
+  const md = (extra: string[] = []) =>
+    ["---", ...body, ...extra, "---", "", "本文"].join("\n");
+
+  let warn: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => warn.mockRestore());
+
+  const warnings = () => warn.mock.calls.map((call) => String(call[0])).join("\n");
+
+  it("重複していれば警告する", () => {
+    createArticles({
+      "/a/夏.md": md(["slug: summer"]),
+      "/a/夏2.md": md(["slug: summer"]),
+    });
+
+    expect(warnings()).toContain("summer");
+  });
+
+  it("どのファイルが重複しているかを挙げる", () => {
+    createArticles({
+      "/a/夏.md": md(["slug: summer"]),
+      "/a/夏2.md": md(["slug: summer"]),
+    });
+
+    expect(warnings()).toContain("夏.md");
+    expect(warnings()).toContain("夏2.md");
+  });
+
+  it("片方が開けなくなることを伝える", () => {
+    createArticles({
+      "/a/夏.md": md(["slug: summer"]),
+      "/a/夏2.md": md(["slug: summer"]),
+    });
+
+    expect(warnings()).toMatch(/開け|表示/);
+  });
+
+  it("重複が無ければ slug については警告しない", () => {
+    createArticles({
+      "/a/夏.md": md(["slug: summer"]),
+      "/a/秋.md": md(["slug: autumn"]),
+    });
+
+    expect(warnings()).not.toContain("slug");
+  });
+
+  // 例外を投げない。記事そのものは読める（spec §5）
+  it("重複していても記事は返す", () => {
+    const articles = createArticles({
+      "/a/夏.md": md(["slug: summer"]),
+      "/a/夏2.md": md(["slug: summer"]),
+    });
+
+    expect(articles).toHaveLength(2);
+  });
+
+  it("3つ以上の重複もまとめて挙げる", () => {
+    createArticles({
+      "/a/1.md": md(["slug: summer"]),
+      "/a/2.md": md(["slug: summer"]),
+      "/a/3.md": md(["slug: summer"]),
+    });
+
+    expect(warnings()).toContain("3.md");
+  });
+
+  // ファイル名由来の slug は拡張子を除いただけなので、ファイル名が違えば重複しない
+  it("ファイル名由来なら重複しない", () => {
+    createArticles({
+      "/a/夏.md": md(),
+      "/a/秋.md": md(),
+    });
+
+    expect(warnings()).not.toContain("slug");
   });
 });
