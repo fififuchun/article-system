@@ -18,6 +18,8 @@ export function buildDraftArticle(raw: string, articles: Article[] = []): Articl
     // date 昇順に並べたとき何番目に入るか。同じ日付の記事より後ろに付く
     id: articles.filter((article) => article.date <= date).length,
     filename: buildFilename(date, title),
+    // フロントマター優先、無ければファイル名から拡張子を除く（spec §3）
+    slug: data.slug?.trim() || buildFilename(date, title).replace(/\.md$/, ""),
     title,
     date,
     latestUpdate: data.latestUpdate ?? "",

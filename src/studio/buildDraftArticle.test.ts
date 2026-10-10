@@ -18,6 +18,7 @@ const complete = {
 function existing(date: string, title = "既存"): Article {
   return {
     id: 0,
+    slug: `${date}-${title}`,
     filename: `${date}-${title}.md`,
     title,
     date,
@@ -88,5 +89,33 @@ describe("buildDraftArticle", () => {
     expect(article.title).toBe("");
     expect(article.date).toBe("");
     expect(article.content).toBe("## 見出しだけ");
+  });
+});
+
+// spec §3: slug は URL に使う識別子
+describe("buildDraftArticle — slug", () => {
+  it("フロントマターの slug を使う", () => {
+    const article = buildDraftArticle(md({ ...complete, slug: "summer-update" }));
+
+    expect(article.slug).toBe("summer-update");
+  });
+
+  it("slug が無ければファイル名から拡張子を除く", () => {
+    const article = buildDraftArticle(md(complete));
+
+    expect(article.slug).toBe("2026-08-23-夏の更新");
+  });
+
+  // プレビューで「この URL になります」を出すために使う（spec §9）
+  it("ファイル名と対応している", () => {
+    const article = buildDraftArticle(md(complete));
+
+    expect(`${article.slug}.md`).toBe(article.filename);
+  });
+
+  it("前後の空白を落とす", () => {
+    const article = buildDraftArticle(md({ ...complete, slug: "  summer-update  " }));
+
+    expect(article.slug).toBe("summer-update");
   });
 });

@@ -32,6 +32,8 @@ export function createArticles(
       const { data, content } = parseFrontmatter(raw);
       return {
         filename,
+        // フロントマター優先、無ければファイル名から拡張子を除く（spec §3）
+        slug: data.slug?.trim() || filename.replace(/\.md$/, ""),
         title: data.title ?? "",
         date: data.date ?? "",
         latestUpdate: data.latestUpdate ?? "",

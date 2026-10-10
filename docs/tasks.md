@@ -224,12 +224,13 @@
 
 - [x] `parseFrontmatter` が `slug` を読めるようにする（テスト → 実装 → グリーン）
 - [x] `validateArticle` が `slug` に使えない文字を検出する（`/` `?` `#` 空白 `.` `..`。spec §3。テスト → 実装 → グリーン）
-- [ ] `Article` の `id` を `slug` に置き換える（`createArticles`：フロントマター優先、無ければファイル名から拡張子を除く。テスト → 実装 → グリーン）
+- [x] `Article` に `slug` を足す（`createArticles`：フロントマター優先、無ければファイル名から拡張子を除く。`id` はまだ残す。テスト → 実装 → グリーン）
 - [ ] `createArticles` が `slug` の重複を `console.warn` で知らせる（片方が開けなくなる。テスト → 実装 → グリーン）
 - [ ] `buildTemplate` が `slug:` を日付で埋める（同じ日に既存があれば `-2`。URL に日本語が入らない既定にする。テスト → 実装 → グリーン）
-- [ ] `buildDraftArticle` を `slug` に合わせる（テスト → 実装 → グリーン）
+- [x] `buildDraftArticle` を `slug` に合わせる（テスト → 実装 → グリーン）
 - [ ] `ArticleList` の React key を `slug` にする（テスト → 実装 → グリーン）
 - [ ] Studio の「`id` の予告」を「URL の予告」に差し替える（テスト → 実装 → グリーン）
+- [ ] `Article` から `id` を消す（参照がすべて `slug` に移った後。型エラーが残りを教えてくれる。テスト → 実装 → グリーン）
 - [ ] `demo/` のルーティングを `slug` に変え、日本語URLで開けることを目視確認する
 - [ ] README / `docs/` を `slug` に合わせ、**移行手順**を書く（`article.id` → `article.slug`、`:id` → `:slug`、`encodeURIComponent`）
 

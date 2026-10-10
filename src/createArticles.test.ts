@@ -49,6 +49,7 @@ describe("createArticles", () => {
 
     expect(article).toEqual({
       id: 0,
+      slug: "2026-08-23-a",
       filename: "2026-08-23-a.md",
       title: "記事タイトル",
       date: "2026-08-23",
@@ -289,5 +290,77 @@ describe("createArticles — 検証結果の報告", () => {
 
     expect(articles).toHaveLength(1);
     expect(articles[0].title).toBe("記事");
+  });
+});
+
+// spec §3: slug は URL に使う識別子。id の index と違い、記事を足しても動かない
+describe("createArticles — slug", () => {
+  const body = [
+    "title: 夏の更新",
+    "date: 2026-08-23",
+    "latestUpdate: 2026-08-23",
+    "staff: 田中 花子",
+    "thumbnail: art_0.webp",
+  ];
+
+  const md = (extra: string[] = []) =>
+    ["---", ...body, ...extra, "---", "", "本文"].join("\n");
+
+  it("フロントマターの slug を使う", () => {
+    const [article] = createArticles({
+      "/src/articles/2026-08-23-夏の更新.md": md(["slug: summer-update"]),
+    });
+
+    expect(article.slug).toBe("summer-update");
+  });
+
+  // 既存記事のための後方互換（spec §3）
+  it("slug が無ければファイル名から拡張子を除く", () => {
+    const [article] = createArticles({
+      "/src/articles/2026-08-23-夏の更新.md": md(),
+    });
+
+    expect(article.slug).toBe("2026-08-23-夏の更新");
+  });
+
+  it("パスではなくファイル名だけを使う", () => {
+    const [article] = createArticles({
+      "/deep/nested/src/articles/2026-08-23-夏の更新.md": md(),
+    });
+
+    expect(article.slug).toBe("2026-08-23-夏の更新");
+  });
+
+  // ★これが id との決定的な違い。古い日付の記事を足しても動かない
+  it("古い日付の記事を足しても既存の slug が変わらない", () => {
+    const before = createArticles({
+      "/a/2026-08-23-夏.md": md(),
+      "/a/2026-09-01-秋.md": md(["slug: autumn"]),
+    });
+
+    const after = createArticles({
+      "/a/2026-01-01-冬.md": md(["slug: winter"]),
+      "/a/2026-08-23-夏.md": md(),
+      "/a/2026-09-01-秋.md": md(["slug: autumn"]),
+    });
+
+    const slugOf = (list: typeof before, name: string) =>
+      list.find((article) => article.filename === name)?.slug;
+
+    expect(slugOf(before, "2026-08-23-夏.md")).toBe(slugOf(after, "2026-08-23-夏.md"));
+    expect(slugOf(before, "2026-09-01-秋.md")).toBe(slugOf(after, "2026-09-01-秋.md"));
+  });
+
+  it("日付の昇順は保つ", () => {
+    // md() の date は固定なので、ここだけ日付を差し替える
+    const dated = (date: string, slug: string) =>
+      md([`slug: ${slug}`]).replace("date: 2026-08-23", `date: ${date}`);
+
+    const articles = createArticles({
+      "/a/秋.md": dated("2026-09-01", "autumn"),
+      "/a/冬.md": dated("2026-01-01", "winter"),
+    });
+
+    expect(articles.map((article) => article.slug)).toEqual(["winter", "autumn"]);
   });
 });
