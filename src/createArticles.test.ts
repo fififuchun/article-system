@@ -26,14 +26,14 @@ describe("createArticles", () => {
     expect(articles.map((article) => article.title)).toEqual(["A", "B", "C"]);
   });
 
-  it("ソート後の index を id として 0 始まりで採番する", () => {
+  it("date 昇順で返す", () => {
     const articles = createArticles({
       "../articles/2026-08-20-b.md": md({ title: "B", date: "2026-08-20" }),
       "../articles/2026-03-15-a.md": md({ title: "A", date: "2026-03-15" }),
       "../articles/2026-08-23-c.md": md({ title: "C", date: "2026-08-23" }),
     });
 
-    expect(articles.map((article) => article.id)).toEqual([0, 1, 2]);
+    expect(articles.map((article) => article.title)).toEqual(["A", "B", "C"]);
   });
 
   it("フロントマターの全項目を Article に写す", () => {
@@ -48,7 +48,6 @@ describe("createArticles", () => {
     });
 
     expect(article).toEqual({
-      id: 0,
       slug: "2026-08-23-a",
       filename: "2026-08-23-a.md",
       title: "記事タイトル",
@@ -102,7 +101,7 @@ describe("createArticles", () => {
     });
 
     expect(articles).toHaveLength(2);
-    expect(articles.map((article) => article.id)).toEqual([0, 1]);
+    expect(articles.map((article) => article.title).sort()).toEqual(["A", "B"]);
   });
 });
 
@@ -223,14 +222,14 @@ describe("createArticles — 不正な date が混ざったときのソート", 
     expect(articles.map((article) => article.title)).toEqual(["空", "A"]);
   });
 
-  it("不正な date が混ざっても id は 0 始まりの連番になる", () => {
+  it("不正な date が混ざっても全件返す", () => {
     const articles = createArticles({
       "../articles/x.md": md({ title: "X", date: "x" }),
       "../articles/a.md": md({ title: "A", date: "2026-03-15" }),
       "../articles/b.md": md({ title: "B", date: "2026-08-20" }),
     });
 
-    expect(articles.map((article) => article.id)).toEqual([0, 1, 2]);
+    expect(articles).toHaveLength(3);
   });
 });
 

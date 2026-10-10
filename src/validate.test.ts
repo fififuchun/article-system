@@ -315,7 +315,7 @@ describe("validateArticle — キー名の typo", () => {
 
 describe("validateArticle — ファイル名の衝突", () => {
   const existing = (filename: string): Article => ({
-    id: 0,
+    slug: filename.replace(/\.md$/, ""),
     filename,
     title: "既存記事",
     date: "2026-08-01",

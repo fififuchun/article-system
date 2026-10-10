@@ -41,7 +41,7 @@ export function ArticleList({
               <span>{year}年{month}月{day}日</span>
             </div>
           </div>,
-          // 記事の身元に紐づける。id は記事を足すとずれる（spec §3）
+          // 記事の身元に紐づける。並び順の index だと記事を足したときずれる（spec §3）
           article.slug
         );
       })}

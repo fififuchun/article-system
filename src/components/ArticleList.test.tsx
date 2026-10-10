@@ -8,7 +8,6 @@ afterEach(cleanup);
 
 function article(date: string, title: string): Article {
   return {
-    id: 0,
     slug: `${date}-${title}`,
     filename: `${date}-${title}.md`,
     title,
@@ -22,7 +21,6 @@ function article(date: string, title: string): Article {
 
 const articles: Article[] = [
   {
-    id: 0,
     slug: "2026-08-23-a",
     filename: "2026-08-23-a.md",
     title: "記事タイトル",
@@ -38,7 +36,7 @@ function renderList(classNames?: Parameters<typeof ArticleList>[0]["classNames"]
   return render(
     <ArticleList
       articles={articles}
-      getArticleUrl={(article) => `/blog/${article.id}`}
+      getArticleUrl={(article) => `/blog/${article.slug}`}
       renderLink={(url, children, key) => (
         <a key={key} href={url}>
           {children}
@@ -83,7 +81,9 @@ describe("ArticleList — 描画内容", () => {
   it("renderLink が返すリンクで各カードを包む", () => {
     const { container } = renderList();
 
-    expect(container.querySelector("a")?.getAttribute("href")).toBe("/blog/0");
+    expect(container.querySelector("a")?.getAttribute("href")).toBe(
+      "/blog/2026-08-23-a"
+    );
   });
 
   it("カードに表示する日付は latestUpdate を使う", () => {
@@ -110,7 +110,7 @@ describe("ArticleList — 画像のパス", () => {
       <ArticleList
         articles={articles}
         imageBasePath="/imgs/"
-        getArticleUrl={(a) => `/blog/${a.id}`}
+        getArticleUrl={(a) => `/blog/${a.slug}`}
         renderLink={(url, children, key) => (
           <a key={key} href={url}>
             {children}
@@ -127,7 +127,7 @@ describe("ArticleList — 画像のパス", () => {
       <ArticleList
         articles={[{ ...articles[0], thumbnail: "https://example.com/thumb.webp" }]}
         imageBasePath="/imgs/"
-        getArticleUrl={(a) => `/blog/${a.id}`}
+        getArticleUrl={(a) => `/blog/${a.slug}`}
         renderLink={(url, children, key) => (
           <a key={key} href={url}>
             {children}

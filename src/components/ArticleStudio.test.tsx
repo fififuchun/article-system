@@ -344,7 +344,7 @@ describe("ArticleStudio — プレビューのタブ", () => {
 
 function existing(date: string, title: string): Article {
   return {
-    id: 0,
+    slug: `${date}-${title}`,
     filename: `${date}.md`,
     title,
     date,

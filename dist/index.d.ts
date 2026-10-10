@@ -5,11 +5,9 @@ interface Article {
      * URL に使う識別子。記事の身元（spec §3）。
      *
      * フロントマターの `slug` 優先、無ければファイル名から拡張子を除いたもの。
-     **記事を足しても動きません。**
+     * **記事を足しても動きません。**
      */
     slug: string;
-    /**  日付昇順の index。URL に使うと記事を足したときずれる。`slug` を使ってください */
-    id: number;
     /** 拡張子付きファイル名。衝突検出と既存記事の編集に使う。URL には使わない（spec §3） */
     filename: string;
     title: string;

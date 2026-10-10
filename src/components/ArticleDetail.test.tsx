@@ -7,7 +7,7 @@ import type { Article } from "../types";
 afterEach(cleanup);
 
 const article: Article = {
-  id: 0,
+  slug: "2026-08-23-a",
   filename: "2026-08-23-a.md",
   title: "記事タイトル",
   date: "2026-08-23",

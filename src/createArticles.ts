@@ -72,7 +72,7 @@ export function createArticles(
     // YYYY-MM-DD は辞書順と時系列順が一致する。new Date() 比較だと不正な日付で
     // NaN が返り、sort の結果が仕様上保証されなくなる（spec §5）
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-    .map((article, index) => ({ ...article, id: index }));
+;
 
   warnDuplicateSlugs(articles);
 

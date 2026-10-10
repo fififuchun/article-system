@@ -17,7 +17,6 @@ const complete = {
 
 function existing(date: string, title = "既存"): Article {
   return {
-    id: 0,
     slug: `${date}-${title}`,
     filename: `${date}-${title}.md`,
     title,
@@ -52,35 +51,6 @@ describe("buildDraftArticle", () => {
     const article = buildDraftArticle(md(complete));
 
     expect(article.filename).toBe("2026-08-23-夏の更新.md");
-  });
-
-  it("既存記事が無ければ id は 0", () => {
-    expect(buildDraftArticle(md(complete)).id).toBe(0);
-  });
-
-  // spec §3: Studio は date の初期値を今日にするので新規記事は末尾に付く
-  it("既存記事より新しければ末尾の id になる", () => {
-    const articles = [existing("2026-01-01"), existing("2026-05-01")];
-
-    expect(buildDraftArticle(md(complete), articles).id).toBe(2);
-  });
-
-  it("既存記事より古ければ挿入される位置の id になる", () => {
-    const articles = [existing("2026-01-01"), existing("2026-12-01")];
-
-    expect(buildDraftArticle(md(complete), articles).id).toBe(1);
-  });
-
-  it("すべての既存記事より古ければ id は 0", () => {
-    const articles = [existing("2026-12-01"), existing("2027-01-01")];
-
-    expect(buildDraftArticle(md(complete), articles).id).toBe(0);
-  });
-
-  it("同じ日付の既存記事があればその後ろに入る", () => {
-    const articles = [existing("2026-08-23")];
-
-    expect(buildDraftArticle(md(complete), articles).id).toBe(1);
   });
 
   it("フロントマターが無くても落ちない", () => {

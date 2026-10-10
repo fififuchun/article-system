@@ -187,7 +187,7 @@ function createArticles(rawFiles) {
       thumbnail: data.thumbnail ?? "",
       content
     };
-  }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0).map((article, index) => ({ ...article, id: index }));
+  }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
   warnDuplicateSlugs(articles);
   return articles;
 }
@@ -334,7 +334,7 @@ function ArticleList({
           ] })
         ] })
       ] }),
-      // 記事の身元に紐づける。id は記事を足すとずれる（spec §3）
+      // 記事の身元に紐づける。並び順の index だと記事を足したときずれる（spec §3）
       article.slug
     );
   }) });
@@ -397,13 +397,11 @@ function buildFilename(date, title, options = {}) {
 }
 
 // src/studio/buildDraftArticle.ts
-function buildDraftArticle(raw, articles = []) {
+function buildDraftArticle(raw) {
   const { data, content } = parseFrontmatter(raw);
   const date = data.date ?? "";
   const title = data.title ?? "";
   return {
-    // date 昇順に並べたとき何番目に入るか。同じ日付の記事より後ろに付く
-    id: articles.filter((article) => article.date <= date).length,
     filename: buildFilename(date, title),
     // フロントマター優先、無ければファイル名から拡張子を除く（spec §3）
     slug: data.slug?.trim() || buildFilename(date, title).replace(/\.md$/, ""),
@@ -919,7 +917,7 @@ function StudioEditor({
   useEffect(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
-  const draft = buildDraftArticle(raw, articles);
+  const draft = buildDraftArticle(raw);
   const basePath = imageBasePath ?? "/article_imgs/";
   const probeNames = collectImageNames(draft.content, draft.thumbnail).filter(
     (name) => !images.some((image) => image.name === name)

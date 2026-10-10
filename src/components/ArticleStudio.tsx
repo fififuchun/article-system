@@ -128,7 +128,7 @@ function StudioEditor({
 
   // ArticleDetail をそのまま使うことで、プレビューと本番の一致が
   // 構造的に保証される（spec §9）
-  const draft = buildDraftArticle(raw, articles);
+  const draft = buildDraftArticle(raw);
 
   // 手書きのファイル名だけ実在を確かめる。ドロップした画像はサーバーに無くて当然（spec §6）
   const basePath = imageBasePath ?? "/article_imgs/";
@@ -188,7 +188,7 @@ function StudioEditor({
 
   // 既存記事に混ぜて日付の新しい順の直近6件。隣の記事と並べることで
   // タイトルの折り返しやサムネイルの雰囲気を比較できる（spec §9）。
-  // 編集中の記事は先に確保する。過去日を書いたとき、id がずれるかを
+  // 編集中の記事は先に確保する。過去日を書いたとき、どこに入るかを
   // 確認したい場面でこそ一覧から漏れてしまうため
   const byDateDesc = (a: Article, b: Article) =>
     a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
@@ -360,7 +360,7 @@ function StudioEditor({
             articles={listPreview}
             imageBasePath={imageBasePath}
             // 遷移はしないので div で包む。編集中の記事だけ印を付けて見分ける。
-            // id で見分けると、既存記事と番号が重なったとき両方に出てしまう
+            // slug で見分けると、既存記事と重なったとき両方に出てしまう
             getArticleUrl={(article) => (article === draft ? DRAFT_MARK : "#")}
             renderLink={(url, children, key) =>
               url === DRAFT_MARK ? (
