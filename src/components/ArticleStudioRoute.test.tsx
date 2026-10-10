@@ -242,3 +242,74 @@ describe("ArticleStudioRoute — 閉じたとき", () => {
     expect(closeButton(container).getAttribute("aria-label")).toContain("閉じる");
   });
 });
+
+// spec §9 設置方法: 入り口は変えられる
+describe("ArticleStudioRoute — hashPath", () => {
+  it("既定は #/studio", () => {
+    at("#/studio");
+
+    const { container } = mount();
+
+    expect(container.querySelector("dialog")).not.toBeNull();
+  });
+
+  it("渡した入り口で開く", () => {
+    at("#/write");
+
+    const { container } = render(<ArticleStudioRoute articles={[]} hashPath="#/write" />);
+
+    expect(container.querySelector("dialog")).not.toBeNull();
+  });
+
+  it("渡したら既定では開かない", () => {
+    at("#/studio");
+
+    const { container } = render(<ArticleStudioRoute articles={[]} hashPath="#/write" />);
+
+    expect(container.innerHTML).toBe("");
+  });
+
+  // 書き方の揺れを吸収する（spec §9 設置方法）
+  it.each(["#/write", "/write", "write"])("書き方が違っても開く（%s）", (given) => {
+    at("#/write");
+
+    const { container } = render(<ArticleStudioRoute articles={[]} hashPath={given} />);
+
+    expect(container.querySelector("dialog")).not.toBeNull();
+  });
+
+  it("入れ子のパスも使える", () => {
+    at("#/admin/write");
+
+    const { container } = render(
+      <ArticleStudioRoute articles={[]} hashPath="#/admin/write" />
+    );
+
+    expect(container.querySelector("dialog")).not.toBeNull();
+  });
+
+  it("閉じたときも渡した入り口から戻す", () => {
+    at("#/write");
+    const { container } = render(<ArticleStudioRoute articles={[]} hashPath="#/write" />);
+
+    act(() => {
+      (container.querySelector(".as-studio-dialog-close") as HTMLButtonElement).click();
+    });
+
+    expect(window.location.hash).toBe("");
+  });
+});
+
+describe("ArticleStudioRoute — classNames", () => {
+  it("classNames.dialog が as- クラスに追記される", () => {
+    at("#/studio");
+
+    const { container } = render(
+      <ArticleStudioRoute articles={[]} classNames={{ dialog: "my-dialog" }} />
+    );
+
+    expect(container.querySelector("dialog")?.className).toBe(
+      "as-studio-dialog my-dialog"
+    );
+  });
+});
