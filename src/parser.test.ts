@@ -109,3 +109,46 @@ describe("parseFrontmatter", () => {
     expect(content).toBe("\n本文\n\n---\n\n続き");
   });
 });
+
+// spec §3: slug は URL に使う識別子。フロントマターに書けば優先される
+describe("parseFrontmatter — slug", () => {
+  it("slug を読む", () => {
+    const { data } = parseFrontmatter(
+      ["---", "title: 夏の更新", "slug: summer-update", "---", "", "本文"].join("\n")
+    );
+
+    expect(data.slug).toBe("summer-update");
+  });
+
+  it("日付だけの slug も読む", () => {
+    const { data } = parseFrontmatter(
+      ["---", "slug: 2026-10-09", "---", "", "本文"].join("\n")
+    );
+
+    expect(data.slug).toBe("2026-10-09");
+  });
+
+  it("連番付きの slug も読む", () => {
+    const { data } = parseFrontmatter(
+      ["---", "slug: 2026-10-09-2", "---", "", "本文"].join("\n")
+    );
+
+    expect(data.slug).toBe("2026-10-09-2");
+  });
+
+  it("書いていなければ undefined", () => {
+    const { data } = parseFrontmatter(
+      ["---", "title: 夏の更新", "---", "", "本文"].join("\n")
+    );
+
+    expect(data.slug).toBeUndefined();
+  });
+
+  it("前後の空白を落とす", () => {
+    const { data } = parseFrontmatter(
+      ["---", "slug:   summer-update  ", "---", "", "本文"].join("\n")
+    );
+
+    expect(data.slug).toBe("summer-update");
+  });
+});
