@@ -888,7 +888,7 @@ export default defineConfig({
 
 ```bash
 # 推奨: タグで固定する
-npm i github:fififuchun/article-system#v0.2.0
+npm i github:fififuchun/article-system#v0.3.0
 
 # 非推奨: npm update で意図せず更新される
 npm i github:fififuchun/article-system
@@ -1105,4 +1105,4 @@ Git Data API なら blob → tree → commit → ref の順に組み立て、**�
 
 ---
 
-記録日: 2026-08-23（§15 を 2026-09-21 に追記） / 対象コミット: `688a6c8`
+記録日: 2026-08-23（§15 を 2026-09-21、§3 と §9 設置方法を 2026-10-10 に追記） / 対象バージョン: 0.3.0

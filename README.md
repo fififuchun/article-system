@@ -33,7 +33,7 @@ npm i github:fififuchun/article-system
 
 ```bash
 # タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.2.0
+npm i github:fififuchun/article-system#v0.3.0
 
 # コミットハッシュで固定する
 npm i github:fififuchun/article-system#b5e66ab

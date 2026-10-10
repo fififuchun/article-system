@@ -285,7 +285,7 @@ _2026-08-19-書きかけの記事.md   ← 下書き
 
 ```bash
 npm i github:fififuchun/article-system
-npm i github:fififuchun/article-system#v0.2.0   # タグで固定
+npm i github:fififuchun/article-system#v0.3.0   # タグで固定
 ```
 
 `ce86c36「distもビルドに含める」` で成果物がリポジトリに入っているため、追加のビルド設定なしにそのまま動きます。

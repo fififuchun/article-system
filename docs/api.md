@@ -145,6 +145,27 @@ interface GitHubConfig {
 
 ---
 
+### `<ArticleStudioRoute>`
+
+`<ArticleStudio>` を `#/studio` で全画面に開く薄い入り口（spec §9 設置方法）。
+`App.tsx` に1行置くだけで済み、`<Route>` の定義もページファイルも要らない。
+
+```tsx
+<ArticleStudioRoute articles={articles} github={{ repo: "me/blog" }} />
+```
+
+| prop | 型 | 必須 | 既定値 |
+| --- | --- | --- | --- |
+| `hashPath` | `string` | | `"#/studio"` |
+
+ほかの prop は `<ArticleStudio>` と同じ。
+
+- ハッシュが一致しないときは `null` を返す（置き場所が結果に影響しない）
+- `<dialog>` を `showModal()` で開くのでトップレイヤーに乗る。`z-index` は書いていない
+- × と Esc のどちらでも閉じ、閉じるとハッシュを `replaceState` で戻す
+
+---
+
 ## アイコン
 
 すべてインライン SVG です。`fill="currentColor"` で CSS の `color` に追従し、`aria-hidden="true"` が付きます。サイズは CSS で指定します。
