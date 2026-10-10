@@ -304,6 +304,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-areas: "actions tabs" "editor  preview";
+  grid-template-rows: auto 1fr;
   font-family: var(--as-font-body);
   color: var(--as-color-text);
   background: var(--as-color-surface);
@@ -468,6 +469,8 @@
   :where(.as-studio) {
     grid-template-columns: 1fr;
     grid-template-areas: "actions" "editor" "tabs" "preview";
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
   }
   :where(.as-studio-actions, .as-studio-tabs) {
     position: static;
@@ -612,4 +615,7 @@
 }
 :where(.as-studio-dialog .as-studio) {
   min-height: 100dvh;
+}
+:where(.as-studio-dialog .as-studio-tabs) {
+  padding-right: 2.5rem;
 }

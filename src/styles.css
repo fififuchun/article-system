@@ -401,6 +401,9 @@
   grid-template-areas:
     "actions tabs"
     "editor  preview";
+  /* 帯は中身の高さ、ペインが残りを取る。行を定義しないと、高さを
+     与えられたとき（dialog の 100dvh など）2行が等分されて帯が巨大になる */
+  grid-template-rows: auto 1fr;
   /* stretch のままにする。start にすると帯の左右で高さが揃わず、
      ペイン間の罫線も短いほうの高さで途切れる */
   font-family: var(--as-font-body);
@@ -608,6 +611,11 @@
       "editor"
       "tabs"
       "preview";
+    /* 縦並びでは4行とも中身の高さにする。auto 1fr のままだと
+       editor だけが伸びる */
+    grid-template-rows: auto auto auto auto;
+    /* 余った高さを行に配らない。配ると帯が間延びする */
+    align-content: start;
   }
 
   :where(.as-studio-actions, .as-studio-tabs) {
@@ -790,4 +798,9 @@
 /* dialog が高さを持つので、中の Studio は全体に広がる */
 :where(.as-studio-dialog .as-studio) {
   min-height: 100dvh;
+}
+
+/* 閉じるボタンの分だけ帯を空ける。重ねると「一覧」が押せなくなる */
+:where(.as-studio-dialog .as-studio-tabs) {
+  padding-right: 2.5rem;
 }

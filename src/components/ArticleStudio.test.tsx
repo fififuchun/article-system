@@ -1571,7 +1571,13 @@ describe("ArticleStudio — 雛形の slug", () => {
   });
 
   const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
-  const today = new Date().toISOString().slice(0, 10);
+  // toISOString() は UTC なのでローカル日付とずれる。buildTemplate と同じ出し方にする
+  const today = (() => {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${now.getFullYear()}-${month}-${day}`;
+  })();
 
   it("雛形に slug が入る", () => {
     render(<ArticleStudio articles={[]} />);
