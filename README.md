@@ -218,7 +218,7 @@ export default function BlogList() {
 
 カードに表示される日付は `latestUpdate` です。
 
-`renderLink` に渡される第3引数の `key` を、返す要素に付けるのは利用側の責任です。付け忘れると React の key 警告が出ます。
+`renderLink` に渡される第3引数の `key` は **`article.slug`（文字列）**です。返す要素に付けるのは利用側の責任です。付け忘れると React の key 警告が出ます。
 
 ### `<ArticleDetail>` — 記事詳細
 

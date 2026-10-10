@@ -105,7 +105,7 @@ interface Props$1 {
     imageBasePath?: string;
     getArticleUrl: (article: Article) => string;
     classNames?: ArticleListClassNames;
-    renderLink: (url: string, children: React.ReactNode, key: number) => React.ReactNode;
+    renderLink: (url: string, children: React.ReactNode, key: string) => React.ReactNode;
 }
 declare function ArticleList({ articles, imageBasePath, getArticleUrl, classNames, renderLink, }: Props$1): react_jsx_runtime.JSX.Element;
 

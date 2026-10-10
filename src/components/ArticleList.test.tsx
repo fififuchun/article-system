@@ -6,9 +6,24 @@ import type { Article } from "../types";
 
 afterEach(cleanup);
 
+function article(date: string, title: string): Article {
+  return {
+    id: 0,
+    slug: `${date}-${title}`,
+    filename: `${date}-${title}.md`,
+    title,
+    date,
+    latestUpdate: date,
+    staff: "担当",
+    thumbnail: "art.webp",
+    content: "本文",
+  };
+}
+
 const articles: Article[] = [
   {
     id: 0,
+    slug: "2026-08-23-a",
     filename: "2026-08-23-a.md",
     title: "記事タイトル",
     date: "2026-08-23",
@@ -122,5 +137,42 @@ describe("ArticleList — 画像のパス", () => {
     );
 
     expect(cardImageSrc(container)).toBe("https://example.com/thumb.webp");
+  });
+});
+
+// spec §3: key は記事の身元に紐づけたい。id は記事を足すとずれる
+describe("ArticleList — key", () => {
+  it("renderLink に slug を key として渡す", () => {
+    const keys: unknown[] = [];
+
+    render(
+      <ArticleList
+        articles={[article("2026-08-23", "夏"), article("2026-09-01", "秋")]}
+        getArticleUrl={() => "#"}
+        renderLink={(url, children, key) => {
+          keys.push(key);
+          return <a key={key} href={url}>{children}</a>;
+        }}
+      />
+    );
+
+    expect(keys).toEqual(["2026-08-23-夏", "2026-09-01-秋"]);
+  });
+
+  it("key は文字列になる", () => {
+    const keys: unknown[] = [];
+
+    render(
+      <ArticleList
+        articles={[article("2026-08-23", "夏")]}
+        getArticleUrl={() => "#"}
+        renderLink={(url, children, key) => {
+          keys.push(typeof key);
+          return <a key={key} href={url}>{children}</a>;
+        }}
+      />
+    );
+
+    expect(keys).toEqual(["string"]);
   });
 });

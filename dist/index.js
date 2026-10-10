@@ -334,7 +334,8 @@ function ArticleList({
           ] })
         ] })
       ] }),
-      article.id
+      // 記事の身元に紐づける。id は記事を足すとずれる（spec §3）
+      article.slug
     );
   }) });
 }

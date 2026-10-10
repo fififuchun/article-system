@@ -12,7 +12,7 @@ interface Props {
   renderLink: (
     url: string,
     children: React.ReactNode,
-    key: number
+    key: string
   ) => React.ReactNode;
 }
 
@@ -41,7 +41,8 @@ export function ArticleList({
               <span>{year}年{month}月{day}日</span>
             </div>
           </div>,
-          article.id
+          // 記事の身元に紐づける。id は記事を足すとずれる（spec §3）
+          article.slug
         );
       })}
     </div>
