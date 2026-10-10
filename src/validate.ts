@@ -30,6 +30,9 @@ const DATE_FIELDS = ["date", "latestUpdate"] as const;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+/** URL のパスとして成立しない文字（spec §3）。`/` はパスを割り、`?` `#` は以降を切る */
+const SLUG_FORBIDDEN = /[\/?#\s]/;
+
 /**
  * 値が引用符で囲まれているか。
  * YAML ではないため引用符は外されず、そのまま値に入ってしまう（spec §3）。
@@ -139,6 +142,27 @@ export function validateArticle(
       field: "latestUpdate",
       message: `latestUpdate (${latestUpdate}) が date (${date}) より前になっています。最終編集日は公開日以降にしてください。`,
     });
+  }
+
+  // slug は URL のパスになる。成立しない値はリンクが切れるので止める（spec §3）。
+  // 任意の項目なので、書いていなければ何も言わない
+  const slug = (data.slug ?? "").trim();
+
+  if (slug !== "" && !isQuoted(slug)) {
+    if (SLUG_FORBIDDEN.test(slug)) {
+      issues.push({
+        level: "error",
+        field: "slug",
+        message: `slug に URL で使えない文字が含まれています（/ ? # と空白）。現在の値: ${slug}`,
+      });
+    } else if (slug.startsWith(".") || slug.endsWith(".")) {
+      // "." や ".." は相対パスとして解釈され、別の場所を指す
+      issues.push({
+        level: "error",
+        field: "slug",
+        message: `slug の先頭と末尾にドットは使えません。相対パスとして扱われます。現在の値: ${slug}`,
+      });
+    }
   }
 
   // 同名のファイルを書き出すと既存記事が上書きされて消える（spec §6）

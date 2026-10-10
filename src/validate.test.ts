@@ -391,3 +391,83 @@ describe("validateArticle — ファイル名の衝突", () => {
     expect(issues[0].field).toBe("staff");
   });
 });
+
+// spec §3: slug は URL のパスになる。成立しない文字は止める
+describe("validateArticle — slug", () => {
+  const withSlug = (slug: string) =>
+    [
+      "---",
+      "title: 夏の更新",
+      `slug: ${slug}`,
+      "date: 2026-08-23",
+      "latestUpdate: 2026-08-23",
+      "staff: 田中 花子",
+      "thumbnail: art_0.webp",
+      "---",
+      "",
+      "本文",
+    ].join("\n");
+
+  const slugIssues = (slug: string) =>
+    validateArticle(withSlug(slug)).filter((issue) => issue.field === "slug");
+
+  // ★ここが通らないと slug を書いた全記事が検証で止まる
+  it("slug 自体を未知の項目として警告しない", () => {
+    expect(validateArticle(withSlug("2026-08-23"))).toEqual([]);
+  });
+
+  it.each(["2026-08-23", "2026-08-23-2", "summer-update", "夏の更新", "a_b.c"])(
+    "使える slug を通す（%s）",
+    (slug) => {
+      expect(slugIssues(slug)).toEqual([]);
+    }
+  );
+
+  // パスが割れて別の URL になる
+  it("スラッシュを断る", () => {
+    expect(slugIssues("blog/summer")[0]?.message).toContain("/");
+  });
+
+  // クエリとフラグメントの区切り。そこから先が URL として切られる
+  it.each(["summer?x=1", "summer#top"])("クエリ・フラグメントの記号を断る（%s）", (slug) => {
+    expect(slugIssues(slug)).toHaveLength(1);
+  });
+
+  it("空白を断る", () => {
+    expect(slugIssues("summer update")).toHaveLength(1);
+  });
+
+  // 相対パスとして解釈され、別の場所を指す
+  it.each([".", ".."])("ドットだけの slug を断る（%s）", (slug) => {
+    expect(slugIssues(slug)).toHaveLength(1);
+  });
+
+  it.each([".hidden", "trailing."])("前後のドットを断る（%s）", (slug) => {
+    expect(slugIssues(slug)).toHaveLength(1);
+  });
+
+  // slug は任意。書いていなければファイル名から作る（spec §3）
+  it("書いていなければ何も言わない", () => {
+    const raw = [
+      "---",
+      "title: 夏の更新",
+      "date: 2026-08-23",
+      "latestUpdate: 2026-08-23",
+      "staff: 田中 花子",
+      "thumbnail: art_0.webp",
+      "---",
+      "",
+      "本文",
+    ].join("\n");
+
+    expect(validateArticle(raw)).toEqual([]);
+  });
+
+  it("空文字も書いていない扱いにする", () => {
+    expect(slugIssues("")).toEqual([]);
+  });
+
+  it("理由が分かる文言にする", () => {
+    expect(slugIssues("blog/summer")[0]?.message).toContain("URL");
+  });
+});

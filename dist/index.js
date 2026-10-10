@@ -39,6 +39,7 @@ var REQUIRED_FIELDS = ["title", "date", "latestUpdate", "staff", "thumbnail"];
 var TYPO_MAX_DISTANCE = 2;
 var DATE_FIELDS = ["date", "latestUpdate"];
 var DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+var SLUG_FORBIDDEN = /[\/?#\s]/;
 function isQuoted(value) {
   if (value.length < 2) return false;
   const head = value[0];
@@ -112,6 +113,22 @@ function validateArticle(raw, context = {}) {
       field: "latestUpdate",
       message: `latestUpdate (${latestUpdate}) \u304C date (${date}) \u3088\u308A\u524D\u306B\u306A\u3063\u3066\u3044\u307E\u3059\u3002\u6700\u7D42\u7DE8\u96C6\u65E5\u306F\u516C\u958B\u65E5\u4EE5\u964D\u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
     });
+  }
+  const slug = (data.slug ?? "").trim();
+  if (slug !== "" && !isQuoted(slug)) {
+    if (SLUG_FORBIDDEN.test(slug)) {
+      issues.push({
+        level: "error",
+        field: "slug",
+        message: `slug \u306B URL \u3067\u4F7F\u3048\u306A\u3044\u6587\u5B57\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\uFF08/ ? # \u3068\u7A7A\u767D\uFF09\u3002\u73FE\u5728\u306E\u5024: ${slug}`
+      });
+    } else if (slug.startsWith(".") || slug.endsWith(".")) {
+      issues.push({
+        level: "error",
+        field: "slug",
+        message: `slug \u306E\u5148\u982D\u3068\u672B\u5C3E\u306B\u30C9\u30C3\u30C8\u306F\u4F7F\u3048\u307E\u305B\u3093\u3002\u76F8\u5BFE\u30D1\u30B9\u3068\u3057\u3066\u6271\u308F\u308C\u307E\u3059\u3002\u73FE\u5728\u306E\u5024: ${slug}`
+      });
+    }
   }
   const { articles, filename } = context;
   if (filename && articles?.some((article) => article.filename === filename)) {
