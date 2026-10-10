@@ -735,3 +735,59 @@
   background: var(--as-color-surface-muted);
   padding: 0 var(--as-space-xs);
 }
+
+/*
+ * ArticleStudioRoute が開く全画面の dialog（spec §9 設置方法）。
+ *
+ * トップレイヤーに乗るので z-index は書かない。利用側がどんな大きい値を
+ * 使っていても最前面になる。
+ */
+:where(.as-studio-dialog) {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: var(--as-color-surface);
+  color: var(--as-color-text);
+  overflow: auto;
+  /* 閉じるボタンを右上に固定するための基準 */
+  position: relative;
+  /* dialog の中ではナビが上に無いので、操作帯のオフセットは 0 にする */
+  --as-studio-header-top: 0px;
+}
+
+:where(.as-studio-dialog)::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+
+/* 操作帯の上に重ねる。帯は sticky なのでスクロールしても隠れない */
+:where(.as-studio-dialog-close) {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--as-color-border);
+  color: var(--as-color-muted);
+  cursor: pointer;
+}
+
+:where(.as-studio-dialog-close svg) {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* dialog が高さを持つので、中の Studio は全体に広がる */
+:where(.as-studio-dialog .as-studio) {
+  min-height: 100dvh;
+}
