@@ -157,3 +157,88 @@ describe("ArticleStudioRoute — Studio への受け渡し", () => {
     ).toBe("保存してあった下書き");
   });
 });
+
+// spec §9 設置方法: 戻さないと「画面は閉じたのに URL は #/studio」になる
+describe("ArticleStudioRoute — 閉じたとき", () => {
+  beforeEach(() => at("#/studio"));
+
+  const closeButton = (container: HTMLElement) =>
+    container.querySelector(".as-studio-dialog-close") as HTMLButtonElement;
+
+  it("× で閉じるとハッシュが戻る", () => {
+    const { container } = mount();
+
+    act(() => {
+      closeButton(container).click();
+    });
+
+    expect(window.location.hash).toBe("");
+  });
+
+  it("× で閉じると描画が消える", () => {
+    const { container } = mount();
+
+    act(() => {
+      closeButton(container).click();
+    });
+
+    expect(container.innerHTML).toBe("");
+  });
+
+  // Esc はブラウザが close イベントを出す
+  it("Esc（close イベント）でもハッシュが戻る", () => {
+    const { container } = mount();
+    const dialog = container.querySelector("dialog") as HTMLDialogElement;
+
+    act(() => {
+      dialog.close();
+    });
+
+    expect(window.location.hash).toBe("");
+    expect(container.innerHTML).toBe("");
+  });
+
+  // 消すと利用側のルーティングが飛ぶ
+  it("閉じてもパスは変えない", () => {
+    const { container } = mount();
+
+    act(() => {
+      closeButton(container).click();
+    });
+
+    expect(window.location.pathname).toBe("/some/page");
+  });
+
+  // 戻るボタンで #/studio に戻れると閉じた意味がない
+  it("閉じるときに履歴を増やさない", () => {
+    const { container } = mount();
+    const before = window.history.length;
+
+    act(() => {
+      closeButton(container).click();
+    });
+
+    expect(window.history.length).toBe(before);
+  });
+
+  it("閉じたあともう一度開ける", () => {
+    const { container } = mount();
+
+    act(() => {
+      closeButton(container).click();
+    });
+    at("#/studio");
+    act(() => {
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+
+    expect(container.querySelector("dialog")).not.toBeNull();
+    expect(shown).toBe(2);
+  });
+
+  it("閉じるボタンに読み上げ用の名前を付ける", () => {
+    const { container } = mount();
+
+    expect(closeButton(container).getAttribute("aria-label")).toContain("閉じる");
+  });
+});
