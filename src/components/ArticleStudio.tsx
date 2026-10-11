@@ -198,9 +198,11 @@ function StudioEditor({
   const byDateDesc = (a: Article, b: Article) =>
     a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
 
+  // 渡すのは previewArticle。draft を渡すと、一覧タブのカードだけ
+  // ドロップした画像が差し替わらず壊れて出る（spec §9）
   const listPreview = [
     ...[...articles].sort(byDateDesc).slice(0, LIST_PREVIEW_COUNT - 1),
-    draft,
+    previewArticle,
   ].sort(byDateDesc);
 
   // 何が出ていくのかを並べる。「よろしいですか」だけでは判断できない（spec §15）
@@ -387,7 +389,7 @@ function StudioEditor({
             imageBasePath={imageBasePath}
             // 遷移はしないので div で包む。編集中の記事だけ印を付けて見分ける。
             // slug で見分けると、既存記事と重なったとき両方に出てしまう
-            getArticleUrl={(article) => (article === draft ? DRAFT_MARK : "#")}
+            getArticleUrl={(article) => (article === previewArticle ? DRAFT_MARK : "#")}
             renderLink={(url, children, key) =>
               url === DRAFT_MARK ? (
                 // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない

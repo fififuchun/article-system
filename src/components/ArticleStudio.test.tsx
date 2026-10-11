@@ -1963,3 +1963,101 @@ describe("ArticleStudio — 投稿した後（spec §9 §15）", () => {
     expect(md().value).toBe(sampleMd);
   });
 });
+
+// spec §9: 仮登録した画像は md にファイル名で書かれ、プレビューだけ blob URL に
+// 差し替える。md の文字列しか見ていなかったため、描画が壊れていても通っていた
+describe("ArticleStudio — ドロップした画像のプレビュー（spec §9）", () => {
+  const blob = "blob:http://localhost/uuid-1";
+
+  beforeEach(() => {
+    localStorage.clear();
+    URL.createObjectURL = vi.fn(() => blob);
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  const dated = (date: string, thumbnail = "") =>
+    [
+      "---",
+      "title: 夏の更新",
+      `date: ${date}`,
+      `latestUpdate: ${date}`,
+      "staff: 田中 花子",
+      `thumbnail: ${thumbnail}`,
+      "---",
+      "",
+      "本文",
+    ].join("\n");
+
+  const drop = (name: string) => {
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [new File(["x"], name, { type: "image/png" })] },
+    });
+  };
+
+  it("本文に出る", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+
+    expect(
+      container.querySelector(".as-studio-preview .as-image img")?.getAttribute("src")
+    ).toBe(blob);
+  });
+
+  // imageBasePath を前置すると壊れたパスになる
+  it("imageBasePath を前置しない", () => {
+    const { container } = render(
+      <ArticleStudio articles={[]} imageBasePath="/imgs/" />
+    );
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+
+    expect(
+      container.querySelector(".as-studio-preview .as-image img")?.getAttribute("src")
+    ).toBe(blob);
+  });
+
+  it("サムネイルに指定しても出る", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+    // 画像欄に出ている名前をそのまま thumbnail に書く（spec §9 画像）
+    fireEvent.change(md(), {
+      target: { value: dated("2026-10-12", "2026/10-12/0_1.png") },
+    });
+
+    expect(container.querySelector(".as-thumbnail")?.getAttribute("src")).toBe(blob);
+  });
+
+  it("名前を書き換えても出続ける", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+    fireEvent.change(screen.getByLabelText("画像の名前"), {
+      target: { value: "2026/10-12/umi.png" },
+    });
+
+    expect(
+      container.querySelector(".as-studio-preview .as-image img")?.getAttribute("src")
+    ).toBe(blob);
+  });
+
+  it("一覧プレビューのカードにも出る", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+    fireEvent.change(md(), {
+      target: { value: dated("2026-10-12", "2026/10-12/0_1.png") },
+    });
+    fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
+
+    expect(container.querySelector(".as-card-image")?.getAttribute("src")).toBe(blob);
+  });
+});

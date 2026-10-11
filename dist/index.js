@@ -986,7 +986,7 @@ ${markdown}
   const byDateDesc = (a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
   const listPreview = [
     ...[...articles].sort(byDateDesc).slice(0, LIST_PREVIEW_COUNT - 1),
-    draft
+    previewArticle
   ].sort(byDateDesc);
   const publishConfirmText = (filename) => [
     `\u300C${draft.title}\u300D\u3092\u6295\u7A3F\u3057\u307E\u3059\u3002`,
@@ -1121,7 +1121,7 @@ ${markdown}
       {
         articles: listPreview,
         imageBasePath,
-        getArticleUrl: (article) => article === draft ? DRAFT_MARK : "#",
+        getArticleUrl: (article) => article === previewArticle ? DRAFT_MARK : "#",
         renderLink: (url, children, key) => url === DRAFT_MARK ? (
           // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
           /* @__PURE__ */ jsxs4("div", { className: "as-studio-draft-card", children: [
