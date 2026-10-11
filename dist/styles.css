@@ -427,6 +427,9 @@
   color: var(--as-color-muted);
   margin: 0 0 var(--as-space-sm);
 }
+:where(.as-studio-images-unsaved) {
+  color: var(--as-color-error);
+}
 :where(.as-studio-image-pending) {
   color: var(--as-color-error);
   white-space: nowrap;

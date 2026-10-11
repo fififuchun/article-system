@@ -126,6 +126,8 @@ function StudioEditor({
   const [placementPending, setPlacementPending] = useState(false);
   // コミットに失敗した。書いたものを持ち帰る手段を出す（spec §15）
   const [fallback, setFallback] = useState<{ needsToken: boolean } | null>(null);
+  // 画像をこの端末に保存できなかった。リロードで消えることを伝える（spec §9）
+  const [imagesUnsaved, setImagesUnsaved] = useState(false);
 
   // 入力のたびに保存する。ボタンを押す必要がないため保存忘れが原理的に起きない（spec §9）
   useEffect(() => {
@@ -165,7 +167,7 @@ function StudioEditor({
     void saveImages(
       storageKey,
       images.map(({ name, file }) => ({ name, blob: file }))
-    );
+    ).then((saved) => setImagesUnsaved(!saved));
   }, [storageKey, images]);
 
   // ArticleDetail をそのまま使うことで、プレビューと本番の一致が
@@ -395,6 +397,13 @@ function StudioEditor({
             {placementPending && (
               <p className="as-studio-images-note">
                 以下の画像を {basePath} に配置してください。md だけでは表示されません。
+              </p>
+            )}
+            {/* 黙って失敗すると、守られていると誤解したまま書き続ける（spec §9） */}
+            {imagesUnsaved && (
+              <p className="as-studio-images-note as-studio-images-unsaved">
+                この端末に画像を保存できませんでした。リロードすると消えるので、
+                投稿までこのタブを閉じないでください。
               </p>
             )}
             <ul>

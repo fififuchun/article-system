@@ -997,6 +997,7 @@ function StudioEditor({
   const [images, setImages] = useState2([]);
   const [placementPending, setPlacementPending] = useState2(false);
   const [fallback, setFallback] = useState2(null);
+  const [imagesUnsaved, setImagesUnsaved] = useState2(false);
   useEffect(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
@@ -1024,7 +1025,7 @@ function StudioEditor({
     void saveImages(
       storageKey,
       images.map(({ name, file }) => ({ name, blob: file }))
-    );
+    ).then((saved) => setImagesUnsaved(!saved));
   }, [storageKey, images]);
   const draft = buildDraftArticle(raw);
   const basePath = imageBasePath ?? "/article_imgs/";
@@ -1174,6 +1175,7 @@ ${markdown}
               basePath,
               " \u306B\u914D\u7F6E\u3057\u3066\u304F\u3060\u3055\u3044\u3002md \u3060\u3051\u3067\u306F\u8868\u793A\u3055\u308C\u307E\u305B\u3093\u3002"
             ] }),
+            imagesUnsaved && /* @__PURE__ */ jsx6("p", { className: "as-studio-images-note as-studio-images-unsaved", children: "\u3053\u306E\u7AEF\u672B\u306B\u753B\u50CF\u3092\u4FDD\u5B58\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u30EA\u30ED\u30FC\u30C9\u3059\u308B\u3068\u6D88\u3048\u308B\u306E\u3067\u3001 \u6295\u7A3F\u307E\u3067\u3053\u306E\u30BF\u30D6\u3092\u9589\u3058\u306A\u3044\u3067\u304F\u3060\u3055\u3044\u3002" }),
             /* @__PURE__ */ jsx6("ul", { children: images.map((image, index) => /* @__PURE__ */ jsxs4("li", { children: [
               /* @__PURE__ */ jsx6("img", { src: image.url, alt: "" }),
               /* @__PURE__ */ jsx6(

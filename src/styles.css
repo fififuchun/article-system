@@ -560,6 +560,11 @@
   margin: 0 0 var(--as-space-sm);
 }
 
+/* 保存できなかった注意。ただの案内と区別が付くようにする（spec §9） */
+:where(.as-studio-images-unsaved) {
+  color: var(--as-color-error);
+}
+
 :where(.as-studio-image-pending) {
   color: var(--as-color-error);
   white-space: nowrap;

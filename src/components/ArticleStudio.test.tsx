@@ -2340,3 +2340,63 @@ describe("ArticleStudio — 画像を捨てるとき（spec §9）", () => {
     expect(container.querySelector(".as-studio-images")).not.toBeNull();
   });
 });
+
+// spec §9: 黙って失敗すると「リロードしても残る」と誤解したまま書き続ける
+describe("ArticleStudio — 画像を保存できなかったとき（spec §9）", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  const drop = () => {
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [new File(["x"], "0_1.png", { type: "image/png" })] },
+    });
+  };
+
+  const mount = async () => {
+    const rendered = render(<ArticleStudio articles={[]} />);
+    fireEvent.change(md(), { target: { value: "---\ntitle: a\ndate: 2026-10-12\n---\n" } });
+    drop();
+    await act(async () => {});
+    return rendered;
+  };
+
+  it("保存できなければ注意を出す", async () => {
+    vi.mocked(saveImages).mockResolvedValue(false);
+
+    const { container } = await mount();
+
+    expect(container.querySelector(".as-studio-images-unsaved")).not.toBeNull();
+  });
+
+  it("リロードで消えることを書く", async () => {
+    vi.mocked(saveImages).mockResolvedValue(false);
+
+    const { container } = await mount();
+
+    expect(container.querySelector(".as-studio-images-unsaved")?.textContent).toContain(
+      "リロード"
+    );
+  });
+
+  it("保存できていれば出さない", async () => {
+    vi.mocked(saveImages).mockResolvedValue(true);
+
+    const { container } = await mount();
+
+    expect(container.querySelector(".as-studio-images-unsaved")).toBeNull();
+  });
+
+  it("画像が無ければ出さない", async () => {
+    vi.mocked(saveImages).mockResolvedValue(false);
+
+    const { container } = render(<ArticleStudio articles={[]} />);
+    await act(async () => {});
+
+    expect(container.querySelector(".as-studio-images-unsaved")).toBeNull();
+  });
+});
