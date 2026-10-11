@@ -536,6 +536,67 @@ function loadDraft(storageKey) {
   }
 }
 
+// src/studio/imageStorage.ts
+var DB_NAME = "as-studio-images";
+var STORE = "drafts";
+var PREFIX2 = "as-studio-images";
+function imagesKey(storageKey = "default") {
+  return `${PREFIX2}:${storageKey}`;
+}
+function open() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(STORE);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("IndexedDB \u304C\u30D6\u30ED\u30C3\u30AF\u3055\u308C\u3066\u3044\u307E\u3059\u3002"));
+  });
+}
+async function withStore(mode, run) {
+  const db = await open();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE, mode);
+      const request = run(transaction.objectStore(STORE));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+      transaction.onabort = () => reject(transaction.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+function isStoredImage(value) {
+  if (typeof value !== "object" || value === null) return false;
+  const image = value;
+  return typeof image.name === "string" && image.blob instanceof Blob;
+}
+async function saveImages(storageKey, images) {
+  try {
+    await withStore(
+      "readwrite",
+      (store) => store.put(
+        images.map(({ name, blob }) => ({ name, blob })),
+        imagesKey(storageKey)
+      )
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function loadImages(storageKey) {
+  try {
+    const stored = await withStore(
+      "readonly",
+      (store) => store.get(imagesKey(storageKey))
+    );
+    return Array.isArray(stored) ? stored.filter(isStoredImage) : [];
+  } catch {
+    return [];
+  }
+}
+
 // src/github/resolveConfig.ts
 function trimSlashes(path) {
   return path.replace(/^\/+|\/+$/g, "");
@@ -664,9 +725,9 @@ async function verifyContentsAccess(token, repo) {
 }
 
 // src/github/tokenStorage.ts
-var PREFIX2 = "as-github-token";
+var PREFIX3 = "as-github-token";
 function tokenKey(storageKey = "default") {
-  return `${PREFIX2}:${storageKey}`;
+  return `${PREFIX3}:${storageKey}`;
 }
 function saveToken(storageKey, token) {
   try {
@@ -939,6 +1000,32 @@ function StudioEditor({
   useEffect(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
+  useEffect(() => {
+    let cancelled = false;
+    void loadImages(storageKey).then((stored) => {
+      if (cancelled || stored.length === 0) return;
+      setImages(
+        (current) => (
+          // 戻している間にドロップされた分を消さない
+          current.length > 0 ? current : stored.map(({ name, blob }) => ({
+            name,
+            file: blob,
+            url: URL.createObjectURL(blob)
+          }))
+        )
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey]);
+  useEffect(() => {
+    if (images.length === 0) return;
+    void saveImages(
+      storageKey,
+      images.map(({ name, file }) => ({ name, blob: file }))
+    );
+  }, [storageKey, images]);
   const draft = buildDraftArticle(raw);
   const basePath = imageBasePath ?? "/article_imgs/";
   const probeNames = collectImageNames(draft.content, draft.thumbnail).filter(
@@ -1282,15 +1369,15 @@ function subscribeToHash(onChange) {
 import { jsx as jsx8, jsxs as jsxs5 } from "react/jsx-runtime";
 var DEFAULT_HASH_PATH = "#/studio";
 function ArticleStudioRoute({ hashPath = DEFAULT_HASH_PATH, ...props }) {
-  const [open, setOpen] = useState3(() => matchesHash(hashPath));
+  const [open2, setOpen] = useState3(() => matchesHash(hashPath));
   const dialog = useRef(null);
   useEffect2(() => subscribeToHash(() => setOpen(matchesHash(hashPath))), [hashPath]);
   useEffect2(() => {
-    if (open && dialog.current && !dialog.current.open) {
+    if (open2 && dialog.current && !dialog.current.open) {
       dialog.current.showModal();
     }
-  }, [open]);
-  if (!open) return null;
+  }, [open2]);
+  if (!open2) return null;
   return /* @__PURE__ */ jsxs5(
     "dialog",
     {

@@ -2,6 +2,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import { saveToken } from "../github/tokenStorage";
+import { loadImages, saveImages } from "../studio/imageStorage";
 import { verifyToken } from "../github/verifyToken";
 
 import {
@@ -11,6 +12,13 @@ import {
 } from "../github/commitArticle";
 import { GitHubApiError } from "../github/api";
 
+// IndexedDB は jsdom に無く、fake-indexeddb は jsdom の Blob を往復できない
+// （往復すると空の {} になる）。保存層そのものは imageStorage.test.ts が
+// node 環境で検証する。ここで見るのは受け渡し（spec §14）
+vi.mock("../studio/imageStorage", () => ({
+  loadImages: vi.fn(),
+  saveImages: vi.fn(),
+}));
 vi.mock("../github/verifyToken", () => ({ verifyToken: vi.fn() }));
 vi.mock("../github/commitArticle", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../github/commitArticle")>()),
@@ -22,6 +30,10 @@ import type { Article } from "../types";
 afterEach(cleanup);
 beforeEach(() => {
   localStorage.clear();
+  vi.mocked(loadImages).mockReset();
+  vi.mocked(loadImages).mockResolvedValue([]);
+  vi.mocked(saveImages).mockReset();
+  vi.mocked(saveImages).mockResolvedValue(true);
   // jsdom は img.src を設定しても読み込みイベントを発火しない。
   // 画像は「読み込めた」ものとして扱い、存在確認そのものは検証しない
   vi.stubGlobal(
@@ -2059,5 +2071,176 @@ describe("ArticleStudio — ドロップした画像のプレビュー（spec §
     fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
 
     expect(container.querySelector(".as-card-image")?.getAttribute("src")).toBe(blob);
+  });
+});
+
+// spec §9: blob URL はリロードで切れる。実体を IndexedDB から戻す。
+// 戻らないと見えないだけでなく、存在確認が 404 になって投稿も止まる
+describe("ArticleStudio — 画像がリロードでも残る（spec §9）", () => {
+  const blob = "blob:http://localhost/u1";
+
+  beforeEach(() => {
+    localStorage.clear();
+    URL.createObjectURL = vi.fn(() => blob);
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  const body = [
+    "---",
+    "title: 夏の更新",
+    "date: 2026-10-12",
+    "latestUpdate: 2026-10-12",
+    "staff: 田中 花子",
+    "thumbnail: 2026/10-12/0_1.png",
+    "---",
+    "",
+    "![](2026/10-12/0_1.png)",
+  ].join("\n");
+
+  const drop = (name: string) => {
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [new File(["x"], name, { type: "image/png" })] },
+    });
+  };
+
+  /** リロード相当。下書きは localStorage、画像は IndexedDB から戻る */
+  const reload = async () => {
+    localStorage.setItem("as-studio-draft:default", body);
+    vi.mocked(loadImages).mockResolvedValue([
+      { name: "2026/10-12/0_1.png", blob: new Blob(["x"], { type: "image/png" }) },
+    ]);
+
+    const rendered = render(<ArticleStudio articles={[]} />);
+    // 復帰は非同期
+    await act(async () => {});
+    return rendered;
+  };
+
+  const savedNames = () => {
+    const calls = vi.mocked(saveImages).mock.calls;
+    return calls[calls.length - 1]?.[1].map((image) => image.name);
+  };
+
+  it("ドロップすると保存される", async () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: body } });
+    drop("0_1.png");
+    await act(async () => {});
+
+    expect(savedNames()).toEqual(["2026/10-12/0_1.png"]);
+  });
+
+  // 名前だけ保存しても復帰できない。実体をそのまま渡す
+  it("実体をそのまま渡す", async () => {
+    const file = new File(["x"], "0_1.png", { type: "image/png" });
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: body } });
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [file] },
+    });
+    await act(async () => {});
+
+    const calls = vi.mocked(saveImages).mock.calls;
+    expect(calls[calls.length - 1][1][0].blob).toBe(file);
+  });
+
+  it("名前を書き換えると保存も追随する", async () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: body } });
+    drop("0_1.png");
+    fireEvent.change(screen.getByLabelText("画像の名前"), {
+      target: { value: "2026/10-12/umi.png" },
+    });
+    await act(async () => {});
+
+    expect(savedNames()).toEqual(["2026/10-12/umi.png"]);
+  });
+
+  it("storageKey で保存先を分ける", async () => {
+    render(<ArticleStudio articles={[]} storageKey="my-blog" />);
+
+    fireEvent.change(md(), { target: { value: body } });
+    drop("0_1.png");
+    await act(async () => {});
+
+    expect(vi.mocked(saveImages).mock.calls[0][0]).toBe("my-blog");
+    expect(vi.mocked(loadImages)).toHaveBeenCalledWith("my-blog");
+  });
+
+  it("リロードすると画像欄に戻る", async () => {
+    await reload();
+
+    expect((screen.getByLabelText("画像の名前") as HTMLInputElement).value).toBe(
+      "2026/10-12/0_1.png"
+    );
+  });
+
+  it("戻した画像がプレビューに出る", async () => {
+    const { container } = await reload();
+
+    expect(
+      container.querySelector(".as-studio-preview .as-image img")?.getAttribute("src")
+    ).toBe(blob);
+  });
+
+  // 戻らないと「画像が見つかりません」で投稿が止まる
+  it("戻した画像は存在確認の対象にならない", async () => {
+    const probed: string[] = [];
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(value: string) {
+          probed.push(value);
+          // 実体はサーバーに無い
+          queueMicrotask(() => this.onerror?.());
+        }
+      }
+    );
+
+    const { container } = await reload();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+
+    expect(probed.some((src) => src.includes("0_1.png"))).toBe(false);
+    expect(container.querySelector(".as-studio-issues")).toBeNull();
+  });
+
+  // 空で上書きすると、戻る前に保存済みが消える
+  it("開いただけでは保存しない", async () => {
+    render(<ArticleStudio articles={[]} />);
+    await act(async () => {});
+
+    expect(vi.mocked(saveImages)).not.toHaveBeenCalled();
+  });
+
+  // 戻している間にドロップされた分を消さない
+  it("復帰より先にドロップされていたら上書きしない", async () => {
+    let resolveLoad: (images: { name: string; blob: Blob }[]) => void = () => {};
+    vi.mocked(loadImages).mockReturnValue(
+      new Promise((resolve) => {
+        resolveLoad = resolve;
+      })
+    );
+
+    render(<ArticleStudio articles={[]} />);
+    fireEvent.change(md(), { target: { value: body } });
+    drop("new.png");
+    await act(async () => {
+      resolveLoad([{ name: "old.png", blob: new Blob(["x"]) }]);
+    });
+
+    expect(
+      Array.from(document.querySelectorAll<HTMLInputElement>("[aria-label='画像の名前']")).map(
+        (input) => input.value
+      )
+    ).toEqual(["2026/10-12/new.png"]);
   });
 });

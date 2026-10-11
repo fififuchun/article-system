@@ -20,6 +20,7 @@ import { buildImagePath } from "../studio/buildImagePath";
 import { collectImageNames } from "../studio/collectImageNames";
 import { findMissingImages } from "../studio/probeImages";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
+import { loadImages, saveImages } from "../studio/imageStorage";
 import { resolveGitHubConfig } from "../github/resolveConfig";
 import { useGitHubToken } from "../github/useGitHubToken";
 import { commitArticle, type CommitImage } from "../github/commitArticle";
@@ -29,9 +30,10 @@ import { GitHubApiError } from "../github/api";
 interface DroppedImage {
   /** md に書かれる名前。Studio 上で変更できる */
   name: string;
-  /** ブラウザ内だけの一時URL。リロードで無効になる */
+  /** ブラウザ内だけの一時URL。リロードで作り直す */
   url: string;
-  file: File;
+  /** 実体。IndexedDB から戻したものは File ではなく Blob になる（spec §9） */
+  file: Blob;
 }
 
 /** fine-grained PAT の発行ページ（spec §15） */
@@ -129,6 +131,42 @@ function StudioEditor({
   useEffect(() => {
     saveDraft(storageKey, raw);
   }, [storageKey, raw]);
+
+  // blob URL はリロードで切れるので、実体を IndexedDB から戻す（spec §9）。
+  // 戻さないと本文に名前だけが残り、存在確認が 404 になって投稿も止まる
+  useEffect(() => {
+    let cancelled = false;
+
+    void loadImages(storageKey).then((stored) => {
+      if (cancelled || stored.length === 0) return;
+
+      setImages((current) =>
+        // 戻している間にドロップされた分を消さない
+        current.length > 0
+          ? current
+          : stored.map(({ name, blob }) => ({
+              name,
+              file: blob,
+              url: URL.createObjectURL(blob),
+            }))
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey]);
+
+  // 空のときは書かない。開いた直後に保存済みを消してしまう。
+  // 捨てるときは投稿と「新しく書く」から明示的に呼ぶ
+  useEffect(() => {
+    if (images.length === 0) return;
+
+    void saveImages(
+      storageKey,
+      images.map(({ name, file }) => ({ name, blob: file }))
+    );
+  }, [storageKey, images]);
 
   // ArticleDetail をそのまま使うことで、プレビューと本番の一致が
   // 構造的に保証される（spec §9）
