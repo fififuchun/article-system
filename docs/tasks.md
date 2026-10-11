@@ -299,4 +299,4 @@ react-markdown の既定の `urlTransform` は http / https / mailto / tel 以�
 - [x] 本文の `blob:` 画像を通す（`img` の `src` だけ。リンクの `href` は既定のまま。テスト → 実装 → グリーン）
 - [x] ドロップした画像がプレビューに出ることを Studio のテストで固定する（テスト → グリーン）
 - [x] 一覧プレビューにも差し替えた記事を渡す（`draft` を渡していたので、一覧タブのカードだけドロップした画像が壊れたまま出ていた。テスト → 実装 → グリーン）
-- [ ] spec と README に書く
+- [x] spec と README に書く
