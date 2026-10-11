@@ -779,7 +779,7 @@ var PermissionError = class extends Error {
 var NotFastForwardError = class extends Error {
   constructor(branch) {
     super(
-      `${branch} \u304C\u9032\u3093\u3067\u3044\u308B\u305F\u3081\u53CD\u6620\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u4F55\u3082\u66F8\u304D\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u3082\u3046\u4E00\u5EA6\u300C\u672C\u756A\u30B3\u30DF\u30C3\u30C8\u300D\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
+      `${branch} \u304C\u9032\u3093\u3067\u3044\u308B\u305F\u3081\u53CD\u6620\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u4F55\u3082\u66F8\u304D\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u3082\u3046\u4E00\u5EA6\u300C\u6295\u7A3F\u300D\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
     );
     this.name = "NotFastForwardError";
   }
@@ -1124,7 +1124,8 @@ function GitHubGate({ github, ...props }) {
       {
         ...props,
         publisher: {
-          label: "\u672C\u756A\u30B3\u30DF\u30C3\u30C8",
+          // 「コミット」では止まって見える。実際はプッシュまで済んで公開される
+          label: "\u6295\u7A3F",
           reset: auth.clear,
           commit: async ({ filename, markdown, title, images }) => {
             try {

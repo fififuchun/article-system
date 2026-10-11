@@ -29,7 +29,7 @@ export default function SettingsPage({ repo, onChange }: Props) {
       <h2>GitHub 連携の設定</h2>
 
       <p className="github-warning">
-        ここにリポジトリを設定すると、執筆画面の「本番コミット」が
+        ここにリポジトリを設定すると、執筆画面の「投稿」が
         <strong>本物のリポジトリに書き込みます。</strong>
         試すだけなら、捨ててよいリポジトリを作ってから使ってください。
       </p>

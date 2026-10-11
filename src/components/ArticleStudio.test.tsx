@@ -1016,8 +1016,8 @@ describe("ArticleStudio — github を渡したとき（spec §15）", () => {
   });
 });
 
-// spec §15: トークンがあるとき、本番はダウンロードではなくコミットになる
-describe("ArticleStudio — 本番コミット（spec §15）", () => {
+// spec §15: トークンがあるとき、本番はダウンロードではなく投稿（プッシュまで）になる
+describe("ArticleStudio — 投稿（spec §15）", () => {
   const github = { repo: "me/blog" };
 
   beforeEach(() => {
@@ -1031,17 +1031,18 @@ describe("ArticleStudio — 本番コミット（spec §15）", () => {
     URL.revokeObjectURL = vi.fn();
   });
 
-  const publishButton = () => screen.getByRole("button", { name: /本番/ });
+  const publishButton = () => screen.getByRole("button", { name: /投稿/ });
   const publish = async () => {
     await act(async () => {
       fireEvent.click(publishButton());
     });
   };
 
-  it("本番ボタンの文言がコミットに変わる", () => {
+  // 「コミット」ではプッシュまで済むことが伝わらない（spec §15）
+  it("ボタンの文言が投稿に変わる", () => {
     render(<ArticleStudio articles={[]} github={github} />);
 
-    expect(publishButton().textContent).toBe("本番コミット");
+    expect(publishButton().textContent).toBe("投稿");
   });
 
   // 下書きはコミットしない（spec §15）
@@ -1147,7 +1148,7 @@ describe("ArticleStudio — 衝突は最新ツリーで見る（spec §15）", (
 
   const publish = async () => {
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+      fireEvent.click(screen.getByRole("button", { name: /投稿/ }));
     });
   };
 
@@ -1229,7 +1230,7 @@ describe("ArticleStudio — コミットに失敗したとき（spec §15）", (
 
   const publish = async () => {
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+      fireEvent.click(screen.getByRole("button", { name: /投稿/ }));
     });
   };
 
@@ -1331,7 +1332,7 @@ describe("ArticleStudio — トークンが失効したとき（spec §15）", (
 
   const publish = async () => {
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+      fireEvent.click(screen.getByRole("button", { name: /投稿/ }));
     });
   };
 
@@ -1421,7 +1422,7 @@ describe("ArticleStudio — コミット後の画像の扱い（spec §15）", (
 
   const publish = async () => {
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+      fireEvent.click(screen.getByRole("button", { name: /投稿|本番/ }));
     });
   };
 

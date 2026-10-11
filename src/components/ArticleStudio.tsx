@@ -403,7 +403,8 @@ function GitHubGate({ github, ...props }: Props & { github: GitHubConfig }) {
       <StudioEditor
         {...props}
         publisher={{
-          label: "本番コミット",
+          // 「コミット」では止まって見える。実際はプッシュまで済んで公開される
+          label: "投稿",
           reset: auth.clear,
           commit: async ({ filename, markdown, title, images }) => {
             try {

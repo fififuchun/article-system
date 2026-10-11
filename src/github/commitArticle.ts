@@ -77,7 +77,7 @@ export class PermissionError extends Error {
 export class NotFastForwardError extends Error {
   constructor(branch: string) {
     super(
-      `${branch} が進んでいるため反映できませんでした。何も書き込まれていません。もう一度「本番コミット」を押してください。`
+      `${branch} が進んでいるため反映できませんでした。何も書き込まれていません。もう一度「投稿」を押してください。`
     );
     this.name = "NotFastForwardError";
   }
