@@ -978,6 +978,14 @@ ${markdown}
     ...[...articles].sort(byDateDesc).slice(0, LIST_PREVIEW_COUNT - 1),
     draft
   ].sort(byDateDesc);
+  const publishConfirmText = (filename) => [
+    `\u300C${draft.title}\u300D\u3092\u6295\u7A3F\u3057\u307E\u3059\u3002`,
+    "",
+    `\u30D5\u30A1\u30A4\u30EB: ${filename}`,
+    `\u753B\u50CF: ${images.length} \u4EF6`,
+    "",
+    "\u6295\u7A3F\u3059\u308B\u3068\u30EA\u30DD\u30B8\u30C8\u30EA\u306B\u5165\u3063\u3066\u516C\u958B\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u753B\u9762\u304B\u3089\u306F\u53D6\u308A\u6D88\u305B\u307E\u305B\u3093\u3002"
+  ].join("\n");
   const downloadDraft = () => {
     downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
   };
@@ -992,6 +1000,7 @@ ${markdown}
     setIssues(found);
     if (found.length > 0) return;
     if (publisher) {
+      if (!window.confirm(publishConfirmText(filename))) return;
       const result = await publisher.commit({
         filename,
         markdown: raw,

@@ -1026,6 +1026,8 @@ describe("ArticleStudio — 投稿（spec §15）", () => {
     saveToken(undefined, { accessToken: "github_pat_secret" });
     vi.mocked(verifyToken).mockResolvedValue(undefined);
     vi.mocked(commitArticle).mockReset();
+    // 確認は別の describe で検証する。ここでは通す
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.mocked(commitArticle).mockResolvedValue("commit-new");
     URL.createObjectURL = vi.fn(() => "blob:stub");
     URL.revokeObjectURL = vi.fn();
@@ -1139,6 +1141,8 @@ describe("ArticleStudio — 衝突は最新ツリーで見る（spec §15）", (
     saveToken(undefined, { accessToken: "github_pat_secret" });
     vi.mocked(verifyToken).mockResolvedValue(undefined);
     vi.mocked(commitArticle).mockReset();
+    // 確認は別の describe で検証する。ここでは通す
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     URL.createObjectURL = vi.fn(() => "blob:stub");
     URL.revokeObjectURL = vi.fn();
   });
@@ -1215,6 +1219,8 @@ describe("ArticleStudio — コミットに失敗したとき（spec §15）", (
     saveToken(undefined, { accessToken: "github_pat_secret" });
     vi.mocked(verifyToken).mockResolvedValue(undefined);
     vi.mocked(commitArticle).mockReset();
+    // 確認は別の describe で検証する。ここでは通す
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     URL.createObjectURL = vi.fn(() => "blob:stub");
     URL.revokeObjectURL = vi.fn();
 
@@ -1323,6 +1329,8 @@ describe("ArticleStudio — トークンが失効したとき（spec §15）", (
     saveToken(undefined, { accessToken: "github_pat_secret" });
     vi.mocked(verifyToken).mockResolvedValue(undefined);
     vi.mocked(commitArticle).mockReset();
+    // 確認は別の describe で検証する。ここでは通す
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.mocked(commitArticle).mockRejectedValue(
       new GitHubApiError("Bad credentials", "unauthorized", 401)
     );
@@ -1415,6 +1423,8 @@ describe("ArticleStudio — コミット後の画像の扱い（spec §15）", (
     saveToken(undefined, { accessToken: "github_pat_secret" });
     vi.mocked(verifyToken).mockResolvedValue(undefined);
     vi.mocked(commitArticle).mockReset();
+    // 確認は別の describe で検証する。ここでは通す
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.mocked(commitArticle).mockResolvedValue("commit-new");
     URL.createObjectURL = vi.fn(() => "blob:stub");
     URL.revokeObjectURL = vi.fn();
@@ -1683,5 +1693,143 @@ describe("ArticleStudio — 画像を日付のフォルダに入れる", () => {
     });
 
     expect(md().value).toContain("![](2026/10-12/海.png)");
+  });
+});
+
+// spec §15: 投稿は公開そのもので、この画面に取り消す手段が無い。
+// 押し間違いを止める最後の砦なので、検証を通った後に必ず挟む
+describe("ArticleStudio — 投稿の確認（spec §15）", () => {
+  const github = { repo: "me/blog" };
+
+  let confirmed: string[];
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    vi.mocked(commitArticle).mockResolvedValue("commit-new");
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+    confirmed = [];
+  });
+
+  const answer = (reply: boolean) => {
+    const spy = vi.spyOn(window, "confirm");
+    // 他の describe が貼った spy が残っていると呼び出し回数が積み上がる
+    spy.mockReset();
+    spy.mockImplementation((message) => {
+      confirmed.push(String(message));
+      return reply;
+    });
+    return spy;
+  };
+
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /投稿/ }));
+    });
+  };
+
+  it("確認を出す", async () => {
+    const spy = answer(true);
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(spy).toHaveBeenCalledOnce();
+    spy.mockRestore();
+  });
+
+  it("断ると投稿しない", async () => {
+    const spy = answer(false);
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(vi.mocked(commitArticle)).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("承諾すると投稿する", async () => {
+    const spy = answer(true);
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(vi.mocked(commitArticle)).toHaveBeenCalledOnce();
+    spy.mockRestore();
+  });
+
+  // 断ったのに消えていたら、確認の意味が無い
+  it("断っても編集内容は残る", async () => {
+    const spy = answer(false);
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(md().value).toBe(sampleMd);
+    spy.mockRestore();
+  });
+
+  // 「よろしいですか」だけでは何が出ていくのか分からない
+  it("何が出ていくのかを確認の文に並べる", async () => {
+    const spy = answer(false);
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(confirmed[0]).toContain("夏の更新");
+    expect(confirmed[0]).toContain("2026-08-23-夏の更新.md");
+    expect(confirmed[0]).toContain("取り消せません");
+    spy.mockRestore();
+  });
+
+  it("画像の件数を確認の文に出す", async () => {
+    const spy = answer(false);
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [new File(["x"], "art_0.webp", { type: "image/webp" })] },
+    });
+    await publish();
+
+    expect(confirmed[0]).toContain("1 件");
+    spy.mockRestore();
+  });
+
+  // 直すところがあるのに確認を出されても判断できない（spec §9）
+  it("検証で止まるときは確認を出さない", async () => {
+    const spy = answer(true);
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: "---\ntitle:\n---\n\n本文" } });
+    await publish();
+
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  // ダウンロードは取り返しがつく。確認で止めない（spec §9）
+  it("github を渡さなければ確認を出さない", async () => {
+    const spy = answer(true);
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

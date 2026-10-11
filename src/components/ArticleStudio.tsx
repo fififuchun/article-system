@@ -200,6 +200,17 @@ function StudioEditor({
     draft,
   ].sort(byDateDesc);
 
+  // 何が出ていくのかを並べる。「よろしいですか」だけでは判断できない（spec §15）
+  const publishConfirmText = (filename: string) =>
+    [
+      `「${draft.title}」を投稿します。`,
+      "",
+      `ファイル: ${filename}`,
+      `画像: ${images.length} 件`,
+      "",
+      "投稿するとリポジトリに入って公開されます。この画面からは取り消せません。",
+    ].join("\n");
+
   // 下書きは検証せずそのまま出す。押した後も編集を続けられる（spec §9）
   const downloadDraft = () => {
     downloadMarkdown(buildFilename(draft.date, draft.title, { draft: true }), raw);
@@ -221,6 +232,9 @@ function StudioEditor({
 
     // github を渡された場合はダウンロードせずコミットする（spec §15）
     if (publisher) {
+      // 投稿は公開そのもの。この画面に取り消す手段は無い（spec §15）
+      if (!window.confirm(publishConfirmText(filename))) return;
+
       const result = await publisher.commit({
         filename,
         markdown: raw,
