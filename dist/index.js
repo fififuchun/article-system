@@ -193,7 +193,7 @@ function createArticles(rawFiles) {
 }
 
 // src/components/ArticleDetail.tsx
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 
@@ -235,6 +235,7 @@ function ClockIcon({ className }) {
 
 // src/components/ArticleDetail.tsx
 import { jsx as jsx2, jsxs } from "react/jsx-runtime";
+var allowBlobImages = (url, key, node) => key === "src" && node.tagName === "img" && url.startsWith("blob:") ? url : defaultUrlTransform(url);
 function ArticleDetail({
   article,
   imageBasePath = "/article_imgs/",
@@ -291,7 +292,15 @@ function ArticleDetail({
         className: cx("as-thumbnail", classNames.thumbnail)
       }
     ),
-    /* @__PURE__ */ jsx2(ReactMarkdown, { remarkPlugins: [remarkGfm, remarkBreaks], components: mdComponents, children: article.content }),
+    /* @__PURE__ */ jsx2(
+      ReactMarkdown,
+      {
+        remarkPlugins: [remarkGfm, remarkBreaks],
+        components: mdComponents,
+        urlTransform: allowBlobImages,
+        children: article.content
+      }
+    ),
     /* @__PURE__ */ jsxs("p", { className: cx("as-footer", classNames.footer), children: [
       "\u62C5\u5F53\uFF1A",
       article.staff

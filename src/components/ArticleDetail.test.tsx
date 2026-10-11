@@ -362,3 +362,60 @@ describe("ArticleDetail — 文中の画像（GitHub 準拠）", () => {
     expect(bodyImage(container)?.closest("p")).toBeNull();
   });
 });
+
+// spec §9: Studio はプレビューだけ blob URL に差し替える。react-markdown の
+// 既定の urlTransform は http / https / mailto / tel 以外を空文字にするため、
+// 何もしないとドロップした画像が本文に出ない
+describe("ArticleDetail — blob: の画像", () => {
+  const blob = "blob:http://localhost/uuid-1";
+
+  const bodyImageSrc = (container: HTMLElement) =>
+    container.querySelector(".as-image img")?.getAttribute("src");
+
+  it("本文の blob: 画像をそのまま出す", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: `![](${blob})` }} />
+    );
+
+    expect(bodyImageSrc(container)).toBe(blob);
+  });
+
+  it("本文の blob: 画像に imageBasePath を前置しない", () => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, content: `![](${blob})` }}
+        imageBasePath="/imgs/"
+      />
+    );
+
+    expect(bodyImageSrc(container)).toBe(blob);
+  });
+
+  it("テキストと混在していても出す", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: `本文テキスト ![](${blob})` }} />
+    );
+
+    expect(container.querySelector("p img")?.getAttribute("src")).toBe(blob);
+  });
+
+  // 通すのは画像の src だけ。href まで通すと本文からスクリプトが走る
+  it("リンクの javascript: は通さない", () => {
+    const { container } = render(
+      <ArticleDetail
+        article={{ ...article, content: "[押す](javascript:alert(1))" }}
+      />
+    );
+
+    expect(container.querySelector("a")?.getAttribute("href")).toBe("");
+  });
+
+  it("画像の javascript: も通さない", () => {
+    const { container } = render(
+      <ArticleDetail article={{ ...article, content: "![](javascript:alert(1))" }} />
+    );
+
+    // 空文字に潰され、imageBasePath だけが残る
+    expect(bodyImageSrc(container)).toBe("/article_imgs/");
+  });
+});

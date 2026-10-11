@@ -1,13 +1,28 @@
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import type { Components } from "react-markdown";
+import type { Components, UrlTransform } from "react-markdown";
 import type { Article, ArticleDetailClassNames } from "../types";
 import { cx } from "../cx";
 import { formatDate } from "../formatDate";
 import { resolveImageSrc } from "../resolveImageSrc";
 
 import { ClockIcon } from "../icons/ClockIcon";
+
+/**
+ * `blob:` の画像を通す（spec §7-3）。
+ *
+ * react-markdown の既定は http / https / mailto / tel 以外のプロトコルを
+ * **空文字にします**。Studio がプレビューで差し替える blob URL もこれに
+ * 当たるため、何もしないとドロップした画像が本文に出ません。
+ *
+ * 通すのは **画像の `src` だけ**です。リンクの `href` は既定のまま潰します。
+ * `javascript:` を通すと、本文を書けるだけでスクリプトを走らせられます。
+ */
+const allowBlobImages: UrlTransform = (url, key, node) =>
+  key === "src" && node.tagName === "img" && url.startsWith("blob:")
+    ? url
+    : defaultUrlTransform(url);
 
 interface Props {
   article: Article;
@@ -74,7 +89,11 @@ export function ArticleDetail({
         />
       )}
 
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={mdComponents}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkBreaks]}
+        components={mdComponents}
+        urlTransform={allowBlobImages}
+      >
         {article.content}
       </ReactMarkdown>
 
