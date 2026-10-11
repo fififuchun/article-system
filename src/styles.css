@@ -445,6 +445,15 @@
   cursor: pointer;
 }
 
+/* 左半分を3つで埋める。中身の幅のままだと「新しく書く」の右に隙間が開き、
+   最後のボタンの罫線が宙に浮く。埋めると罫線がペイン間の罫線と一直線になる。
+   basis は auto のまま。余りだけを等分するので、文言の長さの差は保たれる */
+:where(.as-studio-actions button) {
+  flex: 1 1 auto;
+  /* 等分で詰まっても折り返さない。帯の高さが揺れる */
+  white-space: nowrap;
+}
+
 /* 右半分を2等分し、詳細と一覧が同じ幅で並ぶようにする */
 :where(.as-studio-tabs button) {
   flex: 1;
