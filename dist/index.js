@@ -917,7 +917,8 @@ function StudioEditor({
   classNames = {},
   articleClassNames
 }) {
-  const existingSlugs = articles.map((article) => article.slug);
+  const [publishedSlugs, setPublishedSlugs] = useState2([]);
+  const existingSlugs = [...articles.map((article) => article.slug), ...publishedSlugs];
   const [raw, setRaw] = useState2(
     () => loadDraft(storageKey) ?? buildTemplate(/* @__PURE__ */ new Date(), existingSlugs)
   );
@@ -1009,6 +1010,11 @@ ${markdown}
       });
       if (result.ok) {
         setFallback(null);
+        setPublishedSlugs((current) => [...current, draft.slug]);
+        setRaw(buildTemplate(/* @__PURE__ */ new Date(), [...existingSlugs, draft.slug]));
+        setIssues([]);
+        setImages([]);
+        setPlacementPending(false);
         return;
       }
       setIssues([{ level: "error", message: result.message }]);

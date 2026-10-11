@@ -1103,14 +1103,14 @@ describe("ArticleStudio — 投稿（spec §15）", () => {
     expect(vi.mocked(commitArticle)).not.toHaveBeenCalled();
   });
 
-  // 消したいときは消せばよい（spec §9）
-  it("コミットしても編集内容はそのまま残る", async () => {
+  // 投稿が済んだら次の記事に移る（詳細は「投稿した後」の describe）
+  it("投稿すると雛形に戻る", async () => {
     render(<ArticleStudio articles={[]} github={github} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     await publish();
 
-    expect(textarea().value).toBe(sampleMd);
+    expect(textarea().value).not.toBe(sampleMd);
   });
 
   it("コミットのときは md をダウンロードしない", async () => {
@@ -1831,5 +1831,135 @@ describe("ArticleStudio — 投稿の確認（spec §15）", () => {
 
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+});
+
+// spec §9: 投稿が済んだ記事を残しておくと、次の記事を書くたびに
+// 手で消すことになる。失敗したときだけは残す
+describe("ArticleStudio — 投稿した後（spec §9 §15）", () => {
+  const github = { repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    vi.mocked(commitArticle).mockResolvedValue("commit-new");
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  // toISOString() は UTC なのでローカル日付とずれる
+  const today = (() => {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${now.getFullYear()}-${month}-${day}`;
+  })();
+
+  const filled = (slug: string) =>
+    [
+      "---",
+      "title: 今日の記事",
+      `slug: ${slug}`,
+      `date: ${today}`,
+      `latestUpdate: ${today}`,
+      "staff: 田中 花子",
+      "thumbnail: art_0.webp",
+      "---",
+      "",
+      "本文",
+    ].join("\n");
+
+  const publish = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /投稿/ }));
+    });
+  };
+
+  it("雛形に戻る", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(md().value).toContain("title:\n");
+    expect(md().value).toContain(`date: ${today}`);
+    expect(md().value).not.toContain("夏の更新");
+  });
+
+  // 投稿済みの画像を持ち越すと、次のコミットで同名衝突になる（spec §15）
+  it("画像欄が空になる", async () => {
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [new File(["x"], "art_0.webp", { type: "image/webp" })] },
+    });
+    await publish();
+
+    expect(container.querySelector(".as-studio-images")).toBeNull();
+  });
+
+  // articles はビルド時のスナップショットなので、投稿した記事は載っていない。
+  // 数えないと同じ日の2本目が同じ URL になる（spec §3）
+  it("同じ日の2本目には連番が付く", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: filled(today) } });
+    await publish();
+
+    expect(md().value).toContain(`slug: ${today}-2`);
+  });
+
+  it("3本目には -3 が付く", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: filled(today) } });
+    await publish();
+    fireEvent.change(md(), { target: { value: filled(`${today}-2`) } });
+    await publish();
+
+    expect(md().value).toContain(`slug: ${today}-3`);
+  });
+
+  // 失敗したのに消えていたら書いたものが戻らない（spec §15）
+  it("投稿に失敗したら編集内容を残す", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(new Error("通信できませんでした。"));
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await publish();
+
+    expect(md().value).toBe(sampleMd);
+  });
+
+  it("投稿に失敗したら画像も残す", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(new Error("通信できませんでした。"));
+    const { container } = render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [new File(["x"], "art_0.webp", { type: "image/webp" })] },
+    });
+    await publish();
+
+    expect(container.querySelector(".as-studio-images")).not.toBeNull();
+  });
+
+  // ダウンロードは「置いてください」の案内が要るので畳まない（spec §9）
+  it("github を渡さなければ編集内容はそのまま残る", async () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /本番/ }));
+    });
+
+    expect(md().value).toBe(sampleMd);
   });
 });

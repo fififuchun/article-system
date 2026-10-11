@@ -110,7 +110,10 @@ function StudioEditor({
   // 復帰する下書きがあればテンプレートを出さない。出すと保存内容を上書きしてしまう。
   // ?? を使うのは空文字を「下書きなし」と扱わないため（spec §9）
   // 既存の slug を渡すことで、同じ日の2本目に連番が付く（spec §3）
-  const existingSlugs = articles.map((article) => article.slug);
+  // articles はビルド時のスナップショット。このセッションで投稿した記事は
+  // 載っていないので、連番の計算には自分で覚えておいた分を足す（spec §3）
+  const [publishedSlugs, setPublishedSlugs] = useState<string[]>([]);
+  const existingSlugs = [...articles.map((article) => article.slug), ...publishedSlugs];
   const [raw, setRaw] = useState(
     () => loadDraft(storageKey) ?? buildTemplate(new Date(), existingSlugs)
   );
@@ -244,6 +247,13 @@ function StudioEditor({
 
       if (result.ok) {
         setFallback(null);
+        // 投稿が済んだ記事を残すと、次を書くたびに手で消すことになる（spec §9）。
+        // 画像を持ち越すと次のコミットで同名衝突になる（spec §15）
+        setPublishedSlugs((current) => [...current, draft.slug]);
+        setRaw(buildTemplate(new Date(), [...existingSlugs, draft.slug]));
+        setIssues([]);
+        setImages([]);
+        setPlacementPending(false);
         return;
       }
 
