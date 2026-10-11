@@ -590,22 +590,34 @@
   background: var(--as-color-surface);
   color: var(--as-color-text);
   overflow: auto;
-  position: relative;
-  --as-studio-header-top: 0px;
+  display: flex;
+  flex-direction: column;
+  --as-studio-close-size: 2.5rem;
+  --as-studio-header-top: var(--as-studio-close-size);
+}
+:where(.as-studio-dialog-bar) {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  height: var(--as-studio-close-size);
+  background: var(--as-color-surface);
+  border-bottom: 1px solid var(--as-color-border);
+}
+:where(.as-studio-dialog) > :where(.as-studio, .as-studio-login) {
+  flex: 1 0 auto;
 }
 :where(.as-studio-dialog)::backdrop {
   background: rgb(0 0 0 / 0.5);
 }
 :where(.as-studio-dialog-close) {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--as-studio-close-size);
+  height: 100%;
   padding: 0;
   background: none;
   border: none;
@@ -616,10 +628,4 @@
 :where(.as-studio-dialog-close svg) {
   width: 1rem;
   height: 1rem;
-}
-:where(.as-studio-dialog .as-studio) {
-  min-height: 100dvh;
-}
-:where(.as-studio-dialog .as-studio-tabs) {
-  padding-right: 2.5rem;
 }

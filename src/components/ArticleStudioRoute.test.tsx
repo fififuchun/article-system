@@ -313,3 +313,31 @@ describe("ArticleStudioRoute — classNames", () => {
     );
   });
 });
+
+// spec §9 設置方法: 操作帯に重ねると、帯の高さが変わるたびにボタンが
+// はみ出したり欠けたりする。重ねずに自分の帯を持たせる
+describe("ArticleStudioRoute — 閉じるボタンの置き場所", () => {
+  beforeEach(() => at("#/studio"));
+
+  it("専用の帯の中に置く", () => {
+    const { container } = mount();
+
+    expect(
+      container.querySelector(".as-studio-dialog-bar .as-studio-dialog-close")
+    ).not.toBeNull();
+  });
+
+  it("Studio の中には置かない", () => {
+    const { container } = mount();
+
+    expect(container.querySelector(".as-studio .as-studio-dialog-close")).toBeNull();
+  });
+
+  // 重ねない以上、順序がそのまま上下になる
+  it("帯は Studio より上に置く", () => {
+    const { container } = mount();
+    const dialog = container.querySelector("dialog") as HTMLDialogElement;
+
+    expect(dialog.firstElementChild?.className).toContain("as-studio-dialog-bar");
+  });
+});

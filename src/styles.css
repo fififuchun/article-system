@@ -770,10 +770,33 @@
   background: var(--as-color-surface);
   color: var(--as-color-text);
   overflow: auto;
-  /* 閉じるボタンを右上に固定するための基準 */
-  position: relative;
-  /* dialog の中ではナビが上に無いので、操作帯のオフセットは 0 にする */
-  --as-studio-header-top: 0px;
+  /* 閉じるボタンの帯を上に、Studio を下に積む。重ねないので
+     操作帯の高さが変わっても閉じるボタンの形が崩れない */
+  display: flex;
+  flex-direction: column;
+  --as-studio-close-size: 2.5rem;
+  /* dialog の中ではナビの代わりに閉じるボタンの帯がある。
+     操作帯はその下に貼り付く */
+  --as-studio-header-top: var(--as-studio-close-size);
+}
+
+/* 閉じるボタンの帯。スクロールしても閉じられるよう貼り付けておく */
+:where(.as-studio-dialog-bar) {
+  position: sticky;
+  top: 0;
+  /* 操作帯（z-index: 2）より上。隠れると閉じられなくなる */
+  z-index: 4;
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  height: var(--as-studio-close-size);
+  background: var(--as-color-surface);
+  border-bottom: 1px solid var(--as-color-border);
+}
+
+/* 帯の下は残りの高さをすべて使う。dvh の引き算をしない */
+:where(.as-studio-dialog) > :where(.as-studio, .as-studio-login) {
+  flex: 1 0 auto;
 }
 
 /*
@@ -784,17 +807,13 @@
   background: rgb(0 0 0 / 0.5);
 }
 
-/* 操作帯の上に重ねる。帯は sticky なのでスクロールしても隠れない */
+/* 帯と同じ高さの正方形。帯の中にいるので、操作帯の高さには影響されない */
 :where(.as-studio-dialog-close) {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--as-studio-close-size);
+  height: 100%;
   padding: 0;
   background: none;
   border: none;
@@ -806,14 +825,4 @@
 :where(.as-studio-dialog-close svg) {
   width: 1rem;
   height: 1rem;
-}
-
-/* dialog が高さを持つので、中の Studio は全体に広がる */
-:where(.as-studio-dialog .as-studio) {
-  min-height: 100dvh;
-}
-
-/* 閉じるボタンの分だけ帯を空ける。重ねると「一覧」が押せなくなる */
-:where(.as-studio-dialog .as-studio-tabs) {
-  padding-right: 2.5rem;
 }

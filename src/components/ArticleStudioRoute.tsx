@@ -62,14 +62,18 @@ export function ArticleStudioRoute({ hashPath = DEFAULT_HASH_PATH, ...props }: P
         setOpen(false);
       }}
     >
-      <button
-        type="button"
-        className="as-studio-dialog-close"
-        aria-label="執筆画面を閉じる"
-        onClick={() => dialog.current?.close()}
-      >
-        <CloseIcon />
-      </button>
+      {/* 操作帯に重ねない。重ねると帯の高さが変わるたびにボタンが
+          はみ出したり欠けたりする（spec §9 設置方法） */}
+      <div className="as-studio-dialog-bar">
+        <button
+          type="button"
+          className="as-studio-dialog-close"
+          aria-label="執筆画面を閉じる"
+          onClick={() => dialog.current?.close()}
+        >
+          <CloseIcon />
+        </button>
+      </div>
 
       <ArticleStudio {...props} />
     </dialog>

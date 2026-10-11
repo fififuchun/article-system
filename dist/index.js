@@ -1292,7 +1292,7 @@ function ArticleStudioRoute({ hashPath = DEFAULT_HASH_PATH, ...props }) {
         setOpen(false);
       },
       children: [
-        /* @__PURE__ */ jsx8(
+        /* @__PURE__ */ jsx8("div", { className: "as-studio-dialog-bar", children: /* @__PURE__ */ jsx8(
           "button",
           {
             type: "button",
@@ -1301,7 +1301,7 @@ function ArticleStudioRoute({ hashPath = DEFAULT_HASH_PATH, ...props }) {
             onClick: () => dialog.current?.close(),
             children: /* @__PURE__ */ jsx8(CloseIcon, {})
           }
-        ),
+        ) }),
         /* @__PURE__ */ jsx8(ArticleStudio, { ...props })
       ]
     }
