@@ -472,6 +472,18 @@ function isThumbnailOf(line, name) {
   return match !== null && match[1].trim() === name;
 }
 
+// src/studio/buildImagePath.ts
+var DATE_PATTERN2 = /^(\d{4})-(\d{2}-\d{2})$/;
+function buildImagePath(date, filename) {
+  const name = filename.trim();
+  if (name === "") return name;
+  if (name.includes("/")) return name;
+  const parts = DATE_PATTERN2.exec(date.trim());
+  if (!parts) return name;
+  const [, year, monthDay] = parts;
+  return `${year}/${monthDay}/${name}`;
+}
+
 // src/studio/collectImageNames.ts
 var IMAGE_SYNTAX = /!\[[^\]]*\]\(([^)]*)\)/g;
 function collectImageNames(markdown, thumbnail) {
@@ -948,7 +960,8 @@ function StudioEditor({
     if (dropped.length === 0) return;
     event.preventDefault();
     const added = dropped.map((file) => ({
-      name: file.name,
+      // 日付のフォルダに入れる。平らに置くと別の記事と名前が衝突する（spec §9 画像）
+      name: buildImagePath(draft.date, file.name),
       url: URL.createObjectURL(file),
       file
     }));

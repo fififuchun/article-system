@@ -16,6 +16,7 @@ import { buildFilename } from "../studio/buildFilename";
 import { buildTemplate } from "../studio/buildTemplate";
 import { downloadBlob, downloadMarkdown } from "../studio/downloadFile";
 import { renameImageInMarkdown } from "../studio/renameImage";
+import { buildImagePath } from "../studio/buildImagePath";
 import { collectImageNames } from "../studio/collectImageNames";
 import { findMissingImages } from "../studio/probeImages";
 import { loadDraft, saveDraft } from "../studio/draftStorage";
@@ -174,7 +175,8 @@ function StudioEditor({
 
     event.preventDefault();
     const added = dropped.map((file) => ({
-      name: file.name,
+      // 日付のフォルダに入れる。平らに置くと別の記事と名前が衝突する（spec §9 画像）
+      name: buildImagePath(draft.date, file.name),
       url: URL.createObjectURL(file),
       file,
     }));

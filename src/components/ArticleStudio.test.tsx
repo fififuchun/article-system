@@ -1425,15 +1425,18 @@ describe("ArticleStudio — コミット後の画像の扱い（spec §15）", (
     });
   };
 
-  it("ドロップした画像をコミットに渡す", async () => {
+  it("ドロップした画像を日付のフォルダ付きでコミットに渡す", async () => {
     render(<ArticleStudio articles={[]} github={github} />);
 
-    drop();
+    // 先に date を確定させてからドロップする（spec §9 画像）
     fireEvent.change(md(), { target: { value: sampleMd } });
+    drop();
     await publish();
 
     const payload = vi.mocked(commitArticle).mock.calls[0][0];
-    expect(payload.images?.map((image) => image.name)).toEqual(["art_0.webp"]);
+    expect(payload.images?.map((image) => image.name)).toEqual([
+      "2026/08-23/art_0.webp",
+    ]);
   });
 
   it("配置をお願いする案内を出さない", async () => {
@@ -1493,10 +1496,16 @@ describe("ArticleStudio — 画像の存在確認（回帰）", () => {
 
     const { container } = render(<ArticleStudio articles={[]} />);
 
-    drop("art_0.webp");
+    // サムネイルはフォルダ込みの名前で指す（spec §9 画像）
     fireEvent.change(md(), {
-      target: { value: sampleMd.replace("thumbnail: art_0.webp", "thumbnail: art_0.webp") },
+      target: {
+        value: sampleMd.replace(
+          "thumbnail: art_0.webp",
+          "thumbnail: 2026/08-23/art_0.webp"
+        ),
+      },
     });
+    drop("art_0.webp");
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /本番/ }));
     });
@@ -1600,5 +1609,78 @@ describe("ArticleStudio — 雛形の slug", () => {
     render(<ArticleStudio articles={[taken]} />);
 
     expect(md().value).toContain(`slug: ${today}-2`);
+  });
+});
+
+// spec §9 画像: 平らに置くと別の記事と名前が衝突してコミットが止まる
+describe("ArticleStudio — 画像を日付のフォルダに入れる", () => {
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  const drop = (name: string) => {
+    const file = new File(["x"], name, { type: "image/webp" });
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [file] },
+    });
+  };
+
+  const dated = (date: string) => sampleMd.replace("date: 2026-08-23", `date: ${date}`);
+
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  it("本文に年と月日のフォルダ付きで入る", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+
+    expect(md().value).toContain("![](2026/10-12/0_1.png)");
+  });
+
+  it("画像の名前欄にもフォルダ付きで出る", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+
+    expect((screen.getByLabelText("画像の名前") as HTMLInputElement).value).toBe(
+      "2026/10-12/0_1.png"
+    );
+  });
+
+  // date が空のままドロップされることがある
+  it("date が書かれていなければフォルダを付けない", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: "---\ntitle: a\n---\n\n本文" } });
+    drop("0_1.png");
+
+    expect(md().value).toContain("![](0_1.png)");
+  });
+
+  it("日付が変われば入るフォルダも変わる", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2025-01-05") } });
+    drop("a.png");
+
+    expect(md().value).toContain("![](2025/01-05/a.png)");
+  });
+
+  // フォルダごと書き換えられる（spec §9 画像）
+  it("名前を書き換えると本文も追随する", () => {
+    render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: dated("2026-10-12") } });
+    drop("0_1.png");
+    fireEvent.change(screen.getByLabelText("画像の名前"), {
+      target: { value: "2026/10-12/海.png" },
+    });
+
+    expect(md().value).toContain("![](2026/10-12/海.png)");
   });
 });
