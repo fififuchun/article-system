@@ -188,11 +188,24 @@ function StudioEditor({
     content: toPreviewSrc(draft.content),
   };
 
+  /**
+   * 画像を手放す（spec §9）。
+   *
+   * 保存にも空を書き込みます。消さないとリロードで戻ってきて、
+   * 次の記事のコミットに混ざります。
+   */
+  const discardImages = () => {
+    setImages([]);
+    void saveImages(storageKey, []);
+    setPlacementPending(false);
+  };
+
   // 自動では決して消さない。押されたときだけ、確認を取ってから戻す（spec §9）
   const startNewArticle = () => {
     if (!window.confirm("編集中の内容を消して新しく書き始めます。よろしいですか？")) return;
     setRaw(buildTemplate(new Date(), existingSlugs));
     setIssues([]);
+    discardImages();
   };
 
   // リネーム後の名前で保存できるので、スマホだけで作業が完結する（spec §9）
@@ -292,8 +305,7 @@ function StudioEditor({
         setPublishedSlugs((current) => [...current, draft.slug]);
         setRaw(buildTemplate(new Date(), [...existingSlugs, draft.slug]));
         setIssues([]);
-        setImages([]);
-        setPlacementPending(false);
+        discardImages();
         return;
       }
 

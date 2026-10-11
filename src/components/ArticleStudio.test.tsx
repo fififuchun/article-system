@@ -2244,3 +2244,99 @@ describe("ArticleStudio — 画像がリロードでも残る（spec §9）", ()
     ).toEqual(["2026/10-12/new.png"]);
   });
 });
+
+// spec §9: 持ち越すと次の記事に混ざる。保存した分も捨てないとリロードで戻ってくる
+describe("ArticleStudio — 画像を捨てるとき（spec §9）", () => {
+  const github = { repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+    vi.mocked(commitArticle).mockReset();
+    vi.mocked(commitArticle).mockResolvedValue("commit-new");
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    URL.createObjectURL = vi.fn(() => "blob:stub");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+
+  const sample = [
+    "---",
+    "title: 夏の更新",
+    "date: 2026-08-23",
+    "latestUpdate: 2026-08-24",
+    "staff: 田中 花子",
+    "thumbnail: 2026/08-23/art_0.webp",
+    "---",
+    "",
+    "本文",
+  ].join("\n");
+
+  const drop = () => {
+    fireEvent.drop(document.querySelector(".as-studio-editor")!, {
+      dataTransfer: { files: [new File(["x"], "art_0.webp", { type: "image/webp" })] },
+    });
+  };
+
+  /** 最後に保存された画像の名前 */
+  const savedNames = () => {
+    const calls = vi.mocked(saveImages).mock.calls;
+    return calls[calls.length - 1]?.[1].map((image) => image.name);
+  };
+
+  it("投稿に成功すると保存した画像を捨てる", async () => {
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sample } });
+    drop();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /投稿/ }));
+    });
+
+    expect(savedNames()).toEqual([]);
+  });
+
+  // 失敗したら貼り直しが要らないよう残す（spec §15）
+  it("投稿に失敗したら捨てない", async () => {
+    vi.mocked(commitArticle).mockRejectedValue(new Error("通信できませんでした。"));
+    render(<ArticleStudio articles={[]} github={github} />);
+
+    fireEvent.change(md(), { target: { value: sample } });
+    drop();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /投稿/ }));
+    });
+
+    expect(savedNames()).toEqual(["2026/08-23/art_0.webp"]);
+  });
+
+  it("「新しく書く」で捨てる", async () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: sample } });
+    drop();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "新しく書く" }));
+    });
+
+    expect(savedNames()).toEqual([]);
+    expect(container.querySelector(".as-studio-images")).toBeNull();
+  });
+
+  it("「新しく書く」を断ったら捨てない", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(md(), { target: { value: sample } });
+    drop();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "新しく書く" }));
+    });
+
+    expect(savedNames()).toEqual(["2026/08-23/art_0.webp"]);
+    expect(container.querySelector(".as-studio-images")).not.toBeNull();
+  });
+});
