@@ -13,6 +13,11 @@ function parseFrontmatter(raw) {
   return { data, content: match[2] };
 }
 
+// src/resolveSlug.ts
+function resolveSlug(filename, frontmatterSlug) {
+  return frontmatterSlug?.trim() || filename.replace(/\.md$/, "");
+}
+
 // src/levenshtein.ts
 function levenshtein(a, b) {
   if (a === b) return 0;
@@ -178,8 +183,8 @@ function createArticles(rawFiles) {
     const { data, content } = parseFrontmatter(raw);
     return {
       filename,
-      // フロントマター優先、無ければファイル名から拡張子を除く（spec §3）
-      slug: data.slug?.trim() || filename.replace(/\.md$/, ""),
+      // 決め方は resolveSlug に1か所だけ置く。Vite プラグインも同じものを呼ぶ（spec §18）
+      slug: resolveSlug(filename, data.slug),
       title: data.title ?? "",
       date: data.date ?? "",
       latestUpdate: data.latestUpdate ?? "",

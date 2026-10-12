@@ -1,4 +1,5 @@
 import { parseFrontmatter } from "./parser";
+import { resolveSlug } from "./resolveSlug";
 import { validateArticle } from "./validate";
 import type { Article } from "./types";
 
@@ -59,8 +60,8 @@ export function createArticles(
       const { data, content } = parseFrontmatter(raw);
       return {
         filename,
-        // フロントマター優先、無ければファイル名から拡張子を除く（spec §3）
-        slug: data.slug?.trim() || filename.replace(/\.md$/, ""),
+        // 決め方は resolveSlug に1か所だけ置く。Vite プラグインも同じものを呼ぶ（spec §18）
+        slug: resolveSlug(filename, data.slug),
         title: data.title ?? "",
         date: data.date ?? "",
         latestUpdate: data.latestUpdate ?? "",
