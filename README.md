@@ -557,6 +557,101 @@ export default function App() {
 <br>
 <br>
 
+## 共有したときにサムネイルを出す
+
+記事の URL を X や LINE に貼ったとき、サムネイル付きのカードを出します。
+
+```
+┌────────────────────────────────┐
+│       [ 記事のサムネイル ]       │
+├────────────────────────────────┤
+│ 夏の更新                        │
+│ 今年の夏にやったことのまとめです。 │
+│ example.com                     │
+└────────────────────────────────┘
+```
+
+### 設定は `vite.config.ts` に1つ
+
+```ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { articleOgTags } from "@fififuchun/article-system/vite";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    articleOgTags({
+      siteUrl: "https://example.com",   // 必須
+      path: "/article/:slug",           // 必須。記事の URL の形
+      siteName: "私のブログ",            // 任意
+    }),
+  ],
+});
+```
+
+`npm run build` の最後に、記事ごとの HTML が出力先に書き出されます。
+
+```
+dist/
+├── index.html
+├── article/
+│   ├── 2026-10-12/index.html   ← この記事のタグが入っている
+│   └── 2026-10-10/index.html
+└── assets/...
+```
+
+中身は `dist/index.html` の `<head>` にタグを足しただけのコピーです。**`<script>` はそのままなので、人間が開いたときの見え方は何も変わりません。**
+
+### なぜビルド時に作る必要があるのか
+
+**X や LINE のクローラーは JavaScript を実行しません。** URL を貼られると、向こうのサーバーがその URL を1回取りに行き、返ってきた HTML から `og:` のタグを読むだけです。
+
+React が描画するのはその後なので、`react-helmet` のように React からタグを足す仕組みは**カードには一切反映されません。** ビルド時に HTML そのものに書いておく必要があります。
+
+### 使うときの条件
+
+- **記事の URL は実パスにしてください**（`/article/夏` のように）。`#/article/夏` のようなハッシュだと、`#` から後ろはサーバーに送られないため**原理的に不可能**です
+- **`siteUrl` は必須です。** `og:image` は絶対URLでないとどのサービスも無視します
+- `thumbnail` が空の記事は、画像なしの小さいカードになります
+
+### 設定が間違っていればビルドが止まります
+
+OGタグは**誰かが共有するまで壊れているか分かりません。** ブラウザを見ても気づけないので、黙って諦めずに例外を投げます。
+
+```
+[article-system] path には :slug を含めてください（例: "/article/:slug"）。
+[article-system] siteUrl は http:// か https:// から始まる絶対URLで渡してください。
+[article-system] src/articles に md が1件もありません。
+```
+
+### デプロイしたら確認してください
+
+`/article/2026-10-12` を `/article/2026-10-12/index.html` から返せるホスティングが必要です。**Vercel・Netlify・GitHub Pages はいずれも既定でそうします。**
+
+```
+curl -s https://example.com/article/2026-10-12 | grep og:
+```
+
+> **`vite preview` では末尾スラッシュが必要です。** SPA のフォールバックが先に効いてルートの `index.html` が返るためです。ローカルで試すときは `http://localhost:4173/article/2026-10-12/` のように末尾に `/` を付けてください。
+
+### タグだけ欲しい場合
+
+書き出しを自分で行いたい場合は、タグを作る関数だけ使えます。
+
+```ts
+import { buildArticleHead } from "@fififuchun/article-system";
+
+const head = buildArticleHead(article, {
+  siteUrl: "https://example.com",
+  path: `/article/${article.slug}`,
+});
+// → <title>…</title><link rel="canonical" …><meta property="og:title" …> …
+```
+
+<br>
+<br>
+
 ## 記事の検証
 
 `validateArticle` で、マークダウンの文字列に問題がないか確認できます。
@@ -613,11 +708,14 @@ interface Article {
   latestUpdate: string;
   staff: string;
   thumbnail: string;   // ファイル名のみ（パスなし）
+  description?: string; // 共有したときの説明文。任意
   content: string;     // マークダウン本文
 }
 ```
 
 `filename` は衝突検出などに使う参考情報です。**URL には使いません**（識別子は `slug`）。
+
+`description` だけが省略可能です。書かなければ共有時の説明文を本文の冒頭から作るため、「空」と「書いていない」を区別する必要があります。
 
 すべてのフィールドが必須の型になっていますが、`createArticles` はフロントマターに欠けている項目を空文字で埋めます。**型は「存在すること」しか保証せず、「空でないこと」は保証しません。**
 

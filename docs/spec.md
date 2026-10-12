@@ -1306,4 +1306,185 @@ gzip で8KB程度）。遅延読み込みにせず実装を単純に保つ判断
 
 ---
 
-記録日: 2026-08-23（§15 を 2026-09-21、§3 と §9 設置方法を 2026-10-10、投稿まわりを 2026-10-12 に追記） / 対象バージョン: 0.3.0
+---
+
+## 18. 共有したときのサムネイル（OGタグ）
+
+記事の URL を X や LINE に貼ったとき、サムネイル付きのカードを出します。
+
+### なぜ普通には出ないのか ★調査済み
+
+**クローラーは JavaScript を実行しません。** URL を貼られると、X のサーバーが
+その URL を1回取りに行き、返ってきた HTML の文字列から `og:` のタグを読みます。
+ブラウザを開くわけではありません。
+
+SPA が返す HTML は、どの記事 URL でも同じ1枚です。実際に測りました。
+
+```
+$ curl http://localhost:5199/article/2026-10-10-日本語の記事
+
+記事タイトルの出現回数: 0
+画像パスの出現回数:     0
+og: で始まる行:         0
+```
+
+`<div id="root"></div>` は空で、記事は後から JavaScript が描き込んでいます。
+`react-helmet` のように React からタグを足す仕組みも**効きません。** 足すのは
+React が動いた後であり、クローラーはもう帰っています。
+
+**ハッシュルーティングでは原理的に不可能です。** `#` から後ろはサーバーに
+送られないため、`#/article/夏` と `#/article/秋` はサーバーから見て同じ URL です。
+読者向けを実パスにしているのはこのためでもあります（§9 設置方法）。
+
+### 直し方
+
+**ビルド時に記事ごとの HTML を書き出します。**
+
+```
+dist/
+├── index.html
+├── article/
+│   ├── 2026-10-12/index.html   ← この記事のタグが入ったコピー
+│   └── 2026-10-10/index.html
+└── assets/...
+```
+
+中身は `dist/index.html` の `<head>` にタグを入れただけのコピーです。
+**`<script>` はそのまま残します。** 人間が開いたときは今までどおり React が
+起動するため、挙動は変わりません。
+
+### ライブラリの中で完結させる ★境界線を越える判断
+
+フェーズ11では**読者向けページを出来合いにしない**と決めました。理由は
+「`<title>` と OG タグを記事ごとに出すには、利用側が `article` を手元に持つ
+必要がある」ことでした（§9 設置方法）。
+
+**この §18 はその線を逆向きに越えています。** 利用側に後処理を書かせず、
+ライブラリが出力先に HTML を書き出します。越えるにあたって、線を引いた
+理由そのものである危険を設計で潰しました。
+
+| 危険 | 潰し方 |
+| --- | --- |
+| 記事の探し方が本体とプラグインで二重管理になる | slug の決め方を `resolveSlug` に1か所だけ置き、`createArticles` とプラグインの両方が呼ぶ |
+| 壊れても共有されるまで気づけない | 黙って諦めずビルドを止める（下記） |
+| Vite のバージョンに追従し続ける必要がある | `vite` に依存しない。`configResolved` と `closeBundle` だけを持つ素のオブジェクトを返す |
+
+### 2つに分かれている
+
+| | 中身 | 置き場所 |
+| --- | --- | --- |
+| タグの文字列を作る | `Article` → `<meta ...>` | `buildArticleHead`（ブラウザ側の入口からも使える） |
+| HTML として書き出す | `dist/article/{slug}/index.html` | `@fififuchun/article-system/vite` |
+
+**配布を分けています。** 書き出す側は `node:fs` を使うため、読者のバンドルに
+混ざるとブラウザ向けのビルドが解決できずに壊れます。`src/vite` の外で
+`node:` を import しないことをテストで固定しています。
+
+```ts
+// vite.config.ts
+import { articleOgTags } from "@fififuchun/article-system/vite";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    articleOgTags({ siteUrl: "https://example.com", path: "/article/:slug" }),
+  ],
+});
+```
+
+### 出すタグ
+
+```html
+<title>夏の更新</title>
+<link rel="canonical" href="https://example.com/article/2026-10-12">
+<meta name="description" content="…">
+<meta property="og:type" content="article">
+<meta property="og:title" content="夏の更新">
+<meta property="og:description" content="…">
+<meta property="og:url" content="https://example.com/article/2026-10-12">
+<meta property="og:image" content="https://example.com/article_imgs/2026/10-12/0_1.png">
+<meta property="og:site_name" content="私のブログ">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="article:published_time" content="2026-10-12">
+<meta property="article:modified_time" content="2026-10-13">
+```
+
+`canonical` を出すのは、末尾スラッシュの有無で同じ記事が2つの URL で開ける
+ためです。どちらが本体かを1つに決めます。
+
+**サムネイルが無ければ `og:image` を出さず、`twitter:card` も `summary` に
+落とします。** 画像の無いまま大きいカードを指定すると、各サービスで崩れて出ます。
+
+### `siteUrl` が必須な理由
+
+**`og:image` は絶対URLでなければ無視されます。** ドメインはライブラリから
+分からないため、渡してもらう必要があります。`http://` か `https://` で
+始まっていなければ例外を投げます。
+
+URL は手で文字列を繋がず `URL` に任せます。繋ぐと、`imageBasePath` 自体が
+絶対URL（CDN）のときに `https://site/https://cdn/...` を作ります。**実際に
+デモで踏みました。** `URL` なら絶対URLはそのまま、`//` から始まるものには
+scheme が付き、日本語は percent-encoding され、すでに `%XX` の部分は二重に
+encode されません。
+
+画像は**表示に使うのと同じ `resolveImageSrc` を通してから**絶対URLにします。
+別の判定を書くと、プレビューに出ている画像とカードの画像が食い違います。
+
+### 属性値を escape する ★重要
+
+`title: 夏の"更新"` と書かれるだけで HTML が壊れます。属性は `"` で囲むため、
+escape しなければタグを閉じて別の要素を書き込めます。`&` `"` `'` `<` `>` を
+落とします。
+
+### 説明文の決まり方
+
+フロントマターの `description` 優先、無ければ**本文の冒頭から作ります**（§3）。
+slug と同じ決まり方です。
+
+本文から作るときはマークダウンの記号を落として1行に畳み、120文字で切ります。
+**アンダースコアは落としません。** `0_1.png` のようなファイル名が本文に
+出てくるため、`_強調_` を拾うより壊さないほうを選びました。
+
+### 元のタグを引き継がない
+
+記事用のコピーからは、元の `index.html` にあった `<title>` と
+`og:` / `twitter:` / `description` を消します。
+
+- `<title>` が2つあると、**先に書かれたほうが使われます**
+- `og:` が重複すると、どちらが拾われるか分かりません
+
+**どちらも静かに間違った結果になります。** トップページの `index.html`
+そのものは変更しないので、トップ用のタグはそのまま残ります。
+
+### 止めるとき
+
+OGタグは**誰かが共有するまで壊れているか分かりません。** 他の機能のように
+ブラウザを見れば気づけるものではないため、黙って諦めさせず例外でビルドを
+止めます。
+
+| 状況 | 理由 |
+| --- | --- |
+| `path` に `:slug` が無い | 書き出す先が決まらない。プラグインを作った時点で止める |
+| `siteUrl` が絶対URLでない | タグは出るが無視される |
+| 記事のフォルダが読めない | `articlesDir` の指定違い |
+| 記事が0件 | 設定が間違っている証拠。黙って何も出さないと気づけない |
+| 出力に `index.html` が無い | コピー元が無い |
+| `index.html` に `</head>` が無い | タグを入れる場所が決まらない |
+
+### ホスティング側の前提 ★実測
+
+`/article/2026-10-12` を**`/article/2026-10-12/index.html` から返せる必要が
+あります。** Vercel・Netlify・GitHub Pages はいずれも既定でそうします。
+
+**`vite preview` はしません。** SPA のフォールバックが先に効き、ルートの
+`index.html` が返ります。ローカルで確かめるときは末尾にスラッシュを付けます。
+
+```
+$ curl -s http://localhost:4173/article/2026-10-12/ | grep og:
+```
+
+デプロイ後は、実際の URL を `curl` して `og:` が返ることを確かめてください。
+
+---
+
+記録日: 2026-08-23（§15 を 2026-09-21、§3 と §9 設置方法を 2026-10-10、投稿まわりと §18 を 2026-10-12 に追記） / 対象バージョン: 0.3.0
