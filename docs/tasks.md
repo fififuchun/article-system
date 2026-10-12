@@ -331,7 +331,7 @@ SPA はどの記事URLでも同じ中身の無い HTML を返す。クローラ�
 | Vite のバージョンに追従し続ける必要がある | `vite` に依存しない。`configResolved` と `closeBundle` だけを持つ素のオブジェクトを返す |
 
 - [x] `src/resolveSlug.ts` に slug の決め方を切り出し、`createArticles` から呼ぶ（テスト → 実装 → グリーン）
-- [ ] `description` を任意のフロントマターとして受ける（`Article` と `validate` の既知項目に足す。テスト → 実装 → グリーン）
+- [x] `description` を任意のフロントマターとして受ける（`Article` と `validate` の既知項目に足す。テスト → 実装 → グリーン）
 - [ ] `src/buildDescription.ts` — 本文から説明文を作る（マークダウン記法を落として切り詰め。テスト → 実装 → グリーン）
 - [ ] `src/buildArticleHead.ts` — `<title>` と `og:` タグ一式を作る（属性値の escape、`og:image` の絶対URL化。テスト → 実装 → グリーン）
 - [ ] `src/vite/articleOgTags.ts` — ビルド後に記事ごとの HTML を書き出すプラグイン（テスト → 実装 → グリーン）

@@ -41,6 +41,8 @@ function levenshtein(a, b) {
 
 // src/validate.ts
 var REQUIRED_FIELDS = ["title", "date", "latestUpdate", "staff", "thumbnail"];
+var OPTIONAL_FIELDS = ["slug", "description"];
+var KNOWN_FIELDS = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
 var TYPO_MAX_DISTANCE = 2;
 var DATE_FIELDS = ["date", "latestUpdate"];
 var DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -92,10 +94,10 @@ function validateArticle(raw, context = {}) {
     }
   }
   for (const field of Object.keys(data)) {
-    if (REQUIRED_FIELDS.includes(field)) continue;
+    if (KNOWN_FIELDS.includes(field)) continue;
     let nearest = "";
     let nearestDistance = Infinity;
-    for (const known of REQUIRED_FIELDS) {
+    for (const known of KNOWN_FIELDS) {
       const distance = levenshtein(field, known);
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -190,6 +192,8 @@ function createArticles(rawFiles) {
       latestUpdate: data.latestUpdate ?? "",
       staff: data.staff ?? "",
       thumbnail: data.thumbnail ?? "",
+      // 任意。無ければ本文から作る（spec §18）
+      description: data.description?.trim(),
       content
     };
   }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
@@ -424,6 +428,7 @@ function buildDraftArticle(raw) {
     latestUpdate: data.latestUpdate ?? "",
     staff: data.staff ?? "",
     thumbnail: data.thumbnail ?? "",
+    description: data.description?.trim(),
     content
   };
 }

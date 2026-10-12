@@ -67,6 +67,8 @@ export function createArticles(
         latestUpdate: data.latestUpdate ?? "",
         staff: data.staff ?? "",
         thumbnail: data.thumbnail ?? "",
+        // 任意。無ければ本文から作る（spec §18）
+        description: data.description?.trim(),
         content,
       };
     })

@@ -21,6 +21,7 @@ export function buildDraftArticle(raw: string): Article {
     latestUpdate: data.latestUpdate ?? "",
     staff: data.staff ?? "",
     thumbnail: data.thumbnail ?? "",
+    description: data.description?.trim(),
     content,
   };
 }

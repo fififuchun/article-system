@@ -473,3 +473,50 @@ describe("validateArticle — slug", () => {
     expect(slugIssues("blog/summer")[0]?.message).toContain("URL");
   });
 });
+
+// spec §18: description は任意だが、typo は拾いたい
+describe("validateArticle — 任意の項目", () => {
+  const md = (lines: string[]) => ["---", ...lines, "---", "", "本文"].join("\n");
+
+  const base = [
+    "title: 夏の更新",
+    "date: 2026-08-23",
+    "latestUpdate: 2026-08-23",
+    "staff: 田中",
+    "thumbnail: a.webp",
+  ];
+
+  it("description を未知の項目として報告しない", () => {
+    const issues = validateArticle(md([...base, "description: まとめ"]));
+
+    expect(issues).toEqual([]);
+  });
+
+  it("slug を未知の項目として報告しない", () => {
+    const issues = validateArticle(md([...base, "slug: summer"]));
+
+    expect(issues).toEqual([]);
+  });
+
+  it("description の typo を拾う", () => {
+    const issues = validateArticle(md([...base, "descrption: まとめ"]));
+
+    expect(issues.map((issue) => issue.field)).toContain("descrption");
+    expect(issues.find((issue) => issue.field === "descrption")?.message).toContain(
+      "description"
+    );
+  });
+
+  it("slug の typo を拾う", () => {
+    const issues = validateArticle(md([...base, "slag: summer"]));
+
+    expect(issues.map((issue) => issue.field)).toContain("slag");
+  });
+
+  // 遠いキーは利用側が独自に足したものとして黙って通す
+  it("関係のないキーは黙って通す", () => {
+    const issues = validateArticle(md([...base, "category: 技術"]));
+
+    expect(issues).toEqual([]);
+  });
+});

@@ -18,6 +18,12 @@ export interface ValidateContext {
 /** フロントマターに必ず必要な項目（spec §3） */
 const REQUIRED_FIELDS = ["title", "date", "latestUpdate", "staff", "thumbnail"] as const;
 
+/** 書いてもよい項目。無くてもよいが、typo は拾いたい（spec §3 §18） */
+const OPTIONAL_FIELDS = ["slug", "description"] as const;
+
+/** 既知の項目。これ以外は typo の候補として照合する */
+const KNOWN_FIELDS: readonly string[] = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
+
 /**
  * typo と見なす編集距離の上限。
  * spec §6 が例に挙げる lastUpdate → latestUpdate がちょうど 2 のため、
@@ -104,12 +110,12 @@ export function validateArticle(
   }
 
   for (const field of Object.keys(data)) {
-    if ((REQUIRED_FIELDS as readonly string[]).includes(field)) continue;
+    if (KNOWN_FIELDS.includes(field)) continue;
 
     let nearest = "";
     let nearestDistance = Infinity;
 
-    for (const known of REQUIRED_FIELDS) {
+    for (const known of KNOWN_FIELDS) {
       const distance = levenshtein(field, known);
       if (distance < nearestDistance) {
         nearestDistance = distance;
