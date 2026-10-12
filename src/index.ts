@@ -8,6 +8,10 @@ export type {
 export type { Issue } from "./validate";
 export { createArticles } from "./createArticles";
 export { validateArticle } from "./validate";
+export { resolveSlug } from "./resolveSlug";
+export { buildDescription } from "./buildDescription";
+export { buildArticleHead } from "./buildArticleHead";
+export type { ArticleHeadOptions } from "./buildArticleHead";
 export { ArticleDetail } from "./components/ArticleDetail";
 export { ArticleList } from "./components/ArticleList";
 export { ArticleStudio } from "./components/ArticleStudio";

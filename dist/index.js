@@ -201,6 +201,67 @@ function createArticles(rawFiles) {
   return articles;
 }
 
+// src/buildDescription.ts
+var MAX_LENGTH = 120;
+function buildDescription(content, maxLength = MAX_LENGTH) {
+  const text = content.replace(/```[\s\S]*?```/g, " ").replace(/~~~[\s\S]*?~~~/g, " ").replace(/!\[[^\]]*\]\([^)]*\)/g, " ").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/<!--[\s\S]*?-->/g, " ").replace(/^[ \t]{0,3}([-*_])[ \t]*(\1[ \t]*){2,}$/gm, " ").replace(/^[ \t]{0,3}#{1,6}[ \t]+/gm, " ").replace(/^[ \t]{0,3}>[ \t]?/gm, " ").replace(/^[ \t]{0,3}[-*+][ \t]+/gm, " ").replace(/^[ \t]{0,3}\d+\.[ \t]+/gm, " ").replace(/^[ \t]*\|[ \t:|-]+\|[ \t]*$/gm, " ").replace(/^[ \t]*\|.*\|[ \t]*$/gm, (row) => row.replace(/\|/g, " ")).replace(/[*`~]/g, "").replace(/\s+/g, " ").trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trimEnd()}\u2026`;
+}
+
+// src/resolveImageSrc.ts
+var ABSOLUTE_URL = /^(?:(?:https?:)?\/\/|blob:|data:)/;
+function isAbsoluteImageSrc(src) {
+  return ABSOLUTE_URL.test(src);
+}
+function resolveImageSrc(src, imageBasePath) {
+  return isAbsoluteImageSrc(src) ? src : `${imageBasePath}${src}`;
+}
+
+// src/buildArticleHead.ts
+function escapeAttribute(value) {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function encodeUrlPath(path) {
+  return path.replace(
+    /%(?![0-9A-Fa-f]{2})|[^\x21-\x7e]/g,
+    (char) => encodeURIComponent(char)
+  );
+}
+function join(base, path) {
+  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+function tag(name, key, value) {
+  return `<meta ${name}="${key}" content="${escapeAttribute(value)}">`;
+}
+function buildArticleHead(article, options) {
+  const { siteUrl, path, imageBasePath = "/article_imgs/", siteName } = options;
+  if (!/^https?:\/\//.test(siteUrl)) {
+    throw new Error(
+      `[article-system] siteUrl \u306F http:// \u304B https:// \u304B\u3089\u59CB\u307E\u308B\u7D76\u5BFEURL\u3067\u6E21\u3057\u3066\u304F\u3060\u3055\u3044\u3002og:image \u306F\u7D76\u5BFEURL\u3067\u306A\u3044\u3068\u7121\u8996\u3055\u308C\u307E\u3059\u3002\u53D7\u3051\u53D6\u3063\u305F\u5024: ${siteUrl}`
+    );
+  }
+  const description = article.description?.trim() || buildDescription(article.content, options.descriptionLength);
+  const thumbnail = article.thumbnail.trim();
+  const imageUrl = thumbnail ? isAbsoluteImageSrc(thumbnail) ? thumbnail : encodeUrlPath(join(siteUrl, join(imageBasePath, thumbnail))) : "";
+  const lines = [
+    `<title>${escapeAttribute(article.title)}</title>`,
+    tag("name", "description", description),
+    tag("property", "og:type", "article"),
+    tag("property", "og:title", article.title),
+    tag("property", "og:description", description),
+    tag("property", "og:url", encodeUrlPath(join(siteUrl, path)))
+  ];
+  if (imageUrl) lines.push(tag("property", "og:image", imageUrl));
+  if (siteName) lines.push(tag("property", "og:site_name", siteName));
+  lines.push(tag("name", "twitter:card", imageUrl ? "summary_large_image" : "summary"));
+  if (article.date) lines.push(tag("property", "article:published_time", article.date));
+  if (article.latestUpdate) {
+    lines.push(tag("property", "article:modified_time", article.latestUpdate));
+  }
+  return lines.join("\n");
+}
+
 // src/components/ArticleDetail.tsx
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -215,15 +276,6 @@ function cx(...classes) {
 function formatDate(date) {
   const [year, month, day] = date.split("-").map(Number);
   return { year, month, day };
-}
-
-// src/resolveImageSrc.ts
-var ABSOLUTE_URL = /^(?:(?:https?:)?\/\/|blob:|data:)/;
-function isAbsoluteImageSrc(src) {
-  return ABSOLUTE_URL.test(src);
-}
-function resolveImageSrc(src, imageBasePath) {
-  return isAbsoluteImageSrc(src) ? src : `${imageBasePath}${src}`;
 }
 
 // src/icons/ClockIcon.tsx
@@ -1550,6 +1602,9 @@ export {
   PersonIcon,
   TagIcon,
   WarningIcon,
+  buildArticleHead,
+  buildDescription,
   createArticles,
+  resolveSlug,
   validateArticle
 };
