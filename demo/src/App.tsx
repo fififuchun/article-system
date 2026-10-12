@@ -12,12 +12,19 @@ import "@fififuchun/article-system/styles.css";
 
 type Route = "list" | "detail" | "settings";
 
+/**
+ * 読者向けは**実パス**、執筆画面はハッシュ（spec §9 設置方法）。
+ *
+ * 記事を `#/article/...` で開くと、`#` はサーバーに送られないため
+ * **共有したときのサムネイル（OGタグ）が原理的に出せません**（spec §18）。
+ */
 function getRoute(): { route: Route; slug?: string } {
-  const hash = window.location.hash;
-  if (hash === "#/settings") return { route: "settings" };
-  const m = hash.match(/^#\/article\/(.+)$/);
-  // ハッシュは percent-encoding されるのでデコードして突き合わせる
+  if (window.location.hash === "#/settings") return { route: "settings" };
+
+  const m = window.location.pathname.match(/^\/article\/(.+?)\/?$/);
+  // パスは percent-encoding されるのでデコードして突き合わせる
   if (m) return { route: "detail", slug: decodeURIComponent(m[1]) };
+
   return { route: "list" };
 }
 
@@ -52,11 +59,22 @@ export default function App() {
   useEffect(() => {
     const handler = () => setRouteState(getRoute());
     window.addEventListener("hashchange", handler);
-    return () => window.removeEventListener("hashchange", handler);
+    // 戻るボタンで実パスの行き来にも追随させる
+    window.addEventListener("popstate", handler);
+    return () => {
+      window.removeEventListener("hashchange", handler);
+      window.removeEventListener("popstate", handler);
+    };
   }, []);
 
   const navigate = (hash: string) => {
     window.location.hash = hash;
+  };
+
+  /** 実パスへ移動する。href は本物のままにして、読み込み直しだけ省く */
+  const navigatePath = (path: string) => {
+    window.history.pushState({}, "", path);
+    setRouteState(getRoute());
   };
 
   const selectedArticle: Article | undefined =
@@ -70,9 +88,12 @@ export default function App() {
         <span className="nav-brand">article-system demo</span>
         <div className="nav-links">
           <a
-            href="#/"
+            href="/"
             className={`nav-link${route === "list" || route === "detail" ? " active" : ""}`}
-            onClick={() => navigate("#/")}
+            onClick={(event) => {
+              event.preventDefault();
+              navigatePath("/");
+            }}
           >
             記事一覧
           </a>
@@ -102,7 +123,7 @@ export default function App() {
 
         {route === "detail" && selectedArticle && (
           <>
-            <button onClick={() => navigate("#/")} className="back-button">
+            <button onClick={() => navigatePath("/")} className="back-button">
               ← 一覧に戻る
             </button>
             <ArticleDetail
@@ -118,10 +139,17 @@ export default function App() {
           <ArticleList
             articles={articles}
             imageBasePath="https://placehold.co/400x240/e8e8e8/999999?text="
-            getArticleUrl={(article) => `#/article/${encodeURIComponent(article.slug)}`}
+            getArticleUrl={(article) => `/article/${encodeURIComponent(article.slug)}`}
             classNames={useCustomCss ? listClassNames : undefined}
             renderLink={(url, children, key) => (
-              <a key={key} href={url}>
+              <a
+                key={key}
+                href={url}
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigatePath(url);
+                }}
+              >
                 {children}
               </a>
             )}

@@ -222,14 +222,8 @@ function resolveImageSrc(src, imageBasePath) {
 function escapeAttribute(value) {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
-function encodeUrlPath(path) {
-  return path.replace(
-    /%(?![0-9A-Fa-f]{2})|[^\x21-\x7e]/g,
-    (char) => encodeURIComponent(char)
-  );
-}
-function join(base, path) {
-  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+function absolute(src, siteUrl) {
+  return new URL(src, siteUrl).href;
 }
 function tag(name, key, value) {
   return `<meta ${name}="${key}" content="${escapeAttribute(value)}">`;
@@ -243,14 +237,18 @@ function buildArticleHead(article, options) {
   }
   const description = article.description?.trim() || buildDescription(article.content, options.descriptionLength);
   const thumbnail = article.thumbnail.trim();
-  const imageUrl = thumbnail ? isAbsoluteImageSrc(thumbnail) ? thumbnail : encodeUrlPath(join(siteUrl, join(imageBasePath, thumbnail))) : "";
+  const imageUrl = thumbnail ? absolute(resolveImageSrc(thumbnail, imageBasePath), siteUrl) : "";
+  const url = absolute(path, siteUrl);
   const lines = [
     `<title>${escapeAttribute(article.title)}</title>`,
+    // 同じ記事が複数のURLで開けることがある（末尾スラッシュの有無など）。
+    // どれが本体かを1つに決める
+    `<link rel="canonical" href="${escapeAttribute(url)}">`,
     tag("name", "description", description),
     tag("property", "og:type", "article"),
     tag("property", "og:title", article.title),
     tag("property", "og:description", description),
-    tag("property", "og:url", encodeUrlPath(join(siteUrl, path)))
+    tag("property", "og:url", url)
   ];
   if (imageUrl) lines.push(tag("property", "og:image", imageUrl));
   if (siteName) lines.push(tag("property", "og:site_name", siteName));

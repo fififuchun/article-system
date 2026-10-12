@@ -172,13 +172,14 @@ export function articleOgTags(options: ArticleOgTagsOptions): ArticleOgTagsPlugi
           descriptionLength: options.descriptionLength,
         });
 
-        const html = body.replace(
-          "</head>",
-          `${head
+        // 閉じタグのインデントに合わせる。合わせないと1行目だけ字下げがずれる
+        const html = body.replace(/([ \t]*)<\/head>/, (closing, indent: string) => {
+          const block = head
             .split("\n")
-            .map((line) => `    ${line}`)
-            .join("\n")}\n  </head>`
-        );
+            .map((line) => `${indent}  ${line}`)
+            .join("\n");
+          return `${block}\n${closing}`;
+        });
 
         const file = join(outDir, urlPath, "index.html");
         mkdirSync(dirname(file), { recursive: true });

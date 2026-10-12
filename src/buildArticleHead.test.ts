@@ -228,3 +228,63 @@ describe("buildArticleHead — siteUrl の検査", () => {
     ).not.toThrow();
   });
 });
+
+// デモで実際に踏んだ: imageBasePath に CDN の URL を渡していると、
+// siteUrl と繋いで https://site/https://cdn/... を作っていた（spec §18）
+describe("buildArticleHead — imageBasePath が絶対URLのとき", () => {
+  it("siteUrl と二重に繋がない", () => {
+    const head = buildArticleHead(article, {
+      ...options,
+      imageBasePath: "https://cdn.example.net/imgs/",
+    });
+
+    expect(content(head, "og:image")).toBe(
+      "https://cdn.example.net/imgs/2026/10-12/0_1.png"
+    );
+  });
+
+  it("クエリで終わる imageBasePath にスラッシュを挟まない", () => {
+    const head = buildArticleHead(
+      { ...article, thumbnail: "art.webp" },
+      { ...options, imageBasePath: "https://placehold.co/800x400?text=" }
+    );
+
+    expect(content(head, "og:image")).toBe(
+      "https://placehold.co/800x400?text=art.webp"
+    );
+  });
+
+  // // から始まる URL は og:image として使えない。scheme を補う
+  it("プロトコル相対のサムネイルに scheme を付ける", () => {
+    const head = buildArticleHead(
+      { ...article, thumbnail: "//cdn.example.net/a.png" },
+      options
+    );
+
+    expect(content(head, "og:image")).toBe("https://cdn.example.net/a.png");
+  });
+
+  it("表示に使う解決と同じ結果になる", async () => {
+    const { resolveImageSrc } = await import("./resolveImageSrc");
+    const base = "https://cdn.example.net/imgs/";
+
+    const head = buildArticleHead(article, { ...options, imageBasePath: base });
+
+    expect(content(head, "og:image")).toBe(resolveImageSrc(article.thumbnail, base));
+  });
+});
+
+// 末尾スラッシュの有無で同じ記事が2つのURLで開ける。どれが本体かを決める
+describe("buildArticleHead — canonical", () => {
+  it("canonical を出す", () => {
+    expect(buildArticleHead(article, options)).toContain(
+      '<link rel="canonical" href="https://example.com/article/2026-10-12">'
+    );
+  });
+
+  it("og:url と同じ URL にする", () => {
+    const head = buildArticleHead(article, options);
+
+    expect(head).toContain(`href="${content(head, "og:url")}"`);
+  });
+});

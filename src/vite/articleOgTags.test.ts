@@ -338,3 +338,28 @@ describe("articleOgTags — プラグインの形", () => {
     expect(existsSync(join(root, "dist/article/a/index.html"))).toBe(true);
   });
 });
+
+describe("articleOgTags — 注入の形", () => {
+  it("閉じタグのインデントに合わせる", () => {
+    article("a.md");
+
+    run();
+
+    const lines = written("article/a/index.html").split("\n");
+    const titleLine = lines.find((line) => line.includes("<title>"));
+    const ogLine = lines.find((line) => line.includes("og:title"));
+
+    expect(titleLine?.match(/^ */)?.[0]).toBe("    ");
+    expect(ogLine?.match(/^ */)?.[0]).toBe("    ");
+  });
+
+  it("head を閉じたままにする", () => {
+    article("a.md");
+
+    run();
+
+    const html = written("article/a/index.html");
+    expect(html.match(/<\/head>/g)?.length).toBe(1);
+    expect(html.indexOf("og:title")).toBeLessThan(html.indexOf("</head>"));
+  });
+});

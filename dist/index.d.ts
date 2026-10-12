@@ -131,8 +131,8 @@ interface ArticleHeadOptions {
     /**
      * この記事のパス（`/article/2026-10-12`）。
      *
-     * **渡された形のまま使います。** slug に日本語が入る場合、どう encode するかは
-     * 呼び出し側の決め事です（ここでは URL に出せない文字だけを補います）。
+     * 日本語が入っていれば percent-encoding します。すでに encode されている
+     * 部分は触りません（二重に encode すると別のパスを指します）。
      */
     path: string;
     /** 画像の置き場所のURL。既定 `/article_imgs/` */

@@ -1,6 +1,6 @@
 // src/vite/articleOgTags.ts
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "fs";
-import { dirname, join as join2, resolve } from "path";
+import { dirname, join, resolve } from "path";
 
 // src/parser.ts
 function parseFrontmatter(raw) {
@@ -35,19 +35,16 @@ var ABSOLUTE_URL = /^(?:(?:https?:)?\/\/|blob:|data:)/;
 function isAbsoluteImageSrc(src) {
   return ABSOLUTE_URL.test(src);
 }
+function resolveImageSrc(src, imageBasePath) {
+  return isAbsoluteImageSrc(src) ? src : `${imageBasePath}${src}`;
+}
 
 // src/buildArticleHead.ts
 function escapeAttribute(value) {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
-function encodeUrlPath(path) {
-  return path.replace(
-    /%(?![0-9A-Fa-f]{2})|[^\x21-\x7e]/g,
-    (char) => encodeURIComponent(char)
-  );
-}
-function join(base, path) {
-  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+function absolute(src, siteUrl) {
+  return new URL(src, siteUrl).href;
 }
 function tag(name, key, value) {
   return `<meta ${name}="${key}" content="${escapeAttribute(value)}">`;
@@ -61,14 +58,18 @@ function buildArticleHead(article, options) {
   }
   const description = article.description?.trim() || buildDescription(article.content, options.descriptionLength);
   const thumbnail = article.thumbnail.trim();
-  const imageUrl = thumbnail ? isAbsoluteImageSrc(thumbnail) ? thumbnail : encodeUrlPath(join(siteUrl, join(imageBasePath, thumbnail))) : "";
+  const imageUrl = thumbnail ? absolute(resolveImageSrc(thumbnail, imageBasePath), siteUrl) : "";
+  const url = absolute(path, siteUrl);
   const lines = [
     `<title>${escapeAttribute(article.title)}</title>`,
+    // 同じ記事が複数のURLで開けることがある（末尾スラッシュの有無など）。
+    // どれが本体かを1つに決める
+    `<link rel="canonical" href="${escapeAttribute(url)}">`,
     tag("name", "description", description),
     tag("property", "og:type", "article"),
     tag("property", "og:title", article.title),
     tag("property", "og:description", description),
-    tag("property", "og:url", encodeUrlPath(join(siteUrl, path)))
+    tag("property", "og:url", url)
   ];
   if (imageUrl) lines.push(tag("property", "og:image", imageUrl));
   if (siteName) lines.push(tag("property", "og:site_name", siteName));
@@ -124,7 +125,7 @@ articlesDir \u306B md \u306E\u7F6E\u304D\u5834\u6240\u3092\u6E21\u3057\u3066\u30
 articlesDir \u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
         );
       }
-      const indexPath = join2(outDir, "index.html");
+      const indexPath = join(outDir, "index.html");
       let template;
       try {
         template = readFileSync(indexPath, "utf8");
@@ -141,7 +142,7 @@ articlesDir \u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
       }
       const body = stripHead(template);
       for (const filename of filenames) {
-        const raw = readFileSync(join2(articlesPath, filename), "utf8");
+        const raw = readFileSync(join(articlesPath, filename), "utf8");
         const { data, content } = parseFrontmatter(raw);
         const slug = resolveSlug(filename, data.slug);
         const article = {
@@ -163,12 +164,12 @@ articlesDir \u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002`
           siteName: options.siteName,
           descriptionLength: options.descriptionLength
         });
-        const html = body.replace(
-          "</head>",
-          `${head.split("\n").map((line) => `    ${line}`).join("\n")}
-  </head>`
-        );
-        const file = join2(outDir, urlPath, "index.html");
+        const html = body.replace(/([ \t]*)<\/head>/, (closing, indent) => {
+          const block = head.split("\n").map((line) => `${indent}  ${line}`).join("\n");
+          return `${block}
+${closing}`;
+        });
+        const file = join(outDir, urlPath, "index.html");
         mkdirSync(dirname(file), { recursive: true });
         writeFileSync(file, html);
       }

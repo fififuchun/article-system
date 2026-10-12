@@ -1,6 +1,6 @@
 import type { Article } from "./types";
 import { buildDescription } from "./buildDescription";
-import { isAbsoluteImageSrc } from "./resolveImageSrc";
+import { resolveImageSrc } from "./resolveImageSrc";
 
 export interface ArticleHeadOptions {
   /**
@@ -13,8 +13,8 @@ export interface ArticleHeadOptions {
   /**
    * この記事のパス（`/article/2026-10-12`）。
    *
-   * **渡された形のまま使います。** slug に日本語が入る場合、どう encode するかは
-   * 呼び出し側の決め事です（ここでは URL に出せない文字だけを補います）。
+   * 日本語が入っていれば percent-encoding します。すでに encode されている
+   * 部分は触りません（二重に encode すると別のパスを指します）。
    */
   path: string;
   /** 画像の置き場所のURL。既定 `/article_imgs/` */
@@ -41,20 +41,15 @@ function escapeAttribute(value: string): string {
 }
 
 /**
- * URL に出せない文字だけを encode する。
+ * 絶対URLにする。
  *
- * すでに `%E6` のようになっている部分は触りません。二重に encode すると
- * `%25E6` になり、別のパスを指します。
+ * **手で文字列を繋ぎません。** 繋ぐと、`imageBasePath` 自体が絶対URL
+ * （CDN など）のときに `https://site/https://cdn/...` を作ってしまいます。
+ * `URL` に任せると、絶対URLはそのまま、`//` から始まるものには scheme が付き、
+ * 日本語は percent-encoding され、すでに `%XX` の部分は二重に encode されません。
  */
-function encodeUrlPath(path: string): string {
-  return path.replace(/%(?![0-9A-Fa-f]{2})|[^\x21-\x7e]/g, (char) =>
-    encodeURIComponent(char)
-  );
-}
-
-/** 末尾の `/` を落として繋ぐ。`//` になると別のホストを指す */
-function join(base: string, path: string): string {
-  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+function absolute(src: string, siteUrl: string): string {
+  return new URL(src, siteUrl).href;
 }
 
 function tag(name: "property" | "name", key: string, value: string): string {
@@ -82,20 +77,23 @@ export function buildArticleHead(article: Article, options: ArticleHeadOptions):
     article.description?.trim() ||
     buildDescription(article.content, options.descriptionLength);
 
+  // 表示に使うのと同じ解決をしてから絶対URLにする。別の判定を書くと
+  // プレビューに出ている画像とカードの画像が食い違う（spec §18）
   const thumbnail = article.thumbnail.trim();
-  const imageUrl = thumbnail
-    ? isAbsoluteImageSrc(thumbnail)
-      ? thumbnail
-      : encodeUrlPath(join(siteUrl, join(imageBasePath, thumbnail)))
-    : "";
+  const imageUrl = thumbnail ? absolute(resolveImageSrc(thumbnail, imageBasePath), siteUrl) : "";
+
+  const url = absolute(path, siteUrl);
 
   const lines = [
     `<title>${escapeAttribute(article.title)}</title>`,
+    // 同じ記事が複数のURLで開けることがある（末尾スラッシュの有無など）。
+    // どれが本体かを1つに決める
+    `<link rel="canonical" href="${escapeAttribute(url)}">`,
     tag("name", "description", description),
     tag("property", "og:type", "article"),
     tag("property", "og:title", article.title),
     tag("property", "og:description", description),
-    tag("property", "og:url", encodeUrlPath(join(siteUrl, path))),
+    tag("property", "og:url", url),
   ];
 
   if (imageUrl) lines.push(tag("property", "og:image", imageUrl));

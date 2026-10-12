@@ -336,5 +336,5 @@ SPA はどの記事URLでも同じ中身の無い HTML を返す。クローラ�
 - [x] `src/buildArticleHead.ts` — `<title>` と `og:` タグ一式を作る（属性値の escape、`og:image` の絶対URL化。テスト → 実装 → グリーン）
 - [x] `src/vite/articleOgTags.ts` — ビルド後に記事ごとの HTML を書き出すプラグイン（テスト → 実装 → グリーン）
 - [x] `@fififuchun/article-system/vite` として配布を分ける（読者のバンドルに入らないこと。ビルド確認）
-- [ ] `demo/` に組み込み、実際に `npm run build` して出力を確認する
+- [x] `demo/` に組み込み、実際に `npm run build` して出力を確認する
 - [ ] spec §18 と README を書く
