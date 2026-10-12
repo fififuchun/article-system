@@ -10,7 +10,5 @@
     "outDir": "dist",
     "skipLibCheck": true
   },
-  "include": ["src"],
-  // styles.test.ts だけ node:fs で CSS を読む。@types/node を増やさないため対象外にする
-  "exclude": ["src/styles.test.ts"]
+  "include": ["src"]
 }
