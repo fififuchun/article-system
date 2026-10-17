@@ -33,7 +33,7 @@ npm i github:fififuchun/article-system
 
 ```bash
 # タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.3.0
+npm i github:fififuchun/article-system#v0.4.0
 
 # コミットハッシュで固定する
 npm i github:fififuchun/article-system#b5e66ab
@@ -571,26 +571,13 @@ export default function App() {
 └────────────────────────────────┘
 ```
 
-### 設定は `vite.config.ts` に1つ
+### なぜビルド時に作る必要があるのか
 
-```ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { articleOgTags } from "@fififuchun/article-system/vite";
+**X や LINE のクローラーは JavaScript を実行しません。** URL を貼られると、向こうのサーバーがその URL を1回取りに行き、返ってきた HTML から `og:` のタグを読むだけです。
 
-export default defineConfig({
-  plugins: [
-    react(),
-    articleOgTags({
-      siteUrl: "https://example.com",   // 必須
-      path: "/article/:slug",           // 必須。記事の URL の形
-      siteName: "私のブログ",            // 任意
-    }),
-  ],
-});
-```
+React が描画するのはその後なので、`react-helmet` のように React からタグを足す仕組みは**カードには一切反映されません。** ビルド時に HTML そのものに書いておく必要があります。
 
-`npm run build` の最後に、記事ごとの HTML が出力先に書き出されます。
+このライブラリは `npm run build` の最後に、記事ごとの HTML を出力先に書き出します。
 
 ```
 dist/
@@ -603,18 +590,145 @@ dist/
 
 中身は `dist/index.html` の `<head>` にタグを足しただけのコピーです。**`<script>` はそのままなので、人間が開いたときの見え方は何も変わりません。**
 
-### なぜビルド時に作る必要があるのか
+<br>
 
-**X や LINE のクローラーは JavaScript を実行しません。** URL を貼られると、向こうのサーバーがその URL を1回取りに行き、返ってきた HTML から `og:` のタグを読むだけです。
+## 既存のサイトに導入する手順
 
-React が描画するのはその後なので、`react-helmet` のように React からタグを足す仕組みは**カードには一切反映されません。** ビルド時に HTML そのものに書いておく必要があります。
+ここまでで `ArticleList` / `ArticleDetail` が動いているプロジェクトに、サムネイル表示を足す手順です。**上から順に実行してください。**
 
-### 使うときの条件
+### ステップ1. ライブラリを更新する
 
-- **記事の URL は実パスにしてください**（`/article/夏` のように）。`#/article/夏` のようなハッシュだと、`#` から後ろはサーバーに送られないため**原理的に不可能**です。react-router は既定で実パスです（`HashRouter` を使っている場合だけ変更が必要）
-- **`siteUrl` は必須です。** `og:image` は絶対URLでないとどのサービスも無視します
+```bash
+npm i github:fififuchun/article-system#v0.4.0
+```
+
+OGタグは `v0.4.0` から入っています。`#v0.3.0` のままでは**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
+
+### ステップ2. 記事の URL が実パスかを確認する
+
+```bash
+grep -rn "HashRouter\|createHashRouter" src/
+```
+
+**何も出なければ、そのまま次へ進んでください。** react-router は既定で実パス（`BrowserRouter`）です。
+
+`HashRouter` が見つかった場合は、**先にそれをやめる必要があります。** `#/article/夏` のような URL だと `#` から後ろがサーバーに送られないため、記事ごとのタグを届けることが**原理的にできません**。
+
+```diff
+- import { HashRouter } from "react-router-dom";
++ import { BrowserRouter } from "react-router-dom";
+```
+
+> 執筆画面（`#/studio`）はハッシュのままで構いません。誰にも共有しないのでタグが不要です。
+
+### ステップ3. 記事のパスを確認する
+
+ルート定義を見て、記事1本の URL の形をメモします。
+
+```tsx
+<Route path="/blog/:slug" element={<BlogDetail />} />
+                ↑ これ
+```
+
+この例なら `/blog/:slug` です。
+
+### ステップ4. `vite.config.ts` にプラグインを足す
+
+```ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { articleOgTags } from "@fififuchun/article-system/vite";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    articleOgTags({
+      siteUrl: "https://example.com",   // 本番のドメイン（必須）
+      path: "/blog/:slug",              // ステップ3でメモした形（必須）
+      siteName: "私のブログ",            // 任意
+    }),
+  ],
+});
+```
+
+**4つの値が合っているか確認してください。** ここが食い違うと、ビルドは通るのにカードが出ません。
+
+| 値 | 合わせる相手 | 既定 |
+| --- | --- | --- |
+| `siteUrl` | 本番のドメイン。`https://` から始めること | なし（必須） |
+| `path` | ルート定義の `<Route path>` | なし（必須） |
+| `articlesDir` | `import.meta.glob` が見ている md のフォルダ | `src/articles` |
+| `imageBasePath` | `ArticleDetail` / `ArticleList` に渡している `imageBasePath` | `/article_imgs/` |
+
+> **`articlesDir` と `imageBasePath` は、渡していなければ既定のままでよいか必ず確認してください。** プラグインはブラウザの外（Node）で動くため、`import.meta.glob` のパターンを読み取れません。md の置き場所を変えている場合は `articlesDir` に同じ場所を渡してください。
+>
+> `imageBasePath` がずれると、**画面に出ている画像とカードの画像が食い違います**（カード側だけ 404 になります）。
+
+### ステップ5. ローカルでビルドして確認する
+
+```bash
+npm run build
+```
+
+最後にこの行が出れば書き出せています。
+
+```
+[article-system] 12 件の記事に og タグを書き出しました
+```
+
+ファイルを直接見て確かめます。
+
+```bash
+ls dist/blog/
+cat dist/blog/<記事のslug>/index.html | grep og:
+```
+
+ブラウザ越しにも確認できます。
+
+```bash
+npx vite preview
+curl -s http://localhost:4173/blog/<記事のslug>/ | grep og:
+```
+
+> **末尾の `/` を付けてください。** `vite preview` は末尾スラッシュが無いと SPA のフォールバックが先に効き、トップの `index.html` を返します。これは `vite preview` の挙動で、本番のホスティングでは起きません（下で確認します）。
+
+### ステップ6. デプロイして確認する
+
+デプロイしたら、**本番の URL を実際に取得して確かめます。**
+
+```bash
+curl -s https://example.com/blog/<記事のslug> | grep -E "og:title|og:image"
+```
+
+`og:title` と `og:image` が記事のものになっていれば完了です。
+
+**もしトップページのタイトルが返ってきたら**、ホスティングが「記事の HTML ファイル」ではなく「SPA のフォールバック」を返しています。
+
+```bash
+# まず末尾スラッシュ付きで試す。これで出るならファイル自体は置けている
+curl -s https://example.com/blog/<記事のslug>/ | grep og:title
+```
+
+- 出た → ホスティングの設定で、**静的ファイルがフォールバックより先に評価される**ようにします。`vercel.json` や `_redirects` に `/*` → `/index.html` のような全部書き換えの規則を入れている場合、それが原因です
+- 出ない → ファイルが置けていません。ステップ5に戻って `dist/` の中身を確認してください
+
+### ステップ7. 実際に貼って確認する
+
+X や Slack に URL を貼って、カードが出ることを確認します。
+
+> **一度読まれた URL はしばらくキャッシュされます。** 直した直後は古いカード（または何も無い状態）が出ることがあります。確実に見たいときは、確認用に末尾を変えた URL で試してください。
+
+<br>
+
+### 画像について
+
+`og:image` に使われるのはフロントマターの `thumbnail` です。
+
+- **公開されていて、ログイン不要で開ける画像**である必要があります
+- **1200×630 を推奨します。** 小さすぎると大きいカードにならず、小さいカードに落ちます
 - `thumbnail` が空の記事は、画像なしの小さいカードになります
-- **カードの説明文は本文の冒頭から自動で作られます。** フロントマターに書く項目はありません
+
+カードの説明文は**本文の冒頭から自動で作られます。** フロントマターに書く項目はありません。
 
 ### 設定が間違っていればビルドが止まります
 
@@ -623,18 +737,9 @@ OGタグは**誰かが共有するまで壊れているか分かりません。*
 ```
 [article-system] path には :slug を含めてください（例: "/article/:slug"）。
 [article-system] siteUrl は http:// か https:// から始まる絶対URLで渡してください。
-[article-system] src/articles に md が1件もありません。
+[article-system] 記事のフォルダが読めませんでした: /path/to/your-project/src/articles
+[article-system] /path/to/your-project/src/articles に md が1件もありません。
 ```
-
-### デプロイしたら確認してください
-
-`/article/2026-10-12` を `/article/2026-10-12/index.html` から返せるホスティングが必要です。**Vercel・Netlify・GitHub Pages はいずれも既定でそうします。**
-
-```
-curl -s https://example.com/article/2026-10-12 | grep og:
-```
-
-> **`vite preview` では末尾スラッシュが必要です。** SPA のフォールバックが先に効いてルートの `index.html` が返るためです。ローカルで試すときは `http://localhost:4173/article/2026-10-12/` のように末尾に `/` を付けてください。
 
 ### タグだけ欲しい場合
 
@@ -645,7 +750,7 @@ import { buildArticleHead } from "@fififuchun/article-system";
 
 const head = buildArticleHead(article, {
   siteUrl: "https://example.com",
-  path: `/article/${article.slug}`,
+  path: `/blog/${article.slug}`,
 });
 // → <title>…</title><link rel="canonical" …><meta property="og:title" …> …
 ```
@@ -729,6 +834,33 @@ src/articles/ に .md ファイルを追加するだけ
 `createArticles` が自動でソートするため、他のファイルを変更する必要はありません。
 
 > **`slug` は記事の身元です。** 古い日付の記事を後から追加しても、既存の記事の URL は変わりません。ファイル名を変えると（`slug:` を書いていない記事では）URL が変わるので、URL を保ちたいときはフロントマターに `slug:` を明示してください。
+
+<br>
+<br>
+
+## 0.3.0 から 0.4.0 への変更
+
+**破壊的変更はありません。** 入れ替えるだけで動きます。挙動が変わる点だけ書きます。
+
+### 追加
+
+- **共有したときのサムネイル（OGタグ）。** 導入は上記の手順を参照してください。入れなければ何も変わりません
+- **ドロップした画像がリロードで消えなくなりました。** 本文は localStorage、画像の実体は IndexedDB に保存されます。保存できない環境では画像欄にその旨が出ます
+
+### 変わること
+
+| | 0.3.0 | 0.4.0 |
+| --- | --- | --- |
+| `github` を渡したときのボタン | 「本番コミット」 | **「投稿」**（プッシュまで済むため） |
+| 投稿ボタンを押したとき | すぐコミット | **確認が出る**（タイトル・ファイル名・画像の件数） |
+| 投稿に成功した後 | 編集内容がそのまま残る | **雛形に戻る**（画像欄も空になる） |
+| 「新しく書く」 | 画像は残っていた | **画像も捨てる** |
+
+### 直したこと
+
+- **ドロップした画像が本文プレビューに出なかった**のを直しました。react-markdown が `blob:` の URL を消していました。一覧タブのカードも同じ理由で出ていませんでした
+- 操作帯のボタンの右に隙間が開くのを直しました
+- 閉じる（×）ボタンが操作帯の高さによって崩れるのを直しました
 
 <br>
 <br>

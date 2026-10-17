@@ -347,3 +347,13 @@ SPA はどの記事URLでも同じ中身の無い HTML を返す。クローラ�
 - [x] `Article` と `createArticles` / `buildDraftArticle` から `description` を外す（テスト → 実装 → グリーン）
 - [x] `buildArticleHead` は常に本文から説明文を作る（テスト → 実装 → グリーン）
 - [x] spec §3 §18 と README を書き換える
+
+### フェーズ18: 導入手順を README に書く
+
+利用側プロジェクトに後から OGタグを足すための手順。設定の食い違い
+（`articlesDir` / `imageBasePath`）はビルドが通るのにカードが出ない形で
+出るため、合わせる相手を表にする。
+
+- [x] バージョンを 0.4.0 に上げる（破壊的変更なし。タグは未プッシュ）
+- [x] README に「既存のサイトに導入する手順」をステップで書く
+- [x] README に 0.3.0 → 0.4.0 の変更点を書く
