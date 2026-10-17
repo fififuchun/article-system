@@ -474,7 +474,7 @@ describe("validateArticle — slug", () => {
   });
 });
 
-// spec §18: description は任意だが、typo は拾いたい
+// spec §3: slug は任意だが、typo は拾いたい
 describe("validateArticle — 任意の項目", () => {
   const md = (lines: string[]) => ["---", ...lines, "---", "", "本文"].join("\n");
 
@@ -486,25 +486,17 @@ describe("validateArticle — 任意の項目", () => {
     "thumbnail: a.webp",
   ];
 
-  it("description を未知の項目として報告しない", () => {
-    const issues = validateArticle(md([...base, "description: まとめ"]));
-
-    expect(issues).toEqual([]);
-  });
-
   it("slug を未知の項目として報告しない", () => {
     const issues = validateArticle(md([...base, "slug: summer"]));
 
     expect(issues).toEqual([]);
   });
 
-  it("description の typo を拾う", () => {
-    const issues = validateArticle(md([...base, "descrption: まとめ"]));
+  // フロントマターの項目にはしていない（spec §18）。独自キーと同じく黙って通る
+  it("description は読まれないが報告もしない", () => {
+    const issues = validateArticle(md([...base, "description: まとめ"]));
 
-    expect(issues.map((issue) => issue.field)).toContain("descrption");
-    expect(issues.find((issue) => issue.field === "descrption")?.message).toContain(
-      "description"
-    );
+    expect(issues).toEqual([]);
   });
 
   it("slug の typo を拾う", () => {

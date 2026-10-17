@@ -41,7 +41,7 @@ function levenshtein(a, b) {
 
 // src/validate.ts
 var REQUIRED_FIELDS = ["title", "date", "latestUpdate", "staff", "thumbnail"];
-var OPTIONAL_FIELDS = ["slug", "description"];
+var OPTIONAL_FIELDS = ["slug"];
 var KNOWN_FIELDS = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
 var TYPO_MAX_DISTANCE = 2;
 var DATE_FIELDS = ["date", "latestUpdate"];
@@ -192,8 +192,6 @@ function createArticles(rawFiles) {
       latestUpdate: data.latestUpdate ?? "",
       staff: data.staff ?? "",
       thumbnail: data.thumbnail ?? "",
-      // 任意。無ければ本文から作る（spec §18）
-      description: data.description?.trim(),
       content
     };
   }).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
@@ -235,7 +233,7 @@ function buildArticleHead(article, options) {
       `[article-system] siteUrl \u306F http:// \u304B https:// \u304B\u3089\u59CB\u307E\u308B\u7D76\u5BFEURL\u3067\u6E21\u3057\u3066\u304F\u3060\u3055\u3044\u3002og:image \u306F\u7D76\u5BFEURL\u3067\u306A\u3044\u3068\u7121\u8996\u3055\u308C\u307E\u3059\u3002\u53D7\u3051\u53D6\u3063\u305F\u5024: ${siteUrl}`
     );
   }
-  const description = article.description?.trim() || buildDescription(article.content, options.descriptionLength);
+  const description = buildDescription(article.content, options.descriptionLength);
   const thumbnail = article.thumbnail.trim();
   const imageUrl = thumbnail ? absolute(resolveImageSrc(thumbnail, imageBasePath), siteUrl) : "";
   const url = absolute(path, siteUrl);
@@ -478,7 +476,6 @@ function buildDraftArticle(raw) {
     latestUpdate: data.latestUpdate ?? "",
     staff: data.staff ?? "",
     thumbnail: data.thumbnail ?? "",
-    description: data.description?.trim(),
     content
   };
 }

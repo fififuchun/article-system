@@ -73,9 +73,9 @@ export function buildArticleHead(article: Article, options: ArticleHeadOptions):
     );
   }
 
-  const description =
-    article.description?.trim() ||
-    buildDescription(article.content, options.descriptionLength);
+  // フロントマターに説明文の項目は持ちません。項目を増やすほど書くことが
+   // 増えるため、常に本文から作ります（spec §18）
+  const description = buildDescription(article.content, options.descriptionLength);
 
   // 表示に使うのと同じ解決をしてから絶対URLにする。別の判定を書くと
   // プレビューに出ている画像とカードの画像が食い違う（spec §18）

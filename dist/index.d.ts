@@ -15,13 +15,6 @@ interface Article {
     latestUpdate: string;
     staff: string;
     thumbnail: string;
-    /**
-     * 共有したときのカードに出る説明文（spec §18）。**任意です。**
-     *
-     * 書かなければ本文の冒頭から作ります。だから「空文字」と「書いていない」を
-     * 区別する必要があり、他の項目と違って省略可能にしています。
-     */
-    description?: string;
     content: string;
 }
 interface ArticleDetailClassNames {

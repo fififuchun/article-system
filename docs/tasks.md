@@ -338,3 +338,12 @@ SPA はどの記事URLでも同じ中身の無い HTML を返す。クローラ�
 - [x] `@fififuchun/article-system/vite` として配布を分ける（読者のバンドルに入らないこと。ビルド確認）
 - [x] `demo/` に組み込み、実際に `npm run build` して出力を確認する
 - [x] spec §18 と README を書く
+
+### フェーズ17: フロントマターから description を外す（spec §3 §18）
+
+フロントマターは最小に保つ方針。説明文は常に本文の冒頭から作る。
+`description` は書いても読まれない（他の独自キーと同じく黙って通る）。
+
+- [x] `Article` と `createArticles` / `buildDraftArticle` から `description` を外す（テスト → 実装 → グリーン）
+- [x] `buildArticleHead` は常に本文から説明文を作る（テスト → 実装 → グリーン）
+- [x] spec §3 §18 と README を書き換える

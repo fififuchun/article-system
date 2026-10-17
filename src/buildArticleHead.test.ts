@@ -113,23 +113,36 @@ describe("buildArticleHead — og:image", () => {
   });
 });
 
+// フロントマターに説明文の項目は持たない。常に本文から作る（spec §18）
 describe("buildArticleHead — 説明文", () => {
-  it("description があればそれを使う", () => {
-    const head = buildArticleHead({ ...article, description: "手で書いた説明" }, options);
-
-    expect(content(head, "og:description")).toBe("手で書いた説明");
-  });
-
-  it("description が無ければ本文から作る", () => {
+  it("本文から作る", () => {
     expect(content(buildArticleHead(article, options), "og:description")).toBe(
       "本文テキストです。"
     );
   });
 
-  it("description が空なら本文から作る", () => {
-    const head = buildArticleHead({ ...article, description: "   " }, options);
+  it("マークダウンの記号を落とす", () => {
+    const head = buildArticleHead(
+      { ...article, content: "## 見出し\n\n**本文**です。" },
+      options
+    );
 
-    expect(content(head, "og:description")).toBe("本文テキストです。");
+    expect(content(head, "og:description")).toBe("見出し 本文です。");
+  });
+
+  it("上限を渡せる", () => {
+    const head = buildArticleHead(
+      { ...article, content: "あ".repeat(50) },
+      { ...options, descriptionLength: 10 }
+    );
+
+    expect(content(head, "og:description")).toBe(`${"あ".repeat(10)}…`);
+  });
+
+  it("本文が空なら空のまま出す", () => {
+    const head = buildArticleHead({ ...article, content: "" }, options);
+
+    expect(content(head, "og:description")).toBe("");
   });
 
   // 検索結果にも出る。og と同じものを入れる
@@ -164,7 +177,7 @@ describe("buildArticleHead — escape", () => {
   });
 
   it("説明文も escape する", () => {
-    const head = buildArticleHead({ ...article, description: 'a"b' }, options);
+    const head = buildArticleHead({ ...article, content: 'a"b' }, options);
 
     expect(head).toContain('content="a&quot;b"');
   });

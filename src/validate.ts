@@ -18,8 +18,8 @@ export interface ValidateContext {
 /** フロントマターに必ず必要な項目（spec §3） */
 const REQUIRED_FIELDS = ["title", "date", "latestUpdate", "staff", "thumbnail"] as const;
 
-/** 書いてもよい項目。無くてもよいが、typo は拾いたい（spec §3 §18） */
-const OPTIONAL_FIELDS = ["slug", "description"] as const;
+/** 書いてもよい項目。無くてもよいが、typo は拾いたい（spec §3） */
+const OPTIONAL_FIELDS = ["slug"] as const;
 
 /** 既知の項目。これ以外は typo の候補として照合する */
 const KNOWN_FIELDS: readonly string[] = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];

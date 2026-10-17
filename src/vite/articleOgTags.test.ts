@@ -258,15 +258,8 @@ describe("articleOgTags — 日本語の slug", () => {
 });
 
 describe("articleOgTags — 説明文", () => {
-  it("description があればそれを使う", () => {
-    article("a.md", [...BASE, "description: 手で書いた説明"]);
-
-    run();
-
-    expect(written("article/a/index.html")).toContain('content="手で書いた説明"');
-  });
-
-  it("無ければ本文から作る", () => {
+  // フロントマターの項目にはしていない（spec §18）
+  it("本文から作る", () => {
     article("a.md", BASE, "## 見出し\n\n本文から作られます。");
 
     run();
