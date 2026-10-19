@@ -1,0 +1,8 @@
+/*
+ * Tailwind v3 の preflight だけを入れる（spec §10）。
+ *
+ * 利用側プロジェクト（Tailwind v3）と同じ順序を再現するため、
+ * ライブラリの styles.css より **後** に読み込みます。
+ */
+@tailwind base;
+@tailwind utilities;

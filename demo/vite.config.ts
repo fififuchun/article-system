@@ -3,6 +3,12 @@ import react from "@vitejs/plugin-react";
 import { articleOgTags } from "@fififuchun/article-system/vite";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      // Tailwind v3 の preflight との同居を確かめる別ページ（spec §10）
+      input: { main: "index.html", tailwind: "tailwind.html" },
+    },
+  },
   plugins: [
     react(),
     // 共有したときのサムネイル（spec §18）。ビルドの最後に
