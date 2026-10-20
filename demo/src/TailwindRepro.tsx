@@ -17,6 +17,10 @@ import { articles } from "./lib/articles";
  * 3. トークン入力画面の枠線・ボタンの背景・手順の番号
  * 4. 「classNames で渡した Tailwind クラスが勝つ」の確認
  */
+// デモの記事は実物の画像を持たないので、既定のデモと同じ代替画像を使う
+const DETAIL_IMAGES = "https://placehold.co/800x400/e8e8e8/999999?text=";
+const CARD_IMAGES = "https://placehold.co/400x240/e8e8e8/999999?text=";
+
 export default function TailwindRepro() {
   const [tab, setTab] = useState<"detail" | "list" | "studio" | "login">("detail");
   const [override, setOverride] = useState(false);
@@ -42,18 +46,29 @@ export default function TailwindRepro() {
       </nav>
 
       {tab === "detail" && (
-        <ArticleDetail article={articles[0]} classNames={detailClassNames} />
+        <ArticleDetail
+          article={articles[0]}
+          imageBasePath={DETAIL_IMAGES}
+          classNames={detailClassNames}
+        />
       )}
 
       {tab === "list" && (
         <ArticleList
           articles={articles}
+          imageBasePath={CARD_IMAGES}
           getArticleUrl={() => "#"}
           renderLink={(url, children, key) => <a key={key} href={url}>{children}</a>}
         />
       )}
 
-      {tab === "studio" && <ArticleStudio articles={articles} storageKey="tw-repro" />}
+      {tab === "studio" && (
+        <ArticleStudio
+          articles={articles}
+          storageKey="tw-repro"
+          imageBasePath={DETAIL_IMAGES}
+        />
+      )}
 
       {tab === "login" && (
         <ArticleStudio articles={articles} storageKey="tw-login" github={{ repo: "me/blog" }} />
