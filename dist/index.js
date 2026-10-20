@@ -258,6 +258,23 @@ function buildArticleHead(article, options) {
   return lines.join("\n");
 }
 
+// src/components/ArticleDetail.tsx
+import { useEffect } from "react";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
+
+// src/cx.ts
+function cx(...classes) {
+  return classes.filter((className) => Boolean(className)).join(" ");
+}
+
+// src/formatDate.ts
+function formatDate(date) {
+  const [year, month, day] = date.split("-").map(Number);
+  return { year, month, day };
+}
+
 // src/stylesheetWarning.ts
 var WARNING = '[article-system] \u30AB\u30B9\u30B1\u30FC\u30C9\u30EC\u30A4\u30E4\u30FC\uFF08Tailwind v4 \u306A\u3069\uFF09\u304C\u4F7F\u308F\u308C\u3066\u3044\u307E\u3059\u304C\u3001\u5C64\u306A\u3057\u306E styles.css \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u3059\u3002\n\u3053\u306E\u307E\u307E\u3067\u306F classNames \u3067\u6E21\u3057\u305F\u30AF\u30E9\u30B9\u304C\u30E9\u30A4\u30D6\u30E9\u30EA\u306B\u8CA0\u3051\u3066\u52B9\u304D\u307E\u305B\u3093\u3002\n  import "@fififuchun/article-system/styles.layer.css";\n\u306B\u8AAD\u307F\u66FF\u3048\u3066\u304F\u3060\u3055\u3044\uFF08\u4E21\u65B9\u3092\u8AAD\u307F\u8FBC\u307E\u306A\u3044\u3067\u304F\u3060\u3055\u3044\uFF09\u3002\u8A73\u3057\u304F\u306F spec \xA710\u3002';
 function usesCascadeLayers(names) {
@@ -302,23 +319,6 @@ function warnStylesheetMismatch() {
     }
   } catch {
   }
-}
-
-// src/components/ArticleDetail.tsx
-import { useEffect } from "react";
-import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
-
-// src/cx.ts
-function cx(...classes) {
-  return classes.filter((className) => Boolean(className)).join(" ");
-}
-
-// src/formatDate.ts
-function formatDate(date) {
-  const [year, month, day] = date.split("-").map(Number);
-  return { year, month, day };
 }
 
 // src/icons/ClockIcon.tsx
@@ -1651,6 +1651,5 @@ export {
   buildDescription,
   createArticles,
   resolveSlug,
-  validateArticle,
-  warnStylesheetMismatch
+  validateArticle
 };

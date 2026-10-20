@@ -1185,6 +1185,14 @@ npm i github:fififuchun/article-system
 
 jsdom は純粋関数のテストより桁違いに遅いため、環境はファイル単位で指定します（`// @vitest-environment jsdom`）。純粋関数のテストは Node 環境のまま高速に保ちます。
 
+#### Tailwind との同居は再現ページで見る
+
+`demo/tailwind.html` に Tailwind v3 の preflight を入れた専用ページを置いています（`demo/src/TailwindRepro.tsx`）。**既定のデモページには影響しません** — `@tailwind base` を含む CSS をこのエントリだけが読み込むため、ビルド出力も別ファイルに分かれます。
+
+**残す理由**：この種の崩れは詳細度の計算だけでは確信が持てず、再現環境なしに検証できません。`demo/` の devDependency に Tailwind v3・postcss・autoprefixer が増える代償を払っています。ライブラリ本体の依存は増えていません。
+
+**v4 の再現環境はリポジトリに入れていません。** npm プロジェクトがもう1つ増えるためです。検証したこと（`node_modules` 由来の `@layer` が残る、読み込み順を入れ替えても層の順番が変わらない、層なし版を読むと印が `plain` のまま残る）は `docs/tasks.md` のフェーズ19に記録しています。
+
 ---
 
 ## 15. GitHub 連携

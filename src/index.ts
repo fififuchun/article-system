@@ -11,8 +11,6 @@ export { validateArticle } from "./validate";
 export { resolveSlug } from "./resolveSlug";
 export { buildDescription } from "./buildDescription";
 export { buildArticleHead } from "./buildArticleHead";
-// CSS の版の取り違えを調べる。利用側が自分で呼ぶ必要はない（spec §10）
-export { warnStylesheetMismatch } from "./stylesheetWarning";
 export type { ArticleHeadOptions } from "./buildArticleHead";
 export { ArticleDetail } from "./components/ArticleDetail";
 export { ArticleList } from "./components/ArticleList";
