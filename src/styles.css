@@ -1,10 +1,22 @@
 /*
- * @fififuchun/article-system デフォルトスタイル
+ * @fififuchun/article-system デフォルトスタイル（層なし版）
  *
- * すべてのセレクタを :where() で包み、詳細度を 0 にしています（spec §10）。
- * クラスセレクタは詳細度が同点のため、同点だと CSS の定義順で勝敗が決まり、
- * Vite のコード分割や HMR で順序が変わりえます。:where() なら読み込み順に
- * 関係なく利用側の上書きが常に効きます。
+ * **Tailwind v4 を使う場合は styles.layer.css を読んでください。**
+ * このファイルは Tailwind v3 と、Tailwind を使わない場合のためのものです。
+ *
+ * すべてのセレクタが詳細度 **(0,0,2)** になるように書かれています（spec §10）。
+ * 条件は2つで、どちらも読み込み順に関係なく成立させるためです。順序に頼ると
+ * Vite のコード分割や HMR で勝敗が変わります。
+ *
+ *   1. クラス相当の桁を 0 にする（`:where()` で包む）
+ *      → 利用側が classNames で渡したクラス（0,1,0）に必ず負ける
+ *
+ *   2. 型セレクタを2つ以上にする（`html body` を前置する）
+ *      → Tailwind の preflight のような要素1つのリセット（0,0,1）に必ず勝つ
+ *
+ * `html body` 自体に意味はありません。常に成立する条件を書いて3番目の桁を
+ * 2つ上げているだけです。型セレクタを何個積んでもクラス1つには勝てないため、
+ * 1 と 2 は両立します。
  *
  * 色やサイズは下の変数を再定義するだけで差し替えられます。
  */
@@ -67,7 +79,7 @@
  * ブラウザ標準に優先するため、:where() のままリセットが効きます。
  */
 
-:where(.as-title) {
+html body :where(.as-title) {
   flex: 1;
   align-self: center;
   font-size: var(--as-text-title);
@@ -77,7 +89,7 @@
   margin: 0;
 }
 
-:where(.as-heading) {
+html body :where(.as-heading) {
   font-size: var(--as-text-heading);
   font-weight: bold;
   line-height: var(--as-leading-heading);
@@ -87,7 +99,7 @@
   margin: var(--as-space-xl) 0 var(--as-space-md);
 }
 
-:where(.as-subheading) {
+html body :where(.as-subheading) {
   font-size: var(--as-text-subheading);
   font-weight: bold;
   line-height: var(--as-leading-heading);
@@ -95,7 +107,7 @@
   margin: var(--as-space-lg) 0 var(--as-space-sm);
 }
 
-:where(.as-subsubheading) {
+html body :where(.as-subsubheading) {
   font-size: var(--as-text-subsubheading);
   font-weight: bold;
   line-height: var(--as-leading-heading);
@@ -103,7 +115,7 @@
   margin: var(--as-space-lg) 0 var(--as-space-xs);
 }
 
-:where(.as-paragraph) {
+html body :where(.as-paragraph) {
   font-size: var(--as-text-body);
   line-height: var(--as-leading-body);
   color: var(--as-color-text);
@@ -112,7 +124,7 @@
 
 /* 記事の外枠と周辺 */
 
-:where(.as-article) {
+html body :where(.as-article) {
   font-family: var(--as-font-body);
   color: var(--as-color-text);
   background: var(--as-color-surface);
@@ -123,7 +135,7 @@
   box-shadow: var(--as-shadow-card);
 }
 
-:where(.as-header) {
+html body :where(.as-header) {
   display: flex;
   align-items: stretch;
   gap: var(--as-space-lg);
@@ -131,7 +143,7 @@
 }
 
 /* 日付ブロック。右の罫線がタイトルとの仕切りになる */
-:where(.as-date) {
+html body :where(.as-date) {
   display: flex;
   flex: none;
   flex-direction: column;
@@ -141,21 +153,21 @@
   border-right: 1px solid var(--as-color-border);
 }
 
-:where(.as-date-year) {
+html body :where(.as-date-year) {
   font-size: var(--as-text-date-year);
   line-height: 1.2;
   color: var(--as-color-muted);
   margin: 0;
 }
 
-:where(.as-date-day) {
+html body :where(.as-date-day) {
   font-size: var(--as-text-date-day);
   line-height: 1.2;
   color: var(--as-color-muted);
   margin: 0;
 }
 
-:where(.as-latest-update) {
+html body :where(.as-latest-update) {
   display: flex;
   align-items: center;
   gap: var(--as-space-xs);
@@ -165,13 +177,13 @@
 }
 
 /* サイズを指定しないとインライン SVG は 300x150 で描画される */
-:where(.as-date-icon) {
+html body :where(.as-date-icon) {
   width: 1.2em;
   height: 1.2em;
   flex: none;
 }
 
-:where(.as-thumbnail) {
+html body :where(.as-thumbnail) {
   display: block;
   width: 100%;
   height: auto;
@@ -179,11 +191,11 @@
   margin-bottom: var(--as-space-xl);
 }
 
-:where(.as-image) {
+html body :where(.as-image) {
   margin: var(--as-space-lg) 0;
 }
 
-:where(.as-image img) {
+html body :where(.as-image img) {
   display: block;
   width: 100%;
   height: auto;
@@ -191,13 +203,13 @@
 }
 
 /* 文中のインライン画像。はみ出しを防ぐ */
-:where(.as-paragraph img) {
+html body :where(.as-paragraph img) {
   max-width: 100%;
   height: auto;
   vertical-align: middle;
 }
 
-:where(.as-footer) {
+html body :where(.as-footer) {
   font-size: var(--as-text-small);
   color: var(--as-color-muted);
   margin-top: var(--as-space-xl);
@@ -211,7 +223,7 @@
  * 記事の外枠からの子孫セレクタで当てます（spec §7）。
  */
 
-:where(.as-article ul, .as-article ol) {
+html body :where(.as-article ul, .as-article ol) {
   font-size: var(--as-text-body);
   line-height: var(--as-leading-body);
   color: var(--as-color-text);
@@ -219,25 +231,25 @@
   padding-left: 1.5em;
 }
 
-:where(.as-article li) {
+html body :where(.as-article li) {
   margin: var(--as-space-xs) 0;
 }
 
-:where(.as-article li > ul, .as-article li > ol) {
+html body :where(.as-article li > ul, .as-article li > ol) {
   margin: var(--as-space-xs) 0;
 }
 
 /* タスクリスト。マーカーを消してチェックボックスと行頭を揃える */
-:where(.as-article li:has(> input[type="checkbox"])) {
+html body :where(.as-article li:has(> input[type="checkbox"])) {
   list-style: none;
   margin-left: -1.5em;
 }
 
-:where(.as-article input[type="checkbox"]) {
+html body :where(.as-article input[type="checkbox"]) {
   margin-right: var(--as-space-xs);
 }
 
-:where(.as-article table) {
+html body :where(.as-article table) {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--as-text-small);
@@ -246,18 +258,18 @@
   margin: var(--as-space-lg) 0;
 }
 
-:where(.as-article th, .as-article td) {
+html body :where(.as-article th, .as-article td) {
   border: 1px solid var(--as-color-border);
   padding: var(--as-space-sm) var(--as-space-md);
   text-align: left;
 }
 
-:where(.as-article th) {
+html body :where(.as-article th) {
   background: var(--as-color-surface-muted);
   font-weight: bold;
 }
 
-:where(.as-article blockquote) {
+html body :where(.as-article blockquote) {
   font-size: var(--as-text-body);
   line-height: var(--as-leading-body);
   color: var(--as-color-muted);
@@ -266,7 +278,7 @@
   padding: var(--as-space-sm) var(--as-space-lg);
 }
 
-:where(.as-article code) {
+html body :where(.as-article code) {
   font-family: var(--as-font-mono);
   font-size: 0.9em;
   background: var(--as-color-surface-muted);
@@ -274,7 +286,7 @@
   border-radius: 4px;
 }
 
-:where(.as-article pre) {
+html body :where(.as-article pre) {
   font-family: var(--as-font-mono);
   font-size: var(--as-text-small);
   line-height: 1.6;
@@ -286,7 +298,7 @@
 }
 
 /* コードブロック内の code は pre 側の見た目に任せる */
-:where(.as-article pre code) {
+html body :where(.as-article pre code) {
   font-size: inherit;
   background: none;
   padding: 0;
@@ -299,7 +311,7 @@
  * グリッドの直接の子はそのリンクなので、リンク側にレイアウトを当てます（spec §8）。
  */
 
-:where(.as-grid) {
+html body :where(.as-grid) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: var(--as-space-lg);
@@ -307,14 +319,14 @@
 }
 
 /* リンクの既定の下線と色を打ち消し、カードを高さいっぱいに広げる */
-:where(.as-grid > *) {
+html body :where(.as-grid > *) {
   display: block;
   height: 100%;
   color: inherit;
   text-decoration: none;
 }
 
-:where(.as-card) {
+html body :where(.as-card) {
   height: 100%;
   background: var(--as-color-surface);
   border-radius: var(--as-radius);
@@ -323,18 +335,18 @@
   transition: box-shadow 0.2s;
 }
 
-:where(.as-card:hover) {
+html body :where(.as-card:hover) {
   box-shadow: var(--as-shadow-card-hover);
 }
 
-:where(.as-card-image) {
+html body :where(.as-card-image) {
   display: block;
   width: 100%;
   aspect-ratio: 5 / 3;
   object-fit: cover;
 }
 
-:where(.as-card-title) {
+html body :where(.as-card-title) {
   font-size: var(--as-text-body);
   font-weight: bold;
   line-height: var(--as-leading-heading);
@@ -343,7 +355,7 @@
   padding: var(--as-space-md) var(--as-space-md) var(--as-space-xs);
 }
 
-:where(.as-card-date) {
+html body :where(.as-card-date) {
   display: flex;
   align-items: center;
   gap: var(--as-space-xs);
@@ -352,7 +364,7 @@
   padding: 0 var(--as-space-md) var(--as-space-md);
 }
 
-:where(.as-card-date-icon) {
+html body :where(.as-card-date-icon) {
   width: 1.2em;
   height: 1.2em;
   flex: none;
@@ -365,25 +377,25 @@
  */
 
 @media (max-width: 40rem) {
-  :where(.as-article) {
+  html body :where(.as-article) {
     padding: var(--as-space-lg);
   }
 
-  :where(.as-grid) {
+  html body :where(.as-grid) {
     grid-template-columns: 1fr;
     gap: var(--as-space-md);
   }
 
-  :where(.as-heading) {
+  html body :where(.as-heading) {
     margin-top: var(--as-space-lg);
   }
 
-  :where(.as-thumbnail) {
+  html body :where(.as-thumbnail) {
     margin-bottom: var(--as-space-lg);
   }
 
   /* 表だけは縮められないので横スクロールに逃がす */
-  :where(.as-article table) {
+  html body :where(.as-article table) {
     display: block;
     overflow-x: auto;
   }
@@ -395,7 +407,7 @@
  * 列の指定だけを切り替え、中身の構造は変えません。
  */
 
-:where(.as-studio) {
+html body :where(.as-studio) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-areas:
@@ -413,7 +425,7 @@
 
 /* 操作の帯。actions と tabs は別要素だが、同じ行に並べて1本の帯に見せる。
    狭い画面ではそれぞれを各ペインの側へ戻せるよう、入れ子にはしない（spec §9） */
-:where(.as-studio-actions) {
+html body :where(.as-studio-actions) {
   grid-area: actions;
   position: sticky;
   top: var(--as-studio-header-top);
@@ -423,7 +435,7 @@
   border-bottom: 1px solid var(--as-color-border);
 }
 
-:where(.as-studio-tabs) {
+html body :where(.as-studio-tabs) {
   grid-area: tabs;
   position: sticky;
   top: var(--as-studio-header-top);
@@ -434,7 +446,7 @@
 }
 
 /* 角丸を持たず、罫線で区切った一続きの帯にする */
-:where(.as-studio-actions button, .as-studio-tabs button) {
+html body :where(.as-studio-actions button, .as-studio-tabs button) {
   font: inherit;
   font-size: var(--as-text-small);
   color: var(--as-color-text);
@@ -448,14 +460,14 @@
 /* 左半分を3つで埋める。中身の幅のままだと「新しく書く」の右に隙間が開き、
    最後のボタンの罫線が宙に浮く。埋めると罫線がペイン間の罫線と一直線になる。
    basis は auto のまま。余りだけを等分するので、文言の長さの差は保たれる */
-:where(.as-studio-actions button) {
+html body :where(.as-studio-actions button) {
   flex: 1 1 auto;
   /* 等分で詰まっても折り返さない。帯の高さが揺れる */
   white-space: nowrap;
 }
 
 /* 右半分を2等分し、詳細と一覧が同じ幅で並ぶようにする */
-:where(.as-studio-tabs button) {
+html body :where(.as-studio-tabs button) {
   flex: 1;
   color: var(--as-color-muted);
   border-right: none;
@@ -463,16 +475,16 @@
 }
 
 /* 罫線はタブどうしのあいだだけ。先頭の左側には引かない */
-:where(.as-studio-tabs button + button) {
+html body :where(.as-studio-tabs button + button) {
   border-left: 1px solid var(--as-color-border);
 }
 
-:where(.as-studio-tabs button[aria-selected="true"]) {
+html body :where(.as-studio-tabs button[aria-selected="true"]) {
   color: var(--as-color-surface);
   background: var(--as-color-accent);
 }
 
-:where(.as-studio-editor) {
+html body :where(.as-studio-editor) {
   grid-area: editor;
   display: flex;
   flex-direction: column;
@@ -480,13 +492,13 @@
   border-right: 1px solid var(--as-color-border);
 }
 
-:where(.as-studio-preview) {
+html body :where(.as-studio-preview) {
   grid-area: preview;
   padding: var(--as-space-lg);
 }
 
 /* 角丸も枠線も持たず、ペインいっぱいに広がる */
-:where(.as-studio-textarea) {
+html body :where(.as-studio-textarea) {
   width: 100%;
   min-height: 60vh;
   box-sizing: border-box;
@@ -503,26 +515,26 @@
 }
 
 /* 仮登録した画像。名前を直してその場で保存できる */
-:where(.as-studio-images) {
+html body :where(.as-studio-images) {
   font-size: var(--as-text-small);
   border-top: 1px solid var(--as-color-border);
   padding: var(--as-space-md) var(--as-space-lg);
 }
 
-:where(.as-studio-images ul) {
+html body :where(.as-studio-images ul) {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-:where(.as-studio-images li) {
+html body :where(.as-studio-images li) {
   display: flex;
   align-items: center;
   gap: var(--as-space-sm);
   padding: var(--as-space-xs) 0;
 }
 
-:where(.as-studio-images img) {
+html body :where(.as-studio-images img) {
   width: 2.5rem;
   height: 2.5rem;
   object-fit: cover;
@@ -530,7 +542,7 @@
   flex: none;
 }
 
-:where(.as-studio-images input) {
+html body :where(.as-studio-images input) {
   flex: 1;
   min-width: 0;
   font: inherit;
@@ -540,7 +552,7 @@
   padding: var(--as-space-xs) var(--as-space-sm);
 }
 
-:where(.as-studio-images button) {
+html body :where(.as-studio-images button) {
   display: flex;
   align-items: center;
   color: var(--as-color-muted);
@@ -550,29 +562,29 @@
   cursor: pointer;
 }
 
-:where(.as-studio-image-download-icon) {
+html body :where(.as-studio-image-download-icon) {
   width: 1.2em;
   height: 1.2em;
 }
 
-:where(.as-studio-images-note) {
+html body :where(.as-studio-images-note) {
   color: var(--as-color-muted);
   margin: 0 0 var(--as-space-sm);
 }
 
 /* 保存できなかった注意。ただの案内と区別が付くようにする（spec §9） */
-:where(.as-studio-images-unsaved) {
+html body :where(.as-studio-images-unsaved) {
   color: var(--as-color-error);
 }
 
-:where(.as-studio-image-pending) {
+html body :where(.as-studio-image-pending) {
   color: var(--as-color-error);
   white-space: nowrap;
   flex: none;
 }
 
 /* 検証結果。押したときだけ出る（spec §9） */
-:where(.as-studio-issues) {
+html body :where(.as-studio-issues) {
   font-size: var(--as-text-small);
   color: var(--as-color-error);
   background: var(--as-color-error-surface);
@@ -580,31 +592,31 @@
   padding: var(--as-space-md) var(--as-space-lg);
 }
 
-:where(.as-studio-issues ul) {
+html body :where(.as-studio-issues ul) {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-:where(.as-studio-issues li) {
+html body :where(.as-studio-issues li) {
   display: flex;
   align-items: flex-start;
   gap: var(--as-space-xs);
   padding: var(--as-space-xs) 0;
 }
 
-:where(.as-studio-issue-icon) {
+html body :where(.as-studio-issue-icon) {
   width: 1.2em;
   height: 1.2em;
   flex: none;
 }
 
 /* 編集中の記事のカードに重ねる URL の予告。カードの高さを崩さない */
-:where(.as-studio-draft-card) {
+html body :where(.as-studio-draft-card) {
   position: relative;
 }
 
-:where(.as-studio-slug-preview) {
+html body :where(.as-studio-slug-preview) {
   position: absolute;
   top: var(--as-space-sm);
   left: var(--as-space-sm);
@@ -618,7 +630,7 @@
 
 @media (max-width: 40rem) {
   /* 帯を解体する。タブは切り替え対象であるプレビューの直前に戻す（spec §9） */
-  :where(.as-studio) {
+  html body :where(.as-studio) {
     grid-template-columns: 1fr;
     grid-template-areas:
       "actions"
@@ -632,35 +644,35 @@
     align-content: start;
   }
 
-  :where(.as-studio-actions, .as-studio-tabs) {
+  html body :where(.as-studio-actions, .as-studio-tabs) {
     position: static;
   }
 
-  :where(.as-studio-tabs) {
+  html body :where(.as-studio-tabs) {
     border-top: 1px solid var(--as-color-border);
   }
 
   /* 広い画面と同じく、罫線はタブどうしのあいだだけにする */
-  :where(.as-studio-tabs button) {
+  html body :where(.as-studio-tabs button) {
     border-right: none;
   }
 
-  :where(.as-studio-editor) {
+  html body :where(.as-studio-editor) {
     border-right: none;
   }
 
-  :where(.as-studio-preview) {
+  html body :where(.as-studio-preview) {
     padding: var(--as-space-md);
   }
 
-  :where(.as-studio-textarea) {
+  html body :where(.as-studio-textarea) {
     min-height: 40vh;
     padding: var(--as-space-md);
   }
 }
 
 /* GitHub トークンの関門（spec §15）。編集画面の代わりに出る */
-:where(.as-studio-login) {
+html body :where(.as-studio-login) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -670,7 +682,7 @@
   font-size: var(--as-text-small);
 }
 
-:where(.as-studio-login-form) {
+html body :where(.as-studio-login-form) {
   display: flex;
   flex-direction: column;
   gap: var(--as-space-lg);
@@ -678,13 +690,13 @@
   max-width: 32rem;
 }
 
-:where(.as-studio-login-label) {
+html body :where(.as-studio-login-label) {
   display: flex;
   flex-direction: column;
   gap: var(--as-space-sm);
 }
 
-:where(.as-studio-login-label input) {
+html body :where(.as-studio-login-label input) {
   font: inherit;
   font-size: var(--as-text-small);
   color: var(--as-color-text);
@@ -693,7 +705,7 @@
   padding: var(--as-space-md);
 }
 
-:where(.as-studio-login button) {
+html body :where(.as-studio-login button) {
   font: inherit;
   font-size: var(--as-text-small);
   color: var(--as-color-surface);
@@ -703,12 +715,12 @@
   cursor: pointer;
 }
 
-:where(.as-studio-login button:disabled) {
+html body :where(.as-studio-login button:disabled) {
   background: var(--as-color-subtle);
   cursor: default;
 }
 
-:where(.as-studio-login-error) {
+html body :where(.as-studio-login-error) {
   display: flex;
   align-items: flex-start;
   gap: var(--as-space-sm);
@@ -719,20 +731,20 @@
 }
 
 /* 作り方の案内。本文より一段落とす */
-:where(.as-studio-login-note) {
+html body :where(.as-studio-login-note) {
   color: var(--as-color-muted);
   line-height: 1.7;
 }
 
 /* コミットに失敗したときの逃げ道（spec §15）。エラーの直下に置く */
-:where(.as-studio-issue-actions) {
+html body :where(.as-studio-issue-actions) {
   display: flex;
   flex-wrap: wrap;
   gap: var(--as-space-sm);
   margin-top: var(--as-space-md);
 }
 
-:where(.as-studio-issue-actions button) {
+html body :where(.as-studio-issue-actions button) {
   font: inherit;
   font-size: var(--as-text-small);
   color: var(--as-color-text);
@@ -743,7 +755,7 @@
 }
 
 /* トークンの作り方（spec §15）。番号を消さずに読ませる */
-:where(.as-studio-login-steps) {
+html body :where(.as-studio-login-steps) {
   display: flex;
   flex-direction: column;
   gap: var(--as-space-sm);
@@ -753,7 +765,7 @@
   line-height: 1.8;
 }
 
-:where(.as-studio-login-steps code) {
+html body :where(.as-studio-login-steps code) {
   background: var(--as-color-surface-muted);
   padding: 0 var(--as-space-xs);
 }
@@ -764,7 +776,7 @@
  * トップレイヤーに乗るので z-index は書かない。利用側がどんな大きい値を
  * 使っていても最前面になる。
  */
-:where(.as-studio-dialog) {
+html body :where(.as-studio-dialog) {
   width: 100vw;
   max-width: 100vw;
   height: 100dvh;
@@ -786,7 +798,7 @@
 }
 
 /* 閉じるボタンの帯。スクロールしても閉じられるよう貼り付けておく */
-:where(.as-studio-dialog-bar) {
+html body :where(.as-studio-dialog-bar) {
   position: sticky;
   top: 0;
   /* 操作帯（z-index: 2）より上。隠れると閉じられなくなる */
@@ -800,7 +812,7 @@
 }
 
 /* 帯の下は残りの高さをすべて使う。dvh の引き算をしない */
-:where(.as-studio-dialog) > :where(.as-studio, .as-studio-login) {
+html body :where(.as-studio-dialog) > :where(.as-studio, .as-studio-login) {
   flex: 1 0 auto;
 }
 
@@ -808,12 +820,12 @@
  * 既定では画面を完全に覆うため、この背面は1ピクセルも見えない。
  * `classNames.dialog` でダイアログを小さくしたときだけ効く。
  */
-:where(.as-studio-dialog)::backdrop {
+html body :where(.as-studio-dialog)::backdrop {
   background: rgb(0 0 0 / 0.5);
 }
 
 /* 帯と同じ高さの正方形。帯の中にいるので、操作帯の高さには影響されない */
-:where(.as-studio-dialog-close) {
+html body :where(.as-studio-dialog-close) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -827,7 +839,7 @@
   cursor: pointer;
 }
 
-:where(.as-studio-dialog-close svg) {
+html body :where(.as-studio-dialog-close svg) {
   width: 1rem;
   height: 1rem;
 }
