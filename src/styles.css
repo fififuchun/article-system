@@ -1,8 +1,5 @@
 /*
- * @fififuchun/article-system デフォルトスタイル（層なし版）
- *
- * **Tailwind v4 を使う場合は styles.layer.css を読んでください。**
- * このファイルは Tailwind v3 と、Tailwind を使わない場合のためのものです。
+ * @fififuchun/article-system デフォルトスタイル
  *
  * すべてのセレクタが詳細度 **(0,0,2)** になるように書かれています（spec §10）。
  * 条件は2つで、どちらも読み込み順に関係なく成立させるためです。順序に頼ると
