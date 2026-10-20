@@ -818,7 +818,13 @@ const head = buildArticleHead(article, {
 
 ### ブラウザ
 
-このライブラリは次の機能を使っています。どれも2022年以降のブラウザで使えます（**Safari 15.4 / Chrome 108 以降が目安**）。
+**対応ブラウザ**（`package.json` の `browserslist` に宣言しています）
+
+```
+Chrome 108+ / Edge 108+ / Safari 15.4+ / Firefox 101+
+```
+
+使っている機能から逆算した値です。どれも2022年以降のブラウザで使えます。
 
 | 機能 | 使っている場所 |
 | --- | --- |
@@ -827,6 +833,10 @@ const head = buildArticleHead(article, {
 | `100dvh` | 同上 |
 | `@layer` | **`styles.layer.css` だけ**（Chrome 99 / Safari 15.4 / Firefox 97 以降） |
 | IndexedDB | Studio の画像の保存 |
+
+上の数字を決めているのは `100dvh`（Chrome 108）と `@layer`（Safari 15.4）です。
+
+> **`browserslist` は宣言です。** ビルドがこれを読んで自動で検証する仕組みは入れていません。範囲外のブラウザで動かないことを保証するものではなく、「ここを下回る環境は対象にしていない」という表明です。
 
 > **`@layer` 未対応のブラウザでは、`styles.layer.css` のスタイルが丸ごと無視されます。** エラーは出ません。層に入っていないスタイルだけが適用されるという CSS の仕様です。
 >

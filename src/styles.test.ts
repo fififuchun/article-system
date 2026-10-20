@@ -79,3 +79,38 @@ describe("styles.css — その他", () => {
     expect(css).not.toContain("@layer");
   });
 });
+
+// 宣言と README がずれると、どちらが本当か分からなくなる
+describe("browserslist", () => {
+  const pkg = JSON.parse(
+    readFileSync(fileURLToPath(new URL("../package.json", import.meta.url)), "utf8")
+  ) as { browserslist: string[] };
+  const readme = readFileSync(
+    fileURLToPath(new URL("../README.md", import.meta.url)),
+    "utf8"
+  );
+
+  it("宣言がある", () => {
+    expect(pkg.browserslist.length).toBeGreaterThan(0);
+  });
+
+  it.each([["chrome"], ["edge"], ["safari"], ["firefox"]])(
+    "%s を宣言している",
+    (name) => {
+      expect(pkg.browserslist.some((entry) => entry.startsWith(name))).toBe(true);
+    }
+  );
+
+  // 例: "safari >= 15.4" → README に "Safari 15.4" が出てくること
+  it("宣言した版が README にも書かれている", () => {
+    const missing = pkg.browserslist
+      .map((entry) => entry.split(/\s*>=\s*/))
+      .map(([name, version]) => {
+        const label = name[0].toUpperCase() + name.slice(1);
+        return readme.includes(`${label} ${version}`) ? null : `${label} ${version}`;
+      })
+      .filter((item): item is string => item !== null);
+
+    expect(missing).toEqual([]);
+  });
+});

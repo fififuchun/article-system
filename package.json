@@ -22,6 +22,12 @@
     "test": "tsc --noEmit && vitest run",
     "test:watch": "vitest"
   },
+  "browserslist": [
+    "chrome >= 108",
+    "edge >= 108",
+    "safari >= 15.4",
+    "firefox >= 101"
+  ],
   "peerDependencies": {
     "react": ">=18"
   },
