@@ -1,9 +1,9 @@
 # @fififuchun/article-system
 
 マークダウンファイルを置くだけで記事データを自動生成し、一覧・詳細表示コンポーネントを提供するライブラリです。  
-スタイルはすべて利用側が指定します（ライブラリ自体はスタイルを持ちません）。
+デフォルトCSSを同梱しており、読み込むだけで記事の体裁が整います。見た目は `classNames` で全部差し替えられます。
 
-> **開発中のライブラリです。** 現在 v0.2 に向けた改修を進めており、執筆用の `ArticleStudio`、デフォルトCSSの同梱、下書き機能などが順次入ります。設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
+> **開発中のライブラリです（現在 0.5.0）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
 > **この README は今日時点で実際に動く内容だけを説明しています。**
 
 <br>
@@ -658,7 +658,7 @@ dist/
 npm i github:fififuchun/article-system#v0.5.0
 ```
 
-OGタグは `v0.4.0` から入っています。`#v0.3.0` のままでは**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
+OGタグは **0.4.0 で入った機能**です。それより古いものが入っていると**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
 
 ### ステップ2. 記事の URL が実パスかを確認する
 
@@ -1108,7 +1108,7 @@ npm i github:fififuchun/article-system#<新しいタグ or コミット>
 
 | ドキュメント | 内容 |
 | --- | --- |
-| [docs/spec.md](./docs/spec.md) | v0.2 の実装仕様書（設計の確定版） |
+| [docs/spec.md](./docs/spec.md) | 実装仕様書（設計の確定版。判断の理由はここに残しています） |
 | [docs/tasks.md](./docs/tasks.md) | 実装タスクリストと進捗 |
 | [docs/findings.md](./docs/findings.md) | 既知の問題と制約 |
 | [docs/architecture.md](./docs/architecture.md) | 内部構造とデータフロー |
