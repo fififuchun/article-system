@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -6,6 +7,7 @@ import type { Article, ArticleDetailClassNames } from "../types";
 import { cx } from "../cx";
 import { formatDate } from "../formatDate";
 import { resolveImageSrc } from "../resolveImageSrc";
+import { warnStylesheetMismatch } from "../stylesheetWarning";
 
 import { ClockIcon } from "../icons/ClockIcon";
 
@@ -39,6 +41,9 @@ export function ArticleDetail({
 }: Props) {
   const { year, month, day } = formatDate(article.date);
   const latest = formatDate(article.latestUpdate);
+
+  // CSS の版の取り違えを知らせる（spec §10）。1ページに1回しか調べない
+  useEffect(warnStylesheetMismatch, []);
 
   const mdComponents: Components = {
     h2: ({ children }) => (

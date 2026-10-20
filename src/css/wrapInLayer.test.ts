@@ -75,8 +75,15 @@ describe("dist の層あり版", () => {
   const dist = (name: string) =>
     readFileSync(fileURLToPath(new URL(`../../dist/${name}`, import.meta.url)), "utf8");
 
-  it("層なし版を包んだものになっている", () => {
-    expect(unwrapLayer(dist("styles.layer.css"))).toBe(dist("styles.css"));
+  it("層なし版を包んだものになっている（違うのは印だけ）", () => {
+    expect(unwrapLayer(dist("styles.layer.css"))).toBe(
+      dist("styles.css").replace(MARKER_PLAIN, MARKER_LAYER)
+    );
+  });
+
+  it("印が layer になっている", () => {
+    expect(dist("styles.layer.css")).toContain(MARKER_LAYER);
+    expect(dist("styles.css")).toContain(MARKER_PLAIN);
   });
 
   it("順番の宣言が入っている", () => {

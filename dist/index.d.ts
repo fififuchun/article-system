@@ -143,6 +143,9 @@ interface ArticleHeadOptions {
  */
 declare function buildArticleHead(article: Article, options: ArticleHeadOptions): string;
 
+/** 取り違えていれば1回だけ警告する。ブラウザ以外では何もしない */
+declare function warnStylesheetMismatch(): void;
+
 interface Props$3 {
     article: Article;
     imageBasePath?: string;
@@ -241,4 +244,4 @@ declare function TagIcon({ className }: IconProps): react_jsx_runtime.JSX.Elemen
 
 declare function WarningIcon({ className }: IconProps): react_jsx_runtime.JSX.Element;
 
-export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, type ArticleHeadOptions, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ArticleStudioRoute, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type GitHubConfig, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, buildArticleHead, buildDescription, createArticles, resolveSlug, validateArticle };
+export { ArrowIcon, type Article, ArticleDetail, type ArticleDetailClassNames, type ArticleHeadOptions, ArticleList, type ArticleListClassNames, ArticleStudio, type ArticleStudioClassNames, ArticleStudioRoute, ClockIcon, CloseIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, type GitHubConfig, type IconProps, ImageIcon, type Issue, PersonIcon, TagIcon, WarningIcon, buildArticleHead, buildDescription, createArticles, resolveSlug, validateArticle, warnStylesheetMismatch };

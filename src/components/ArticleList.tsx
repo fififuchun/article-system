@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import type { Article, ArticleListClassNames } from "../types";
 import { ClockIcon } from "../icons/ClockIcon";
 import { cx } from "../cx";
 import { formatDate } from "../formatDate";
 import { resolveImageSrc } from "../resolveImageSrc";
+import { warnStylesheetMismatch } from "../stylesheetWarning";
 
 interface Props {
   articles: Article[];
@@ -23,6 +25,9 @@ export function ArticleList({
   classNames = {},
   renderLink,
 }: Props) {
+  // CSS の版の取り違えを知らせる（spec §10）。1ページに1回しか調べない
+  useEffect(warnStylesheetMismatch, []);
+
   return (
     <div className={cx("as-grid", classNames.grid)}>
       {articles.map((article) => {
