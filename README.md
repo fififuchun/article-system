@@ -33,7 +33,7 @@ npm i github:fififuchun/article-system
 
 ```bash
 # タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.4.0
+npm i github:fififuchun/article-system#v0.5.0
 
 # コミットハッシュで固定する
 npm i github:fififuchun/article-system#b5e66ab
@@ -655,7 +655,7 @@ dist/
 ### ステップ1. ライブラリを更新する
 
 ```bash
-npm i github:fififuchun/article-system#v0.4.0
+npm i github:fififuchun/article-system#v0.5.0
 ```
 
 OGタグは `v0.4.0` から入っています。`#v0.3.0` のままでは**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
@@ -890,6 +890,48 @@ src/articles/ に .md ファイルを追加するだけ
 `createArticles` が自動でソートするため、他のファイルを変更する必要はありません。
 
 > **`slug` は記事の身元です。** 古い日付の記事を後から追加しても、既存の記事の URL は変わりません。ファイル名を変えると（`slug:` を書いていない記事では）URL が変わるので、URL を保ちたいときはフロントマターに `slug:` を明示してください。
+
+<br>
+<br>
+
+## 0.4.0 から 0.5.0 への移行
+
+**CSS の優先順位が変わります。** API は変わりません。
+
+### Tailwind v4 を使っている場合
+
+**import を1行変えてください。**
+
+```diff
+- import "@fififuchun/article-system/styles.css";
++ import "@fififuchun/article-system/styles.layer.css";
+```
+
+変えないと `classNames` で渡したクラスが効きません。**ブラウザのコンソールに警告が出ます。**
+
+### Tailwind v3 / Tailwind を使っていない場合
+
+**import はそのままです。** ただし、**タグ名だけで書いた CSS が効かなくなる可能性があります。**
+
+```bash
+# 記事に出てくる要素をタグ名だけで指定している CSS を探す
+grep -rnE "^[[:space:]]*(h[1-6]|p|ul|ol|li|a|img|button|input|textarea|table|code|pre|blockquote)[[:space:]]*(,|\{)" src/ --include=*.css
+```
+
+出てきた指定は、クラスを足せば今までどおり効きます。
+
+```css
+h2 { margin-top: 40px; }           /* 効かなくなる */
+.article h2 { margin-top: 40px; }  /* 効く */
+```
+
+### なぜ変えたか
+
+Tailwind v3 のリセット（preflight）がライブラリのスタイルに勝っていて、**記事表示と Studio が崩れていました。** 実測で61箇所です。見出しの階層、段落の余白、画像、リストの点と番号、ボタンの背景、罫線のすべてが消えていました。
+
+リセットはタグ名で指定されているので、これに勝つにはライブラリの優先順位を少し上げる必要がありました。その副作用として、あなたがタグ名だけで書いた指定も巻き込みます。
+
+**`classNames` で渡したクラスは、今までどおり必ず勝ちます。** ここは変わりません。
 
 <br>
 <br>
