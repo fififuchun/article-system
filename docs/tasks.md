@@ -407,3 +407,14 @@ v3 と v4 で手段が違うため、同じ CSS では両立できない（v3 �
 
 - [x] 再現ページの画像を既定のデモと同じ代替画像にする（`imageBasePath` を渡していなかった。ライブラリ側の問題ではない）
 - [x] README に「動作環境と注意点」を足す（ブラウザ要件、`@layer` 未対応時に層の中身が丸ごと無視されること、Shadow DOM、警告の止め方、将来の注意点）
+
+### フェーズ20: docs を実装に追随させる
+
+`overview.md` / `architecture.md` / `api.md` は「実装に追随して更新する」と
+宣言しているドキュメント（`docs/README.md`）。フェーズ13〜19の内容が
+入っていない。`findings.md` / `design-decisions.md` / `design-revisions.md` は
+解析当時の記録として凍結しているので対象外。
+
+- [x] `overview.md` のリポジトリ構成と技術スタックを現状に合わせる
+- [x] `architecture.md` の「スタイルは持つが、必ず負ける」を2条件に書き換え、新しいモジュールと流れを足す
+- [x] `api.md` に `buildArticleHead` / `resolveSlug` / `buildDescription` / `/vite` エントリ / CSS の2ファイルを足す

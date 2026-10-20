@@ -16,4 +16,4 @@
 
 `overview.md` / `architecture.md` / `api.md` は実装に追随して更新しています。
 
-`findings.md` / `design-decisions.md` / `design-revisions.md` は解析当時（`ce86c36`）の記録で、更新していません。
+`findings.md` / `design-decisions.md` / `design-revisions.md` は解析当時（`ce86c36`）の記録で、更新していません。**`ArticlePreview` や `article.id` のように、今は存在しないものへの言及が残っています。** 現状は spec.md を見てください。
