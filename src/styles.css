@@ -65,6 +65,15 @@
   --as-article-width: 45rem;
   /* Studio の操作帯が貼り付く位置。利用側に固定ヘッダーがあればその高さを入れる */
   --as-studio-header-top: 0px;
+
+  /*
+   * どちらの版が読まれているかの印（spec §10）。
+   *
+   * 層あり版（styles.layer.css）では生成時に `layer` に差し替わります。
+   * Tailwind v4 なのに `plain` のままだと、利用側の classNames が効きません。
+   * 実行時にこれを読んで警告します。
+   */
+  --as-stylesheet: plain;
   --as-radius: 8px;
   --as-radius-sm: 6px;
 }

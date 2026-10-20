@@ -35,9 +35,23 @@ const HEADER = `/*
  * こちらが無意味になります）。
  */`;
 
+/** どちらの版が読まれているかの印（spec §10）。実行時の警告に使う */
+export const MARKER_PLAIN = "--as-stylesheet: plain;";
+export const MARKER_LAYER = "--as-stylesheet: layer;";
+
 /** 層なしの CSS を受け取り、層ありの CSS を返す */
 export function wrapInLayer(css: string): string {
-  return `${HEADER}\n${LAYER_ORDER}\n\n@layer ${LAYER_NAME} {\n${css}}\n`;
+  if (!css.includes(MARKER_PLAIN)) {
+    // 印が無いまま配ると、取り違えを検出できないまま出荷してしまう
+    throw new Error(
+      `[article-system] styles.css に "${MARKER_PLAIN}" が見つかりません。` +
+        `層あり版の印を差し替えられないため、ビルドを止めます。`
+    );
+  }
+
+  const marked = css.replace(MARKER_PLAIN, MARKER_LAYER);
+
+  return `${HEADER}\n${LAYER_ORDER}\n\n@layer ${LAYER_NAME} {\n${marked}}\n`;
 }
 
 /** 層ありの CSS から、包む前の中身を取り出す（テストと検証用） */
