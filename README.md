@@ -132,7 +132,21 @@ export const articles = createArticles(rawFiles);
 
 `_` 始まりのファイルが渡された場合、`createArticles` は例外を投げてページを停止させます。漏洩自体は取り消せませんが、壊れたサイトが最も確実な警報として機能し、放置される期間を最短にします。
 
-### 5. 画像ファイルを配置する
+### 5. CSS を読み込む
+
+**Tailwind v4 を使っているかどうかでファイルが変わります。**
+
+```tsx
+// Tailwind v4
+import "@fififuchun/article-system/styles.layer.css";
+
+// Tailwind v3 / Tailwind を使っていない
+import "@fififuchun/article-system/styles.css";
+```
+
+詳しくは[スタイル](#スタイル)の節を読んでください。**両方を読み込まないでください。**
+
+### 6. 画像ファイルを配置する
 
 ```
 your-project/
@@ -150,14 +164,45 @@ your-project/
 
 デフォルトCSSを同梱しています。読み込むだけで記事の体裁が整い、`classNames` を一切渡さなくても読める記事になります。
 
-```tsx
-// 新規プロジェクトで必要な全コード
-import "@fififuchun/article-system/styles.css";
+### どちらのファイルを読むか ★最初に確認してください
 
-<ArticleDetail article={article} />
+**Tailwind CSS v4 を使っているかどうかで、読み込むファイルが変わります。**
+
+```bash
+# どちらを使っているか調べる
+npm ls tailwindcss
 ```
 
-**import は任意です。** 読み込まなければ `as-` クラスは無害なただの文字列になるため、スタイルを全部自分で書く運用もそのまま成立します。
+| あなたのプロジェクト | 読み込むファイル |
+| --- | --- |
+| **Tailwind v4** | `@fififuchun/article-system/styles.layer.css` |
+| Tailwind v3 | `@fififuchun/article-system/styles.css` |
+| Tailwind を使っていない | `@fififuchun/article-system/styles.css` |
+
+```tsx
+// Tailwind v4
+import "@fififuchun/article-system/styles.layer.css";
+
+// それ以外
+import "@fififuchun/article-system/styles.css";
+```
+
+**両方を読み込まないでください。** 層なしが勝って、`styles.layer.css` が無意味になります。
+
+> **読み込み順はどちらでも構いません。** 利用側の CSS の前でも後でも結果は変わりません。
+
+#### 間違えたときどうなるか
+
+| | 何が起きるか |
+| --- | --- |
+| v4 で `styles.css` を読んだ | **`classNames` が効かなくなります。** ブラウザのコンソールに警告が出ます |
+| v3 で `styles.layer.css` を読んだ | **ビルドが止まります**（`@layer components` is used but no matching `@tailwind components` directive is present） |
+
+#### なぜ分かれているのか
+
+Tailwind v4 は自分の CSS をすべて「カスケードレイヤー」に入れます。層に入っていない CSS は層の中の CSS に必ず勝つため、v4 のサイトで層なし版を読むと、**ライブラリがあなたの Tailwind クラスにまで勝ってしまいます**。
+
+v3 には層の仕組みがなく、むしろ `@layer` と書くとビルドが止まるため、同じファイルで両対応できません。
 
 ### 上書きの仕方
 
@@ -168,7 +213,18 @@ classNames 未指定:              <h2 class="as-heading">
 classNames={{heading:"my-h"}}:  <h2 class="as-heading my-h">
 ```
 
-デフォルトCSSのセレクタはすべて `:where()` で包んであり**詳細度が0**です。読み込み順に関係なく、利用側のクラスが必ず勝ちます。Tailwind のユーティリティクラスも追記で効きます。
+**読み込み順に関係なく、`classNames` で渡したクラスが必ず勝ちます。** Tailwind のユーティリティクラスも追記で効きます。
+
+#### タグ名だけで書いた CSS は負けます（Tailwind v3 / Tailwind なしの場合）
+
+```css
+h2 { margin-top: 40px; }           /* ライブラリに負ける */
+.article h2 { margin-top: 40px; }  /* 勝つ */
+```
+
+デフォルトCSSは、Tailwind のリセット（`h2 { font-size: inherit }` のようなタグ名の指定）に負けないよう作られています。その結果、**あなたがタグ名だけで書いた指定にも勝ってしまいます。** クラスを足せば勝てます。
+
+**Tailwind v4（`styles.layer.css`）ではこれは起きません。** 層ありのライブラリは、層に入っていない CSS すべてに負けるためです。
 
 ### 色やサイズを変える
 
