@@ -114,3 +114,59 @@ describe("browserslist", () => {
     expect(missing).toEqual([]);
   });
 });
+
+/*
+ * spec §10: 詳細度が足りていても、**元から設定していない**プロパティは
+ * preflight が消したままになる。v0.5.0 でリンクとリストが実際に崩れた。
+ * 「preflight が消すもののうち、復元が必要なもの」を表で固定する。
+ */
+describe("styles.css — preflight が消すものの復元", () => {
+  /** `html body :where(セレクタ) {` の宣言ブロックを取り出す */
+  function block(selector: string): string | null {
+    const open = `html body :where(${selector}) {`;
+    const start = css.indexOf(open);
+    if (start === -1) return null;
+    const end = css.indexOf("\n}", start);
+    return css.slice(start + open.length, end);
+  }
+
+  const MUST_RESTORE: [string, string[]][] = [
+    // ol, ul, menu { list-style: none }
+    [".as-article ul", ["list-style"]],
+    [".as-article ol", ["list-style"]],
+    // a { color: inherit; text-decoration: inherit }
+    [".as-article a", ["color", "text-decoration"]],
+    [".as-studio-login a", ["color", "text-decoration"]],
+    // blockquote, ..., hr, ..., p, pre { margin: 0 }
+    [".as-article hr", ["margin"]],
+  ];
+
+  it.each(MUST_RESTORE)("%s が %s を指定している", (selector, props) => {
+    const found = block(selector);
+
+    expect(found, `${selector} のルールが無い`).not.toBeNull();
+    const missing = props.filter((prop) => !new RegExp(`\\b${prop}\\s*:`).test(found!));
+    expect(missing).toEqual([]);
+  });
+
+  // 入れ子のリストはブラウザ既定（disc → circle → square）に合わせる
+  it("入れ子の ul でマーカーが変わる", () => {
+    expect(block(".as-article li > ul")).not.toBeNull();
+    expect(block(".as-article li li > ul")).not.toBeNull();
+  });
+
+  // リンクの色は変数で差し替えられる
+  it("リンクの色を変数にしている", () => {
+    expect(css).toContain("--as-color-link");
+    expect(block(".as-article a")).toContain("var(--as-color-link)");
+  });
+
+  // タスクリストはマーカーを出さない。上の指定より後に書く必要がある
+  it("タスクリストのマーカー消しが後に来る", () => {
+    const lists = css.indexOf("html body :where(.as-article ul) {");
+    const task = css.indexOf('html body :where(.as-article li:has(> input[type="checkbox"])) {');
+
+    expect(lists).toBeGreaterThan(-1);
+    expect(task).toBeGreaterThan(lists);
+  });
+});

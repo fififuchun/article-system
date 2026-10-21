@@ -5,6 +5,7 @@
   --as-color-muted: #888;
   --as-color-subtle: #aaa;
   --as-color-accent: #4a90e2;
+  --as-color-link: var(--as-color-accent);
   --as-color-border: #eee;
   --as-color-surface: #fff;
   --as-color-surface-muted: #f6f7f9;
@@ -171,11 +172,34 @@ html body :where(.as-article ul, .as-article ol) {
   margin: var(--as-space-md) 0;
   padding-left: 1.5em;
 }
+html body :where(.as-article ul) {
+  list-style: disc;
+}
+html body :where(.as-article ol) {
+  list-style: decimal;
+}
+html body :where(.as-article li > ul) {
+  list-style: circle;
+}
+html body :where(.as-article li li > ul) {
+  list-style: square;
+}
 html body :where(.as-article li) {
   margin: var(--as-space-xs) 0;
 }
 html body :where(.as-article li > ul, .as-article li > ol) {
   margin: var(--as-space-xs) 0;
+}
+html body :where(.as-article a) {
+  color: var(--as-color-link);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+html body :where(.as-article hr) {
+  height: 0;
+  border: none;
+  border-top: 1px solid var(--as-color-border);
+  margin: var(--as-space-xl) 0;
 }
 html body :where(.as-article li:has(> input[type=checkbox])) {
   list-style: none;
@@ -550,6 +574,11 @@ html body :where(.as-studio-login-error) {
   background: var(--as-color-error-surface);
   border: 1px solid var(--as-color-error);
   padding: var(--as-space-md) var(--as-space-lg);
+}
+html body :where(.as-studio-login a) {
+  color: var(--as-color-link);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 html body :where(.as-studio-login-note) {
   color: var(--as-color-muted);

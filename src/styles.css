@@ -25,6 +25,8 @@
   --as-color-muted: #888;
   --as-color-subtle: #aaa;
   --as-color-accent: #4a90e2;
+  /* 本文とトークン画面のリンク。既定はアクセント色に追従する */
+  --as-color-link: var(--as-color-accent);
   --as-color-border: #eee;
   --as-color-surface: #fff;
   --as-color-surface-muted: #f6f7f9;
@@ -237,12 +239,57 @@ html body :where(.as-article ul, .as-article ol) {
   padding-left: 1.5em;
 }
 
+/*
+ * マーカーを自分で指定します（spec §10）。
+ *
+ * ブラウザ既定に任せると、Tailwind の preflight の `ol, ul { list-style: none }`
+ * に消されます。詳細度では勝っていても、**指定していないものは戻りません。**
+ */
+html body :where(.as-article ul) {
+  list-style: disc;
+}
+
+html body :where(.as-article ol) {
+  list-style: decimal;
+}
+
+/* 入れ子のマーカーはブラウザ既定（disc → circle → square）に合わせる。
+   上の指定と詳細度が同点なので、必ずこの順で書く */
+html body :where(.as-article li > ul) {
+  list-style: circle;
+}
+
+html body :where(.as-article li li > ul) {
+  list-style: square;
+}
+
 html body :where(.as-article li) {
   margin: var(--as-space-xs) 0;
 }
 
 html body :where(.as-article li > ul, .as-article li > ol) {
   margin: var(--as-space-xs) 0;
+}
+
+/*
+ * リンク（spec §10）。
+ *
+ * preflight の `a { color: inherit; text-decoration: inherit }` に消されるため、
+ * 色と下線を自分で指定します。下線を残すのは、色だけだと本文と見分けが
+ * つきにくい配色で使われたときにリンクだと分からなくなるためです。
+ */
+html body :where(.as-article a) {
+  color: var(--as-color-link);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/* 本文の区切り線（`---`）。preflight が margin を 0 にするため戻す */
+html body :where(.as-article hr) {
+  height: 0;
+  border: none;
+  border-top: 1px solid var(--as-color-border);
+  margin: var(--as-space-xl) 0;
 }
 
 /* タスクリスト。マーカーを消してチェックボックスと行頭を揃える */
@@ -734,6 +781,13 @@ html body :where(.as-studio-login-error) {
   background: var(--as-color-error-surface);
   border: 1px solid var(--as-color-error);
   padding: var(--as-space-md) var(--as-space-lg);
+}
+
+/* トークンの発行ページへのリンク。本文と同じ理由で色と下線を指定する */
+html body :where(.as-studio-login a) {
+  color: var(--as-color-link);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 /* 作り方の案内。本文より一段落とす */
