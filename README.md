@@ -3,7 +3,7 @@
 マークダウンファイルを置くだけで記事データを自動生成し、一覧・詳細表示コンポーネントを提供するライブラリです。  
 デフォルトCSSを同梱しており、読み込むだけで記事の体裁が整います。見た目は `classNames` で全部差し替えられます。
 
-> **開発中のライブラリです（現在 0.5.0）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
+> **開発中のライブラリです（現在 0.5.1）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
 > **この README は今日時点で実際に動く内容だけを説明しています。**
 
 <br>
@@ -33,7 +33,7 @@ npm i github:fififuchun/article-system
 
 ```bash
 # タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.5.0
+npm i github:fififuchun/article-system#v0.5.1
 
 # コミットハッシュで固定する
 npm i github:fififuchun/article-system#b5e66ab
@@ -233,6 +233,7 @@ CSS変数を再定義するだけで差し替えられます。
 ```css
 :root {
   --as-color-accent: #e2574a;
+  --as-color-link: #2563eb;   /* 既定はアクセント色に追従 */
   --as-text-body: 1rem;
   --as-article-width: 50rem;
 }
@@ -655,7 +656,7 @@ dist/
 ### ステップ1. ライブラリを更新する
 
 ```bash
-npm i github:fififuchun/article-system#v0.5.0
+npm i github:fififuchun/article-system#v0.5.1
 ```
 
 OGタグは **0.4.0 で入った機能**です。それより古いものが入っていると**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
@@ -949,6 +950,27 @@ src/articles/ に .md ファイルを追加するだけ
 `createArticles` が自動でソートするため、他のファイルを変更する必要はありません。
 
 > **`slug` は記事の身元です。** 古い日付の記事を後から追加しても、既存の記事の URL は変わりません。ファイル名を変えると（`slug:` を書いていない記事では）URL が変わるので、URL を保ちたいときはフロントマターに `slug:` を明示してください。
+
+<br>
+<br>
+
+## 0.5.0 から 0.5.1 への変更
+
+**不具合の修正だけです。** import もAPIも変わりません。
+
+Tailwind のリセットが消していたものを3つ復元しました。詳細度は足りていましたが、**ライブラリが元から指定していなかった**ため戻っていませんでした。
+
+| 直したところ | 症状 |
+| --- | --- |
+| 本文の `ul` / `ol` | 点と番号が出ていなかった（入れ子も） |
+| リンク（本文・トークン入力画面） | ただの文字に見えていた |
+| 本文の `---`（区切り線） | 前後の文にくっついていた |
+
+リンクの色は変数で差し替えられます。既定はアクセント色（`--as-color-accent`）に追従します。
+
+```css
+:root { --as-color-link: #e2574a; }
+```
 
 <br>
 <br>
