@@ -435,7 +435,8 @@ html body :where(.as-card-date-icon) {
   }
 
   html body :where(.as-grid) {
-    grid-template-columns: 1fr;
+    /* 1fr のままだと、折り返せない長い文字列を含むカードで列が広がる */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--as-space-md);
   }
 
@@ -462,7 +463,13 @@ html body :where(.as-card-date-icon) {
 
 html body :where(.as-studio) {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /*
+   * minmax(0, ...) にするのは、`1fr` が `minmax(auto, 1fr)` と同じで、
+   * **中身の最小幅でトラックが広がる**ためです（spec §9）。操作帯のボタンは
+   * nowrap で縮まないので、幅 390px の画面でグリッド全体が 409px になり
+   * 横スクロールが出ていました。
+   */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
     "actions tabs"
     "editor  preview";
@@ -484,6 +491,14 @@ html body :where(.as-studio-actions) {
   top: var(--as-studio-header-top);
   z-index: 2;
   display: flex;
+  /*
+   * 入らなければ行を折る（spec §9）。ボタンは nowrap で縮まないため、
+   * 折らないとグリッドを押し広げます。**狭い画面専用にはできません** —
+   * 2ペインのときも操作帯は半分の幅しかなく、818px 未満では入りません。
+   */
+  flex-wrap: wrap;
+  /* グリッドの子は min-width: auto が既定で、中身より小さくならない */
+  min-width: 0;
   background: var(--as-color-surface);
   border-bottom: 1px solid var(--as-color-border);
 }
@@ -494,6 +509,7 @@ html body :where(.as-studio-tabs) {
   top: var(--as-studio-header-top);
   z-index: 2;
   display: flex;
+  min-width: 0;
   background: var(--as-color-surface);
   border-bottom: 1px solid var(--as-color-border);
 }
@@ -541,6 +557,7 @@ html body :where(.as-studio-editor) {
   grid-area: editor;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   /* ペイン間は罫線1本。隙間は空けない */
   border-right: 1px solid var(--as-color-border);
 }
@@ -548,6 +565,7 @@ html body :where(.as-studio-editor) {
 html body :where(.as-studio-preview) {
   grid-area: preview;
   padding: var(--as-space-lg);
+  min-width: 0;
 }
 
 /* 角丸も枠線も持たず、ペインいっぱいに広がる */
@@ -684,7 +702,7 @@ html body :where(.as-studio-slug-preview) {
 @media (max-width: 40rem) {
   /* 帯を解体する。タブは切り替え対象であるプレビューの直前に戻す（spec §9） */
   html body :where(.as-studio) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "actions"
       "editor"

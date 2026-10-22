@@ -326,7 +326,7 @@ html body :where(.as-card-date-icon) {
     padding: var(--as-space-lg);
   }
   html body :where(.as-grid) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--as-space-md);
   }
   html body :where(.as-heading) {
@@ -342,7 +342,7 @@ html body :where(.as-card-date-icon) {
 }
 html body :where(.as-studio) {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas: "actions tabs" "editor  preview";
   grid-template-rows: auto 1fr;
   font-family: var(--as-font-body);
@@ -355,6 +355,8 @@ html body :where(.as-studio-actions) {
   top: var(--as-studio-header-top);
   z-index: 2;
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   background: var(--as-color-surface);
   border-bottom: 1px solid var(--as-color-border);
 }
@@ -364,6 +366,7 @@ html body :where(.as-studio-tabs) {
   top: var(--as-studio-header-top);
   z-index: 2;
   display: flex;
+  min-width: 0;
   background: var(--as-color-surface);
   border-bottom: 1px solid var(--as-color-border);
 }
@@ -398,11 +401,13 @@ html body :where(.as-studio-editor) {
   grid-area: editor;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   border-right: 1px solid var(--as-color-border);
 }
 html body :where(.as-studio-preview) {
   grid-area: preview;
   padding: var(--as-space-lg);
+  min-width: 0;
 }
 html body :where(.as-studio-textarea) {
   width: 100%;
@@ -514,7 +519,7 @@ html body :where(.as-studio-slug-preview) {
 }
 @media (max-width: 40rem) {
   html body :where(.as-studio) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "actions" "editor" "tabs" "preview";
     grid-template-rows: auto auto auto auto;
     align-content: start;

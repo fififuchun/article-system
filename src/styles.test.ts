@@ -170,3 +170,49 @@ describe("styles.css — preflight が消すものの復元", () => {
     expect(task).toBeGreaterThan(lists);
   });
 });
+
+/*
+ * spec §9: 幅 390px で Studio が 409px に広がり、横スクロールが出た。
+ * 原因は2つで、どちらも「中身の最小幅がレイアウトを広げる」こと。
+ */
+describe("styles.css — 狭い画面で横にはみ出さない", () => {
+  function block(selector: string, from = 0): string | null {
+    const open = `html body :where(${selector}) {`;
+    const start = css.indexOf(open, from);
+    if (start === -1) return null;
+    return css.slice(start + open.length, css.indexOf("\n", start) + 1 + 400);
+  }
+
+  /*
+   * 素の `1fr` は `minmax(auto, 1fr)` と同じで、中身の最小幅でトラックが
+   * 広がります。`fr` を使うトラックは必ず `minmax()` で下限を明示します
+   * （カード一覧の `minmax(15rem, 1fr)` のように、0 以外が正しい場所もある）。
+   */
+  it("列の fr は minmax で下限を明示している", () => {
+    // 行（grid-template-rows）は対象外。中身に合わせて伸び、縦は
+    // スクロールで逃げられる。minmax(0, ...) にすると中身がはみ出す
+    const columns = css.match(/grid-template-columns:[^;]+;/g) ?? [];
+    const bare = columns.filter((line) =>
+      line.replace(/minmax\([^)]*\)/g, "").includes("fr")
+    );
+
+    expect(columns.length).toBeGreaterThan(0);
+    expect(bare).toEqual([]);
+  });
+
+  // グリッドの子は min-width: auto が既定で、中身より小さくならない
+  it.each([
+    ".as-studio-actions",
+    ".as-studio-tabs",
+    ".as-studio-editor",
+    ".as-studio-preview",
+  ])("%s に min-width: 0 がある", (selector) => {
+    expect(block(selector)).toContain("min-width: 0");
+  });
+
+  // 操作帯のボタンは nowrap で縮まないため、入らなければ行を折る。
+  // 640px より上でも操作帯は半分の幅しかないので、狭い画面専用にしない
+  it("操作帯が折り返せる", () => {
+    expect(block(".as-studio-actions")).toContain("flex-wrap: wrap");
+  });
+});
