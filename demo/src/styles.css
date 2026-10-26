@@ -299,3 +299,27 @@ body {
   color: #888;
 }
 
+
+/* ---------------------------------------------------------------------------
+ * テーマB の例（article-system の spec §10 テーマ）
+ *
+ * **これは利用側（このデモ）が書くものです。** ライブラリは触っていません。
+ * 信州Charm のような利用側プロジェクトは、これと同じ形で自分の CSS に
+ * 変数を並べます。これだけで本番の記事ページと Studio のプレビューの
+ * 両方に効きます（props を渡す必要がありません）。
+ * ------------------------------------------------------------------------ */
+[data-as-theme="demo"] {
+  --as-color-accent: #8b5a2b;
+  --as-color-heading: #2b2b2b;
+  --as-color-link: #1d4ed8;
+  --as-font-body: Georgia, "Times New Roman", serif;
+  --as-article-width: 52rem;
+
+  /* 装飾を自分の好みに差し替える */
+  --as-heading-marker: none;
+  --as-date-divider: none;
+  --as-footer-divider: 2px solid #2b2b2b;
+  --as-shadow-card: none;
+  --as-radius: 0;
+  --as-article-padding: 0;
+}

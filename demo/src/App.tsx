@@ -13,6 +13,25 @@ import "@fififuchun/article-system/styles.css";
 type Route = "list" | "detail" | "settings";
 
 /**
+ * テーマ（spec §10 テーマ）。
+ *
+ * `<html data-as-theme="...">` を書き換えるだけで、記事ページと Studio の
+ * プレビューの両方が同時に変わります。**props は何も渡していません。**
+ *
+ * - `""`      … ライブラリ既定（テーマA。青基調）
+ * - `minimal` … ライブラリ同梱。装飾を外したもの
+ * - `demo`    … **このデモが自分の CSS に書いたもの**（利用側の書き方の例）
+ */
+const THEMES = ["", "minimal", "demo"] as const;
+type Theme = (typeof THEMES)[number];
+
+const THEME_LABELS: Record<Theme, string> = {
+  "": "既定（テーマA）",
+  minimal: "minimal（同梱）",
+  demo: "demo（利用側が書いた例）",
+};
+
+/**
  * 読者向けは**実パス**、執筆画面はハッシュ（spec §9 設置方法）。
  *
  * 記事を `#/article/...` で開くと、`#` はサーバーに送られないため
@@ -55,6 +74,13 @@ export default function App() {
   const [{ route, slug }, setRouteState] = useState(getRoute);
   const [useCustomCss, setUseCustomCss] = useState(false);
   const [repo, setRepo] = useState(loadRepo);
+  const [theme, setTheme] = useState<Theme>("");
+
+  // 属性1つで全体が切り替わる。記事ページと Studio のプレビューの両方に効く
+  useEffect(() => {
+    if (theme === "") delete document.documentElement.dataset.asTheme;
+    else document.documentElement.dataset.asTheme = theme;
+  }, [theme]);
 
   useEffect(() => {
     const handler = () => setRouteState(getRoute());
@@ -115,6 +141,17 @@ export default function App() {
           >
             CSS: {useCustomCss ? "カスタム" : "デフォルト"}
           </button>
+          <select
+            className="css-toggle"
+            value={theme}
+            onChange={(event) => setTheme(event.target.value as Theme)}
+          >
+            {THEMES.map((name) => (
+              <option key={name} value={name}>
+                {THEME_LABELS[name]}
+              </option>
+            ))}
+          </select>
         </div>
       </nav>
 
