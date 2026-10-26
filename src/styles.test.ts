@@ -334,3 +334,57 @@ describe("styles.css — テーマと Studio の画面を分ける", () => {
     expect(usedBy("--as-studio-radius").length).toBeGreaterThan(0);
   });
 });
+
+/*
+ * spec §10 テーマ: 作り置きのテーマは styles.css の中に入れる（ファイルを
+ * 増やさない）。`<html data-as-theme="...">` で切り替える
+ */
+describe("styles.css — 作り置きのテーマ", () => {
+  const MINIMAL = ':where([data-as-theme="minimal"])';
+
+  it("minimal がある", () => {
+    expect(css).toContain(MINIMAL);
+  });
+
+  // 詳細度0なので、@media の中の変数書き換えより後に来ないと負ける
+  it("テーマは @media より後ろにある", () => {
+    expect(css.indexOf(MINIMAL)).toBeGreaterThan(css.lastIndexOf("@media"));
+  });
+
+  // 利用側の :root（0,1,0）に必ず負ける必要がある（spec §10 条件1）
+  it("テーマのセレクタもクラス相当が0", () => {
+    expect(specificity(MINIMAL).b).toBe(0);
+  });
+
+  it("装飾を外している", () => {
+    const block = css.slice(css.indexOf(MINIMAL), css.indexOf("\n}", css.indexOf(MINIMAL)));
+
+    for (const name of [
+      "--as-heading-marker",
+      "--as-date-divider",
+      "--as-footer-divider",
+      "--as-article-padding",
+      "--as-shadow-card",
+      "--as-radius",
+    ]) {
+      expect(block, `${name} が無い`).toContain(name);
+    }
+  });
+
+  // 内容を読むのに必要なものは残す
+  it.each(["--as-table-border", "--as-quote-marker", "--as-divider"])(
+    "%s は外さない",
+    (name) => {
+      const block = css.slice(css.indexOf(MINIMAL), css.indexOf("\n}", css.indexOf(MINIMAL)));
+
+      expect(block).not.toContain(name);
+    }
+  );
+
+  // 色はテーマの担当外。変えると Studio のタブやボタンまで動く
+  it("色を変えない", () => {
+    const block = css.slice(css.indexOf(MINIMAL), css.indexOf("\n}", css.indexOf(MINIMAL)));
+
+    expect(block).not.toContain("--as-color-");
+  });
+});

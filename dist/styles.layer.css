@@ -690,4 +690,14 @@ html body :where(.as-studio-dialog-close svg) {
   width: 1rem;
   height: 1rem;
 }
+:where([data-as-theme=minimal]) {
+  --as-heading-marker: none;
+  --as-date-divider: none;
+  --as-footer-divider: none;
+  --as-article-padding: 0;
+  --as-shadow-card: none;
+  --as-shadow-card-hover: none;
+  --as-radius: 0;
+  --as-radius-sm: 0;
+}
 }
