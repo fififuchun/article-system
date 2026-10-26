@@ -78,6 +78,21 @@
   --as-stylesheet: plain;
   --as-radius: 8px;
   --as-radius-sm: 6px;
+
+  /*
+   * 装飾（spec §10 テーマ）。
+   *
+   * **ここを `none` / `0` にすると、その装飾だけが消えます。** テーマは
+   * この変数を書き換えるだけの CSS です。既定値は従来の見た目をそのまま
+   * 移したもので、何も指定しなければ1ピクセルも変わりません。
+   */
+  --as-heading-marker: 4px solid var(--as-color-accent);
+  --as-date-divider: 1px solid var(--as-color-border);
+  --as-footer-divider: 1px solid var(--as-color-border);
+  --as-quote-marker: 4px solid var(--as-color-border);
+  --as-table-border: 1px solid var(--as-color-border);
+  --as-divider: 1px solid var(--as-color-border);
+  --as-article-padding: var(--as-space-xl);
 }
 
 /* 記事のタイポグラフィ
@@ -102,7 +117,7 @@ html body :where(.as-heading) {
   font-weight: bold;
   line-height: var(--as-leading-heading);
   color: var(--as-color-heading);
-  border-left: 4px solid var(--as-color-accent);
+  border-left: var(--as-heading-marker);
   padding-left: var(--as-space-md);
   margin: var(--as-space-xl) 0 var(--as-space-md);
 }
@@ -138,7 +153,7 @@ html body :where(.as-article) {
   background: var(--as-color-surface);
   max-width: var(--as-article-width);
   margin-inline: auto;
-  padding: var(--as-space-xl);
+  padding: var(--as-article-padding);
   border-radius: var(--as-radius);
   box-shadow: var(--as-shadow-card);
 }
@@ -158,7 +173,7 @@ html body :where(.as-date) {
   justify-content: center;
   text-align: center;
   padding-right: var(--as-space-lg);
-  border-right: 1px solid var(--as-color-border);
+  border-right: var(--as-date-divider);
 }
 
 html body :where(.as-date-year) {
@@ -222,7 +237,7 @@ html body :where(.as-footer) {
   color: var(--as-color-muted);
   margin-top: var(--as-space-xl);
   padding-top: var(--as-space-md);
-  border-top: 1px solid var(--as-color-border);
+  border-top: var(--as-footer-divider);
 }
 
 /* 本文中の素の要素（remark-gfm の出力）
@@ -288,7 +303,7 @@ html body :where(.as-article a) {
 html body :where(.as-article hr) {
   height: 0;
   border: none;
-  border-top: 1px solid var(--as-color-border);
+  border-top: var(--as-divider);
   margin: var(--as-space-xl) 0;
 }
 
@@ -312,7 +327,7 @@ html body :where(.as-article table) {
 }
 
 html body :where(.as-article th, .as-article td) {
-  border: 1px solid var(--as-color-border);
+  border: var(--as-table-border);
   padding: var(--as-space-sm) var(--as-space-md);
   text-align: left;
 }
@@ -326,7 +341,7 @@ html body :where(.as-article blockquote) {
   font-size: var(--as-text-body);
   line-height: var(--as-leading-body);
   color: var(--as-color-muted);
-  border-left: 4px solid var(--as-color-border);
+  border-left: var(--as-quote-marker);
   margin: var(--as-space-lg) 0;
   padding: var(--as-space-sm) var(--as-space-lg);
 }
@@ -430,8 +445,10 @@ html body :where(.as-card-date-icon) {
  */
 
 @media (max-width: 40rem) {
-  html body :where(.as-article) {
-    padding: var(--as-space-lg);
+  /* 要素に書くとテーマの指定（:root）より近い位置になり、テーマが効かなく
+     なる。変数を書き換えることで、テーマ側の上書きが常に勝つ（spec §10） */
+  :where(:root) {
+    --as-article-padding: var(--as-space-lg);
   }
 
   html body :where(.as-grid) {

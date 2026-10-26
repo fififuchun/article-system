@@ -18,12 +18,31 @@ function selectors(source: string): string[] {
 }
 
 /**
- * 変数を定義するブロックだけは `html body` を前置しません（spec §10）。
+ * 変数だけを宣言するブロックは `html body` を前置しません（spec §10）。
  *
- * `:root` は `html` そのものなので `html body` の子孫になりません。変数は
- * preflight と名前が衝突しないため、詳細度を上げる必要もありません。
+ * 置き場所が `:root`（= `html` 自身）なので `html body` の子孫になりません。
+ * そして **preflight は `--as-*` をリセットしません**。詳細度を上げる理由が
+ * どちらの意味でもありません。
+ *
+ * 宣言が全部カスタムプロパティのブロックを、ファイルから機械的に拾います。
  */
-const VARIABLES_ONLY = ":where(:root)";
+function variablesOnlySelectors(source: string): string[] {
+  const found: string[] = [];
+  const text = source.replace(/\/\*[\s\S]*?\*\//g, "");
+
+  for (const match of text.matchAll(/([^{}@\n][^{}]*)\{([^{}]*)\}/g)) {
+    const selector = match[1].trim();
+    const declarations = match[2]
+      .split(";")
+      .map((line) => line.trim())
+      .filter((line) => line.includes(":"));
+
+    if (declarations.length === 0) continue;
+    if (declarations.every((line) => line.startsWith("--"))) found.push(selector);
+  }
+
+  return [...new Set(found)];
+}
 
 describe("styles.css — 詳細度の不変条件（spec §10 ★重要）", () => {
   /*
@@ -43,8 +62,9 @@ describe("styles.css — 詳細度の不変条件（spec §10 ★重要）", () 
 
   // 2. Tailwind の preflight など、要素1つのリセット（0.0.1）に必ず勝つ
   it("型セレクタが2つ以上（要素リセットに必ず勝つ）", () => {
+    const exempt = new Set(variablesOnlySelectors(css));
     const offenders = selectors(css)
-      .filter((selector) => selector !== VARIABLES_ONLY)
+      .filter((selector) => !exempt.has(selector))
       .map((selector) => ({ selector, spec: specificity(selector) }))
       .filter(({ spec }) => spec.c < 2)
       .map(({ selector, spec }) => `${selector} → ${format(spec)}`);
@@ -52,13 +72,15 @@ describe("styles.css — 詳細度の不変条件（spec §10 ★重要）", () 
     expect(offenders).toEqual([]);
   });
 
-  // 条件2の唯一の例外。増やすときは理由を spec に書く
-  it("例外は変数の定義1件だけ", () => {
+  // 条件2を外せるのは、変数だけを宣言しているブロックに限る
+  it("例外は変数だけのブロックに限られる", () => {
+    const exempt = new Set(variablesOnlySelectors(css));
     const exceptions = selectors(css).filter(
       (selector) => specificity(selector).c < 2
     );
 
-    expect(exceptions).toEqual([VARIABLES_ONLY]);
+    expect(exceptions.filter((selector) => !exempt.has(selector))).toEqual([]);
+    expect(exceptions.length).toBeGreaterThan(0);
   });
 
   it("セレクタが1つ以上ある", () => {
@@ -214,5 +236,61 @@ describe("styles.css — 狭い画面で横にはみ出さない", () => {
   // 640px より上でも操作帯は半分の幅しかないので、狭い画面専用にしない
   it("操作帯が折り返せる", () => {
     expect(block(".as-studio-actions")).toContain("flex-wrap: wrap");
+  });
+});
+
+/*
+ * spec §10 テーマ: 装飾を変数に出した。**既定値は従来の見た目をそのまま
+ * 移したもの**で、何も指定しなければ1ピクセルも変わらない。変数に出す
+ * ついでに値を変えてしまうと、既存利用者の見た目が黙って動く。
+ */
+describe("styles.css — テーマの変数", () => {
+  /** `:root` に宣言された変数の既定値 */
+  function defaultOf(name: string): string | null {
+    const match = css.match(new RegExp(`\\n\\s+${name}:\\s*([^;]+);`));
+    return match ? match[1].trim() : null;
+  }
+
+  // 変数に出す前に書かれていた値
+  const DEFAULTS: [string, string][] = [
+    ["--as-heading-marker", "4px solid var(--as-color-accent)"],
+    ["--as-date-divider", "1px solid var(--as-color-border)"],
+    ["--as-footer-divider", "1px solid var(--as-color-border)"],
+    ["--as-quote-marker", "4px solid var(--as-color-border)"],
+    ["--as-table-border", "1px solid var(--as-color-border)"],
+    ["--as-divider", "1px solid var(--as-color-border)"],
+    ["--as-article-padding", "var(--as-space-xl)"],
+  ];
+
+  it.each(DEFAULTS)("%s の既定値が従来と同じ", (name, value) => {
+    expect(defaultOf(name)).toBe(value);
+  });
+
+  // 変数に出したのに、使う側が直書きのままだとテーマが効かない
+  it.each([
+    ["--as-heading-marker", ".as-heading"],
+    ["--as-date-divider", ".as-date"],
+    ["--as-footer-divider", ".as-footer"],
+    ["--as-quote-marker", ".as-article blockquote"],
+    ["--as-table-border", ".as-article th, .as-article td"],
+    ["--as-divider", ".as-article hr"],
+    ["--as-article-padding", ".as-article"],
+  ])("%s を %s が使っている", (name, selector) => {
+    const open = `html body :where(${selector}) {`;
+    const start = css.indexOf(open);
+
+    expect(start, `${selector} のルールが無い`).toBeGreaterThan(-1);
+    expect(css.slice(start, css.indexOf("\n}", start))).toContain(`var(${name})`);
+  });
+
+  /*
+   * 狭い画面の余白は、要素ではなく変数を書き換える。要素に書くと
+   * テーマの指定（`:root`）より近い位置になり、テーマが効かなくなる
+   */
+  it("狭い画面でも記事の余白が変数で決まる", () => {
+    const narrow = css.slice(css.indexOf("@media (max-width: 40rem)"));
+
+    expect(narrow).toContain("--as-article-padding:");
+    expect(narrow).not.toMatch(/:where\(\.as-article\) \{\s*padding:/);
   });
 });
