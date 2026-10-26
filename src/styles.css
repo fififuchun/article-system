@@ -78,6 +78,13 @@
   --as-stylesheet: plain;
   --as-radius: 8px;
   --as-radius-sm: 6px;
+  /*
+   * Studio の画面部分（編集画面のUI）の角丸。
+   *
+   * **テーマ用の変数とは分けています。** 同じ変数を使うと、記事の
+   * デザインを変えただけで編集画面の見た目まで動きます（spec §10 テーマ）。
+   */
+  --as-studio-radius: 6px;
 
   /*
    * 装飾（spec §10 テーマ）。
@@ -626,7 +633,7 @@ html body :where(.as-studio-images img) {
   width: 2.5rem;
   height: 2.5rem;
   object-fit: cover;
-  border-radius: var(--as-radius-sm);
+  border-radius: var(--as-studio-radius);
   flex: none;
 }
 
@@ -636,7 +643,7 @@ html body :where(.as-studio-images input) {
   font: inherit;
   color: var(--as-color-text);
   border: 1px solid var(--as-color-border);
-  border-radius: var(--as-radius-sm);
+  border-radius: var(--as-studio-radius);
   padding: var(--as-space-xs) var(--as-space-sm);
 }
 
@@ -712,7 +719,7 @@ html body :where(.as-studio-slug-preview) {
   font-size: var(--as-text-meta);
   color: var(--as-color-surface);
   background: var(--as-color-accent);
-  border-radius: var(--as-radius-sm);
+  border-radius: var(--as-studio-radius);
   padding: var(--as-space-xs) var(--as-space-sm);
 }
 

@@ -294,3 +294,43 @@ describe("styles.css — テーマの変数", () => {
     expect(narrow).not.toMatch(/:where\(\.as-article\) \{\s*padding:/);
   });
 });
+
+// spec §10 テーマ: テーマ用の変数で編集画面の見た目まで動いてはいけない
+describe("styles.css — テーマと Studio の画面を分ける", () => {
+  /** その変数を使っているセレクタ */
+  function usedBy(name: string): string[] {
+    const text = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    const found: string[] = [];
+
+    for (const match of text.matchAll(/([^{}@\n][^{}]*)\{([^{}]*)\}/g)) {
+      if (new RegExp(`var\\(${name}[,)]`).test(match[2])) found.push(match[1].trim());
+    }
+
+    return found;
+  }
+
+  const THEME_VARIABLES = [
+    "--as-radius",
+    "--as-radius-sm",
+    "--as-shadow-card",
+    "--as-heading-marker",
+    "--as-date-divider",
+    "--as-footer-divider",
+    "--as-quote-marker",
+    "--as-table-border",
+    "--as-divider",
+    "--as-article-padding",
+  ];
+
+  it.each(THEME_VARIABLES)("%s を Studio の画面部分が使っていない", (name) => {
+    const chrome = usedBy(name).filter(
+      (selector) => selector.includes(".as-studio") && !selector.includes(".as-article")
+    );
+
+    expect(chrome).toEqual([]);
+  });
+
+  it("Studio の画面には専用の角丸がある", () => {
+    expect(usedBy("--as-studio-radius").length).toBeGreaterThan(0);
+  });
+});

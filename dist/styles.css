@@ -48,6 +48,7 @@
   --as-stylesheet: plain;
   --as-radius: 8px;
   --as-radius-sm: 6px;
+  --as-studio-radius: 6px;
   --as-heading-marker: 4px solid var(--as-color-accent);
   --as-date-divider: 1px solid var(--as-color-border);
   --as-footer-divider: 1px solid var(--as-color-border);
@@ -435,7 +436,7 @@ html body :where(.as-studio-images img) {
   width: 2.5rem;
   height: 2.5rem;
   object-fit: cover;
-  border-radius: var(--as-radius-sm);
+  border-radius: var(--as-studio-radius);
   flex: none;
 }
 html body :where(.as-studio-images input) {
@@ -444,7 +445,7 @@ html body :where(.as-studio-images input) {
   font: inherit;
   color: var(--as-color-text);
   border: 1px solid var(--as-color-border);
-  border-radius: var(--as-radius-sm);
+  border-radius: var(--as-studio-radius);
   padding: var(--as-space-xs) var(--as-space-sm);
 }
 html body :where(.as-studio-images button) {
@@ -506,7 +507,7 @@ html body :where(.as-studio-slug-preview) {
   font-size: var(--as-text-meta);
   color: var(--as-color-surface);
   background: var(--as-color-accent);
-  border-radius: var(--as-radius-sm);
+  border-radius: var(--as-studio-radius);
   padding: var(--as-space-xs) var(--as-space-sm);
 }
 @media (max-width: 40rem) {
