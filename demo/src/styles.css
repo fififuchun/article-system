@@ -40,6 +40,27 @@ body {
   gap: 4px;
 }
 
+/*
+ * ナビの中身は縮めない。
+ *
+ * flex の子は既定で縮み、min-content までは小さくなります。**日本語は
+ * どの文字の間でも改行できるので min-content が1文字分**です。幅が
+ * 足りなくなると「記事一覧」が縦1列に潰れ、高さ 52px の帯からはみ出します。
+ */
+.nav > *,
+.nav-links > * {
+  flex: none;
+  white-space: nowrap;
+}
+
+/*
+ * 入りきらないときは、ページ全体ではなくナビの中で横に逃がします。
+ * `--as-studio-header-top: 52px` が前提なので、高さは変えません。
+ */
+.nav {
+  overflow-x: auto;
+}
+
 .nav-link {
   font-size: 14px;
   color: #666;
