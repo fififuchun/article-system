@@ -321,5 +321,6 @@ body {
   --as-footer-divider: 2px solid #2b2b2b;
   --as-shadow-card: none;
   --as-radius: 0;
-  --as-article-padding: 0;
+  /* 余白は 0 にしない。文字が箱の端に貼り付く */
+  --as-article-padding: 2.5rem;
 }

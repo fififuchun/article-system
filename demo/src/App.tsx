@@ -25,10 +25,11 @@ type Route = "list" | "detail" | "settings";
 const THEMES = ["", "minimal", "demo"] as const;
 type Theme = (typeof THEMES)[number];
 
+/** ナビは高さ 52px の1行なので、ラベルは短く保つ（説明は README にある） */
 const THEME_LABELS: Record<Theme, string> = {
-  "": "既定（テーマA）",
-  minimal: "minimal（同梱）",
-  demo: "demo（利用側が書いた例）",
+  "": "既定",
+  minimal: "minimal",
+  demo: "demo",
 };
 
 /**
@@ -143,6 +144,8 @@ export default function App() {
           </button>
           <select
             className="css-toggle"
+            aria-label="テーマ"
+            title="テーマ（既定 / 同梱の minimal / このデモが書いた demo）"
             value={theme}
             onChange={(event) => setTheme(event.target.value as Theme)}
           >

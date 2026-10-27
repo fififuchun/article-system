@@ -363,7 +363,6 @@ describe("styles.css — 作り置きのテーマ", () => {
       "--as-heading-marker",
       "--as-date-divider",
       "--as-footer-divider",
-      "--as-article-padding",
       "--as-shadow-card",
       "--as-radius",
     ]) {
@@ -371,8 +370,14 @@ describe("styles.css — 作り置きのテーマ", () => {
     }
   });
 
-  // 内容を読むのに必要なものは残す
-  it.each(["--as-table-border", "--as-quote-marker", "--as-divider"])(
+  // 内容を読むのに必要なものは残す。本文の余白を 0 にすると、文字が
+  // 白い箱の端に貼り付いて読めなくなる
+  it.each([
+    "--as-table-border",
+    "--as-quote-marker",
+    "--as-divider",
+    "--as-article-padding",
+  ])(
     "%s は外さない",
     (name) => {
       const block = css.slice(css.indexOf(MINIMAL), css.indexOf("\n}", css.indexOf(MINIMAL)));

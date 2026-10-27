@@ -963,9 +963,10 @@ html body :where(.as-studio-dialog-close svg) {
 /*
  * minimal — 読むのに要らない装飾だけを外す。
  *
- * **色は変えません。** 外すのは枠・影・角丸・カードの余白だけです。
- * **表の罫線・引用の左線・区切り線・コードの背景は残します** — それらは
- * 装飾ではなく、内容を読むために必要なものです。
+ * **色は変えません。** 外すのは枠・影・角丸だけです。
+ * **表の罫線・引用の左線・区切り線・コードの背景・本文の余白は残します**
+ * — それらは装飾ではなく、内容を読むために必要なものです。本文の余白を
+ * 0 にすると、文字が白い箱の端に貼り付いて読めなくなります。
  *
  * 自分のデザインを作るときの出発点にも使えます。
  */
@@ -973,7 +974,6 @@ html body :where(.as-studio-dialog-close svg) {
   --as-heading-marker: none;
   --as-date-divider: none;
   --as-footer-divider: none;
-  --as-article-padding: 0;
   --as-shadow-card: none;
   --as-shadow-card-hover: none;
   --as-radius: 0;

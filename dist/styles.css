@@ -679,7 +679,6 @@ html body :where(.as-studio-dialog-close svg) {
   --as-heading-marker: none;
   --as-date-divider: none;
   --as-footer-divider: none;
-  --as-article-padding: 0;
   --as-shadow-card: none;
   --as-shadow-card-hover: none;
   --as-radius: 0;
