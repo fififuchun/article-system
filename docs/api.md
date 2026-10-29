@@ -33,6 +33,31 @@ export type { ArticleOgTagsOptions, ArticleOgTagsPlugin };
 
 **どちらか一方だけを読み込みます。** 取り違えると実行時に警告が出ます（spec §10）。
 
+### テーマ
+
+見た目は CSS変数で決まります。利用側の CSS に並べるだけで、**本番の記事ページと Studio のプレビューの両方に効きます**（`props` は不要。spec §10 テーマ）。
+
+```css
+:root {
+  --as-color-accent: #8b5a2b;
+  --as-heading-marker: none;   /* 装飾は none で消える */
+  --as-shadow-card: none;
+}
+```
+
+同梱のテーマは属性で切り替えます。
+
+```html
+<html data-as-theme="minimal">
+```
+
+| | 内容 |
+| --- | --- |
+| 指定なし | 既定（青基調） |
+| `minimal` | 枠・影・角丸を外したもの |
+
+変数の一覧は [README](../README.md#テーマ--見た目を1か所で決める) にあります。`--as-studio-radius`（執筆画面のUI）はテーマから切り離してあります。
+
 ---
 
 ## 型

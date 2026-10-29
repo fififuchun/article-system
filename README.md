@@ -226,18 +226,87 @@ h2 { margin-top: 40px; }           /* ライブラリに負ける */
 
 **Tailwind v4（`styles.layer.css`）ではこれは起きません。** 層ありのライブラリは、層に入っていない CSS すべてに負けるためです。
 
-### 色やサイズを変える
+### テーマ — 見た目を1か所で決める
 
-CSS変数を再定義するだけで差し替えられます。
+**見た目は CSS変数のセット（＝テーマ）で決まります。** 自分のサイトの CSS に変数を並べるだけです。
 
 ```css
+/* あなたのサイトの CSS */
 :root {
-  --as-color-accent: #e2574a;
-  --as-color-link: #2563eb;   /* 既定はアクセント色に追従 */
-  --as-text-body: 1rem;
-  --as-article-width: 50rem;
+  --as-color-accent: #8b5a2b;
+  --as-font-body: "Noto Sans JP", sans-serif;
+  --as-heading-marker: none;    /* 見出しの左線を消す */
+  --as-date-divider: none;      /* 日付とタイトルの間の縦線を消す */
+  --as-shadow-card: none;
+  --as-radius: 0;
 }
 ```
+
+#### 本番と執筆画面の両方に、自動で効きます
+
+**これが一番の利点です。** CSS変数はページ全体で共有されるので、`props` を渡す必要がありません。
+
+```
+<html>  ← ここに変数を置く
+  ├ 本番の記事ページ ────→ 同じ変数を読む
+  └ Studio のプレビュー ──→ 同じ変数を読む
+```
+
+**テーマを1枚書き換えれば、両方が同時に変わります。** 執筆画面用に `classNames` を手でコピーする必要はありません。
+
+> **読み込み順も気にしなくて構いません。** あなたの `:root`（クラス1つ分の強さ）は、ライブラリ側の指定（強さ0）に必ず勝ちます。Tailwind の v3 / v4 のどちらでも同じです。
+
+#### 変えられるもの
+
+| 分類 | 変数 |
+| --- | --- |
+| 色 | `--as-color-text` `--as-color-heading` `--as-color-muted` `--as-color-subtle` `--as-color-accent` `--as-color-link` `--as-color-border` `--as-color-surface` `--as-color-surface-muted` `--as-color-error` |
+| 文字 | `--as-font-body` `--as-font-mono` `--as-text-title` `--as-text-heading` `--as-text-subheading` `--as-text-subsubheading` `--as-text-body` `--as-text-small` `--as-text-meta` `--as-leading-body` `--as-leading-heading` |
+| 余白・幅 | `--as-space-xs` 〜 `--as-space-xl` `--as-article-width` `--as-article-padding` |
+| **装飾（`none` で消える）** | `--as-heading-marker` `--as-date-divider` `--as-footer-divider` `--as-quote-marker` `--as-table-border` `--as-divider` `--as-shadow-card` `--as-shadow-card-hover` `--as-radius` `--as-radius-sm` |
+
+**装飾の変数は `none` や `0` を入れると、その装飾だけが消えます。** 「指定していないプロパティにライブラリ既定が残る」ということが起きません。
+
+#### 変えられないもの
+
+- **HTML の構造**（どの要素が何を包むか、要素の順番）
+- 要素を増やす・減らす
+
+構造まで変えたい場合は、`classNames` で各要素にクラスを渡すか、自分の描画部品を使ってください。
+
+#### 同梱のテーマ
+
+`<html>` に属性を1つ付けるだけで切り替わります。**追加のファイルはありません。**
+
+```html
+<html data-as-theme="minimal">
+```
+
+| | 内容 |
+| --- | --- |
+| 指定なし（既定） | 青基調。枠線・影・角丸あり |
+| `minimal` | **枠・影・角丸を外したもの。** 自分のテーマを作るときの出発点にも使えます |
+
+`minimal` が**外さないもの**もあります。
+
+- **本文の余白** — 0 にすると文字が箱の端に貼り付いて読めません
+- **表の罫線・引用の左線・区切り線・コードの背景** — 装飾ではなく、内容を読むために必要です
+- **色** — 変えると執筆画面のタブやボタンまで動きます
+
+必要なら自分のテーマで上書きしてください。
+
+#### 自分のテーマは自分のプロジェクトに置きます
+
+ライブラリは特定プロジェクトのデザインを持ちません。`:root` に書くか、属性で切り替える形にもできます。
+
+```css
+/* 属性で切り替えたい場合 */
+[data-as-theme="my-site"] {
+  --as-color-accent: #8b5a2b;
+}
+```
+
+> **執筆画面のUI（ボタン・タブ・入力欄）の角丸はテーマから切り離してあります**（`--as-studio-radius`）。記事のデザインを変えただけで編集画面の見た目まで動かないようにするためです。
 
 ## コンポーネントの使い方
 
