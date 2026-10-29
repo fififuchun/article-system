@@ -1274,7 +1274,7 @@ export default defineConfig({
 
 ```bash
 # 推奨: タグで固定する
-npm i github:fififuchun/article-system#v0.3.0
+npm i github:fififuchun/article-system#v0.6.0
 
 # 非推奨: npm update で意図せず更新される
 npm i github:fififuchun/article-system
@@ -1778,4 +1778,4 @@ $ curl -s http://localhost:4173/article/2026-10-12/ | grep og:
 
 ---
 
-記録日: 2026-08-23（§15 を 2026-09-21、§3 と §9 設置方法を 2026-10-10、投稿まわりと §18 を 2026-10-12、§10 の詳細度と Tailwind 対応を 2026-10-20 に追記） / 対象バージョン: 0.5.1
+記録日: 2026-08-23（§15 を 2026-09-21、§3 と §9 設置方法を 2026-10-10、投稿まわりと §18 を 2026-10-12、§10 の詳細度と Tailwind 対応を 2026-10-20、テーマを 2026-10-29 に追記） / 対象バージョン: 0.6.0

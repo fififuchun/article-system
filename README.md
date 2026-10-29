@@ -3,7 +3,7 @@
 マークダウンファイルを置くだけで記事データを自動生成し、一覧・詳細表示コンポーネントを提供するライブラリです。  
 デフォルトCSSを同梱しており、読み込むだけで記事の体裁が整います。見た目は `classNames` で全部差し替えられます。
 
-> **開発中のライブラリです（現在 0.5.2）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
+> **開発中のライブラリです（現在 0.6.0）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
 > **この README は今日時点で実際に動く内容だけを説明しています。**
 
 <br>
@@ -33,7 +33,7 @@ npm i github:fififuchun/article-system
 
 ```bash
 # タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.5.2
+npm i github:fififuchun/article-system#v0.6.0
 
 # コミットハッシュで固定する
 npm i github:fififuchun/article-system#b5e66ab
@@ -725,7 +725,7 @@ dist/
 ### ステップ1. ライブラリを更新する
 
 ```bash
-npm i github:fififuchun/article-system#v0.5.2
+npm i github:fififuchun/article-system#v0.6.0
 ```
 
 OGタグは **0.4.0 で入った機能**です。それより古いものが入っていると**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
@@ -1019,6 +1019,45 @@ src/articles/ に .md ファイルを追加するだけ
 `createArticles` が自動でソートするため、他のファイルを変更する必要はありません。
 
 > **`slug` は記事の身元です。** 古い日付の記事を後から追加しても、既存の記事の URL は変わりません。ファイル名を変えると（`slug:` を書いていない記事では）URL が変わるので、URL を保ちたいときはフロントマターに `slug:` を明示してください。
+
+<br>
+<br>
+
+## 0.5.2 から 0.6.0 への変更
+
+**破壊的変更はありません。** 入れ替えるだけで、見た目は1ピクセルも変わりません。
+
+### 追加：テーマ
+
+**見た目を CSS変数のセットで決められるようになりました。** 自分のサイトの CSS に変数を並べるだけで、**本番の記事ページと Studio のプレビューの両方に効きます**（`props` は不要）。
+
+これまで変えられなかった「装飾があること自体」も消せます。
+
+```css
+:root {
+  --as-heading-marker: none;    /* 見出しの左線 */
+  --as-date-divider: none;      /* 日付とタイトルの間の縦線 */
+  --as-footer-divider: none;    /* 担当者欄の上の線 */
+  --as-quote-marker: none;      /* 引用の左線 */
+  --as-table-border: none;      /* 表の罫線 */
+  --as-divider: none;           /* 区切り線 */
+  --as-article-padding: 0;      /* 記事の内側の余白 */
+}
+```
+
+同梱のテーマも使えます（**追加のファイルはありません**）。
+
+```html
+<html data-as-theme="minimal">
+```
+
+詳しくは[テーマ](#テーマ--見た目を1か所で決める)の節を読んでください。
+
+### 変わること（1つだけ）
+
+`--as-radius-sm` は執筆画面のUI（画像一覧・名前の入力欄）にも効いていましたが、**テーマから切り離しました。** 執筆画面の角丸は `--as-studio-radius` になりました。
+
+記事のデザインを変えただけで編集画面の見た目まで動かないようにするためです。**`--as-radius-sm` を上書きして執筆画面の角丸も変えていた場合だけ、影響があります。**
 
 <br>
 <br>
