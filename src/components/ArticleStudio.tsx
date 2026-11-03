@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type {
   Article,
   ArticleDetailClassNames,
+  ArticleListClassNames,
   ArticleStudioClassNames,
   GitHubConfig,
 } from "../types";
@@ -58,7 +59,10 @@ interface Props {
   imageBasePath?: string;
   dateLabel?: string;
   classNames?: ArticleStudioClassNames;
+  /** 詳細タブの `ArticleDetail` に渡す */
   articleClassNames?: ArticleDetailClassNames;
+  /** 一覧タブの `ArticleList` に渡す。本番の一覧と見た目を揃えるため（spec §9） */
+  articleListClassNames?: ArticleListClassNames;
   /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15） */
   github?: GitHubConfig;
 }
@@ -106,6 +110,7 @@ function StudioEditor({
   dateLabel,
   classNames = {},
   articleClassNames,
+  articleListClassNames,
 }: EditorProps) {
   // 生の md を1枚の textarea で編集する。フォーム化しないことで
   // エディタとのコピーペーストが自由に行き来できる（spec §9）
@@ -446,6 +451,7 @@ function StudioEditor({
           <ArticleList
             articles={listPreview}
             imageBasePath={imageBasePath}
+            classNames={articleListClassNames}
             // 遷移はしないので div で包む。編集中の記事だけ印を付けて見分ける。
             // slug で見分けると、既存記事と重なったとき両方に出てしまう
             getArticleUrl={(article) => (article === previewArticle ? DRAFT_MARK : "#")}

@@ -2400,3 +2400,97 @@ describe("ArticleStudio — 画像を保存できなかったとき（spec §9�
     expect(container.querySelector(".as-studio-images-unsaved")).toBeNull();
   });
 });
+
+// spec §9: 本番の一覧を ArticleList + classNames で作っている利用側が、
+// Studio の一覧タブも同じ見た目に揃えられるようにする
+describe("ArticleStudio — articleListClassNames（spec §9）", () => {
+  const md = () => document.querySelector(".as-studio-textarea") as HTMLTextAreaElement;
+  const openList = () => fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
+
+  const listClassNames = {
+    grid: "my-grid",
+    card: "my-card",
+    cardImage: "my-card-image",
+    cardTitle: "my-card-title",
+    cardDate: "my-card-date",
+  };
+
+  it("一覧タブの ArticleList に渡る", () => {
+    const { container } = render(
+      <ArticleStudio articles={[]} articleListClassNames={listClassNames} />
+    );
+
+    openList();
+
+    expect(container.querySelector(".as-grid")?.className).toBe("as-grid my-grid");
+  });
+
+  it("カードの各要素にも付く", () => {
+    const { container } = render(
+      <ArticleStudio articles={[]} articleListClassNames={listClassNames} />
+    );
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+    openList();
+
+    expect(container.querySelector(".as-card")?.className).toContain("my-card");
+    expect(container.querySelector(".as-card-title")?.className).toContain(
+      "my-card-title"
+    );
+  });
+
+  // 未指定なら今までどおり
+  it("渡さなければ余分な空白が入らない", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    openList();
+
+    expect(container.querySelector(".as-grid")?.className).toBe("as-grid");
+  });
+
+  // 詳細タブ側と混ざらないこと
+  it("詳細タブの classNames とは別に効く", () => {
+    const { container } = render(
+      <ArticleStudio
+        articles={[]}
+        articleClassNames={{ title: "my-title" }}
+        articleListClassNames={listClassNames}
+      />
+    );
+
+    fireEvent.change(md(), { target: { value: sampleMd } });
+
+    expect(container.querySelector(".as-title")?.className).toContain("my-title");
+    expect(container.querySelector(".as-grid")).toBeNull();
+
+    openList();
+
+    expect(container.querySelector(".as-grid")?.className).toContain("my-grid");
+  });
+});
+
+// github を渡すと GitHubGate を経由する。そこで props が落ちないこと
+describe("ArticleStudio — articleListClassNames は GitHubGate も通る（spec §15）", () => {
+  const github = { repo: "me/blog" };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    saveToken(undefined, { accessToken: "github_pat_secret" });
+    vi.mocked(verifyToken).mockResolvedValue(undefined);
+  });
+
+  it("トークンがあるとき一覧タブに渡る", () => {
+    const { container } = render(
+      <ArticleStudio
+        articles={[]}
+        github={github}
+        articleListClassNames={{ grid: "my-grid" }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
+
+    expect(container.querySelector(".as-grid")?.className).toBe("as-grid my-grid");
+  });
+});

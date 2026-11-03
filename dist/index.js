@@ -1092,7 +1092,8 @@ function StudioEditor({
   imageBasePath,
   dateLabel,
   classNames = {},
-  articleClassNames
+  articleClassNames,
+  articleListClassNames
 }) {
   const [publishedSlugs, setPublishedSlugs] = useState2([]);
   const existingSlugs = [...articles.map((article) => article.slug), ...publishedSlugs];
@@ -1322,6 +1323,7 @@ ${markdown}
       {
         articles: listPreview,
         imageBasePath,
+        classNames: articleListClassNames,
         getArticleUrl: (article) => article === previewArticle ? DRAFT_MARK : "#",
         renderLink: (url, children, key) => url === DRAFT_MARK ? (
           // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない

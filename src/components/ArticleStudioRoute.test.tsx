@@ -341,3 +341,20 @@ describe("ArticleStudioRoute — 閉じるボタンの置き場所", () => {
     expect(dialog.firstElementChild?.className).toContain("as-studio-dialog-bar");
   });
 });
+
+// spec §9: Studio に渡す props はすべて Route からも渡せる
+describe("ArticleStudioRoute — articleListClassNames", () => {
+  beforeEach(() => at("#/studio"));
+
+  it("一覧タブに渡る", () => {
+    const { container } = render(
+      <ArticleStudioRoute articles={[]} articleListClassNames={{ grid: "my-grid" }} />
+    );
+
+    act(() => {
+      (container.querySelector('[role="tab"][aria-selected="false"]') as HTMLButtonElement).click();
+    });
+
+    expect(container.querySelector(".as-grid")?.className).toBe("as-grid my-grid");
+  });
+});

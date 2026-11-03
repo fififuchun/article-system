@@ -173,7 +173,10 @@ interface Props$1 {
     imageBasePath?: string;
     dateLabel?: string;
     classNames?: ArticleStudioClassNames;
+    /** 詳細タブの `ArticleDetail` に渡す */
     articleClassNames?: ArticleDetailClassNames;
+    /** 一覧タブの `ArticleList` に渡す。本番の一覧と見た目を揃えるため（spec §9） */
+    articleListClassNames?: ArticleListClassNames;
     /** 渡すとダウンロードではなくリポジトリへコミットする（spec §15） */
     github?: GitHubConfig;
 }
@@ -192,6 +195,7 @@ interface Props {
     dateLabel?: string;
     classNames?: ArticleStudioClassNames;
     articleClassNames?: ArticleDetailClassNames;
+    articleListClassNames?: ArticleListClassNames;
     github?: GitHubConfig;
     /** 入り口のハッシュ。既定 `#/studio` */
     hashPath?: string;

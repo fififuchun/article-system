@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type {
   Article,
   ArticleDetailClassNames,
+  ArticleListClassNames,
   ArticleStudioClassNames,
   GitHubConfig,
 } from "../types";
@@ -20,6 +21,7 @@ interface Props {
   dateLabel?: string;
   classNames?: ArticleStudioClassNames;
   articleClassNames?: ArticleDetailClassNames;
+  articleListClassNames?: ArticleListClassNames;
   github?: GitHubConfig;
   /** 入り口のハッシュ。既定 `#/studio` */
   hashPath?: string;
