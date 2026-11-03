@@ -499,5 +499,5 @@ Studio の一覧タブに渡す口が無く、本番と見た目が揃わない�
 
 - [x] `articleListClassNames` を `ArticleStudio` と `ArticleStudioRoute` に足す（GitHubGate 経由も。テスト → 実装 → グリーン）
 - [x] 下書きの予告をカードに重ねるのをやめ、プレビュー枠の上に出す（テスト → 実装 → グリーン）
-- [ ] README を更新する
-- [ ] 0.7.0 に上げる（タグはローカルまで）
+- [x] README を更新する
+- [x] 0.7.0 に上げる（タグはローカルまで）

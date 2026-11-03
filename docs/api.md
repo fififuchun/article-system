@@ -201,6 +201,7 @@ buildArticleHead(article, {
 | `dateLabel` | `string` | | `"最終更新日時"` |
 | `classNames` | `ArticleStudioClassNames` | | `{}` |
 | `articleClassNames` | `ArticleDetailClassNames` | | `{}` |
+| `articleListClassNames` | `ArticleListClassNames` | | `{}` |
 | `github` | `GitHubConfig` | | — |
 
 `articles` は必須です。渡さないとファイル名の衝突を検出できず、既存記事が上書きで消えます。

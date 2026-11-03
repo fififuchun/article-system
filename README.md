@@ -3,7 +3,7 @@
 マークダウンファイルを置くだけで記事データを自動生成し、一覧・詳細表示コンポーネントを提供するライブラリです。  
 デフォルトCSSを同梱しており、読み込むだけで記事の体裁が整います。見た目は `classNames` で全部差し替えられます。
 
-> **開発中のライブラリです（現在 0.6.0）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
+> **開発中のライブラリです（現在 0.7.0）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
 > **この README は今日時点で実際に動く内容だけを説明しています。**
 
 <br>
@@ -33,7 +33,7 @@ npm i github:fififuchun/article-system
 
 ```bash
 # タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.6.0
+npm i github:fififuchun/article-system#v0.7.0
 
 # コミットハッシュで固定する
 npm i github:fififuchun/article-system#b5e66ab
@@ -254,6 +254,20 @@ h2 { margin-top: 40px; }           /* ライブラリに負ける */
 
 **テーマを1枚書き換えれば、両方が同時に変わります。** 執筆画面用に `classNames` を手でコピーする必要はありません。
 
+#### `classNames` で揃える場合
+
+テーマではなく `classNames`（Tailwind のクラスなど）で見た目を作っている場合は、本番で使っているものを執筆画面にも渡します。**詳細と一覧で別の prop です。**
+
+```tsx
+<ArticleStudioRoute
+  articles={articles}
+  articleClassNames={articleClassNames}       // 詳細タブ（ArticleDetail）
+  articleListClassNames={articleListClassNames} // 一覧タブ（ArticleList）
+/>
+```
+
+渡さなければ既定の見た目のままです。
+
 > **読み込み順も気にしなくて構いません。** あなたの `:root`（クラス1つ分の強さ）は、ライブラリ側の指定（強さ0）に必ず勝ちます。Tailwind の v3 / v4 のどちらでも同じです。
 
 #### 変えられるもの
@@ -447,6 +461,7 @@ export default function BlogStudio() {
 | `dateLabel` | `string` | | `"最終更新日時"` |
 | `classNames` | `ArticleStudioClassNames` | | `{}` |
 | `articleClassNames` | `ArticleDetailClassNames` | | `{}` |
+| `articleListClassNames` | `ArticleListClassNames` | | `{}` |
 | `github` | `GitHubConfig` | | — （渡すとコミットになる） |
 
 #### `articles` は必ず渡してください
@@ -725,7 +740,7 @@ dist/
 ### ステップ1. ライブラリを更新する
 
 ```bash
-npm i github:fififuchun/article-system#v0.6.0
+npm i github:fififuchun/article-system#v0.7.0
 ```
 
 OGタグは **0.4.0 で入った機能**です。それより古いものが入っていると**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
@@ -1019,6 +1034,37 @@ src/articles/ に .md ファイルを追加するだけ
 `createArticles` が自動でソートするため、他のファイルを変更する必要はありません。
 
 > **`slug` は記事の身元です。** 古い日付の記事を後から追加しても、既存の記事の URL は変わりません。ファイル名を変えると（`slug:` を書いていない記事では）URL が変わるので、URL を保ちたいときはフロントマターに `slug:` を明示してください。
+
+<br>
+<br>
+
+## 0.6.0 から 0.7.0 への変更
+
+**追加だけです。** 入れ替えるだけで動きます。
+
+### 追加：`articleListClassNames`
+
+執筆画面の**一覧タブ**に `classNames` を渡せるようになりました。詳細タブの `articleClassNames` と対になります。
+
+```tsx
+<ArticleStudioRoute
+  articles={articles}
+  articleClassNames={articleClassNames}
+  articleListClassNames={articleListClassNames}
+/>
+```
+
+### 変わること：URL の予告の位置
+
+編集中の記事の「URL は … になります」は、**カードに重ねるのをやめ、プレビュー枠の先頭に移しました。**
+
+| | 以前 | 今 |
+| --- | --- | --- |
+| 置き場所 | 編集中の記事のカードに重ねる | プレビュー枠の先頭 |
+| 出るタブ | 一覧タブだけ | **両方のタブ** |
+| どのカードが編集中か | 予告の位置で分かる | カードの外枠に輪郭が出る |
+
+`classNames` でカードを小さくすると文字がはみ出し、カードに `transform` をかけると位置がずれていたためです。枠の先頭なら、カードにどんな指定をしても影響を受けません。
 
 <br>
 <br>
