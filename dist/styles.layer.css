@@ -512,18 +512,20 @@ html body :where(.as-studio-issue-icon) {
   flex: none;
 }
 html body :where(.as-studio-draft-card) {
-  position: relative;
+  outline: 2px solid var(--as-color-accent);
+  outline-offset: 2px;
+  border-radius: var(--as-studio-radius);
 }
 html body :where(.as-studio-slug-preview) {
-  position: absolute;
-  top: var(--as-space-sm);
-  left: var(--as-space-sm);
-  z-index: 1;
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: var(--as-space-md);
   font-size: var(--as-text-meta);
   color: var(--as-color-surface);
   background: var(--as-color-accent);
   border-radius: var(--as-studio-radius);
   padding: var(--as-space-xs) var(--as-space-sm);
+  overflow-wrap: anywhere;
 }
 @media (max-width: 40rem) {
   html body :where(.as-studio) {

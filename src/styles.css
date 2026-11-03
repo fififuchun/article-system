@@ -707,20 +707,37 @@ html body :where(.as-studio-issue-icon) {
 }
 
 /* 編集中の記事のカードに重ねる URL の予告。カードの高さを崩さない */
+/*
+ * どのカードが編集中の記事かを示す印（spec §9）。
+ *
+ * **outline を使うのはレイアウトに影響しないためです。** カードの中身は
+ * 利用側の `classNames` が決めるので、こちらからは触れません。
+ */
 html body :where(.as-studio-draft-card) {
-  position: relative;
+  outline: 2px solid var(--as-color-accent);
+  outline-offset: 2px;
+  border-radius: var(--as-studio-radius);
 }
 
+/*
+ * URL の予告（spec §9）。プレビュー枠の先頭に置きます。
+ *
+ * **カードに重ねません。** 以前は重ねていましたが、利用側が `classNames` で
+ * カードを小さくすると文字がはみ出し（実測で 272px vs 201px）、カードに
+ * transform をかけると位置がずれました。枠の先頭なら、カードの指定に
+ * 一切左右されません。
+ */
 html body :where(.as-studio-slug-preview) {
-  position: absolute;
-  top: var(--as-space-sm);
-  left: var(--as-space-sm);
-  z-index: 1;
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: var(--as-space-md);
   font-size: var(--as-text-meta);
   color: var(--as-color-surface);
   background: var(--as-color-accent);
   border-radius: var(--as-studio-radius);
   padding: var(--as-space-xs) var(--as-space-sm);
+  /* 長い slug でも枠からはみ出さない */
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 40rem) {

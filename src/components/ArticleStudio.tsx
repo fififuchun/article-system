@@ -440,6 +440,14 @@ function StudioEditor({
       </div>
 
       <div className={cx("as-studio-preview", classNames.previewPane)}>
+        {/*
+          出したあとどの URL になるかを、どちらのタブでも見せる（spec §9）。
+
+          **カードには重ねません。** 利用側が `classNames` でカードの大きさや
+          transform を変えても追従できず、はみ出したりずれたりします（実測）。
+        */}
+        <p className="as-studio-slug-preview">URL は {draft.slug} になります</p>
+
         {tab === "detail" ? (
           <ArticleDetail
             article={previewArticle}
@@ -457,11 +465,9 @@ function StudioEditor({
             getArticleUrl={(article) => (article === previewArticle ? DRAFT_MARK : "#")}
             renderLink={(url, children, key) =>
               url === DRAFT_MARK ? (
-                // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
+                // どのカードが編集中の記事かを示す印。輪郭を引くだけなので
+                // レイアウトに影響せず、カードの中身にも触らない（spec §9）
                 <div key={key} className="as-studio-draft-card">
-                  <span className="as-studio-slug-preview">
-                    URL は {draft.slug} になります
-                  </span>
                   {children}
                 </div>
               ) : (

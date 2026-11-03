@@ -1310,34 +1310,35 @@ ${markdown}
         ]
       }
     ),
-    /* @__PURE__ */ jsx6("div", { className: cx("as-studio-preview", classNames.previewPane), children: tab === "detail" ? /* @__PURE__ */ jsx6(
-      ArticleDetail,
-      {
-        article: previewArticle,
-        imageBasePath,
-        dateLabel,
-        classNames: articleClassNames
-      }
-    ) : /* @__PURE__ */ jsx6(
-      ArticleList,
-      {
-        articles: listPreview,
-        imageBasePath,
-        classNames: articleListClassNames,
-        getArticleUrl: (article) => article === previewArticle ? DRAFT_MARK : "#",
-        renderLink: (url, children, key) => url === DRAFT_MARK ? (
-          // 予告はカードに重ねる。積むとカードが押し下げられ高さが揃わない
-          /* @__PURE__ */ jsxs4("div", { className: "as-studio-draft-card", children: [
-            /* @__PURE__ */ jsxs4("span", { className: "as-studio-slug-preview", children: [
-              "URL \u306F ",
-              draft.slug,
-              " \u306B\u306A\u308A\u307E\u3059"
-            ] }),
-            children
-          ] }, key)
-        ) : /* @__PURE__ */ jsx6("div", { children }, key)
-      }
-    ) })
+    /* @__PURE__ */ jsxs4("div", { className: cx("as-studio-preview", classNames.previewPane), children: [
+      /* @__PURE__ */ jsxs4("p", { className: "as-studio-slug-preview", children: [
+        "URL \u306F ",
+        draft.slug,
+        " \u306B\u306A\u308A\u307E\u3059"
+      ] }),
+      tab === "detail" ? /* @__PURE__ */ jsx6(
+        ArticleDetail,
+        {
+          article: previewArticle,
+          imageBasePath,
+          dateLabel,
+          classNames: articleClassNames
+        }
+      ) : /* @__PURE__ */ jsx6(
+        ArticleList,
+        {
+          articles: listPreview,
+          imageBasePath,
+          classNames: articleListClassNames,
+          getArticleUrl: (article) => article === previewArticle ? DRAFT_MARK : "#",
+          renderLink: (url, children, key) => url === DRAFT_MARK ? (
+            // どのカードが編集中の記事かを示す印。輪郭を引くだけなので
+            // レイアウトに影響せず、カードの中身にも触らない（spec §9）
+            /* @__PURE__ */ jsx6("div", { className: "as-studio-draft-card", children }, key)
+          ) : /* @__PURE__ */ jsx6("div", { children }, key)
+        }
+      )
+    ] })
   ] });
 }
 function GitHubGate({ github, ...props }) {

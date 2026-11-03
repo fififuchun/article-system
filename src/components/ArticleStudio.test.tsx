@@ -775,7 +775,7 @@ describe("ArticleStudio — URL の予告", () => {
 
   beforeEach(() => localStorage.clear());
 
-  it("編集中の記事のカードに slug を出す", () => {
+  it("slug を出す", () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
@@ -804,17 +804,75 @@ describe("ArticleStudio — URL の予告", () => {
     expect(badge(container)).toContain("URL");
   });
 
-  it("既存記事のカードには出さない", () => {
-    const articles = [existing("2026-01-01", "A")];
-    const { container } = render(<ArticleStudio articles={articles} />);
+  /*
+   * spec §9: カードには重ねない。利用側が classNames でカードの大きさや
+   * transform を変えても追従できず、はみ出したりずれたりする（実測）
+   */
+  it("プレビュー枠に出す（カードの中ではない）", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     openList();
 
-    expect(container.querySelectorAll(".as-studio-slug-preview")).toHaveLength(1);
+    expect(container.querySelector(".as-studio-preview > .as-studio-slug-preview")).not.toBeNull();
+    expect(container.querySelector(".as-card .as-studio-slug-preview")).toBeNull();
+    expect(container.querySelector(".as-studio-draft-card .as-studio-slug-preview")).toBeNull();
   });
 
-  it("既存記事と slug が重なっても編集中の記事にだけ出す", () => {
+  // 以前はカードに重ねていたので一覧タブだけだった
+  it("詳細タブにも出す", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+
+    expect(badge(container)).toContain("2026-08-23-夏の更新");
+  });
+
+  it("どちらのタブでも1つだけ", () => {
+    const { container } = render(
+      <ArticleStudio articles={[existing("2026-01-01", "A")]} />
+    );
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    expect(container.querySelectorAll(".as-studio-slug-preview")).toHaveLength(1);
+
+    openList();
+    expect(container.querySelectorAll(".as-studio-slug-preview")).toHaveLength(1);
+  });
+});
+
+/*
+ * spec §9: 過去日を書いたとき一覧のどこに入るかを確認したい。どのカードが
+ * 編集中の記事かは、レイアウトに影響しない輪郭で示す
+ */
+describe("ArticleStudio — 編集中の記事のカードの印", () => {
+  const openList = () => fireEvent.click(screen.getByRole("tab", { name: "一覧" }));
+  const marks = (container: HTMLElement) =>
+    container.querySelectorAll(".as-studio-draft-card");
+
+  beforeEach(() => localStorage.clear());
+
+  it("編集中の記事のカードに印を付ける", () => {
+    const { container } = render(<ArticleStudio articles={[]} />);
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(marks(container)).toHaveLength(1);
+  });
+
+  it("既存記事のカードには付けない", () => {
+    const { container } = render(
+      <ArticleStudio articles={[existing("2026-01-01", "A")]} />
+    );
+
+    fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
+
+    expect(marks(container)).toHaveLength(1);
+  });
+
+  it("既存記事と slug が重なっても編集中の記事にだけ付ける", () => {
     const clashing = existing("2026-01-01", "A");
     clashing.slug = "2026-08-23-夏の更新"; // 編集中の記事と同じになる
     const { container } = render(<ArticleStudio articles={[clashing]} />);
@@ -822,15 +880,16 @@ describe("ArticleStudio — URL の予告", () => {
     fireEvent.change(textarea(), { target: { value: sampleMd } });
     openList();
 
-    expect(container.querySelectorAll(".as-studio-slug-preview")).toHaveLength(1);
+    expect(marks(container)).toHaveLength(1);
   });
 
-  it("詳細タブには出さない", () => {
+  it("印はカードを包むだけで、中身を変えない", () => {
     const { container } = render(<ArticleStudio articles={[]} />);
 
     fireEvent.change(textarea(), { target: { value: sampleMd } });
+    openList();
 
-    expect(container.querySelector(".as-studio-slug-preview")).toBeNull();
+    expect(container.querySelector(".as-studio-draft-card > .as-card")).not.toBeNull();
   });
 });
 
