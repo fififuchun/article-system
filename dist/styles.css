@@ -375,6 +375,7 @@ html body :where(.as-studio-actions button, .as-studio-tabs button) {
 }
 html body :where(.as-studio-actions button) {
   flex: 1 1 auto;
+  box-shadow: 0 1px 0 var(--as-color-border);
   white-space: nowrap;
 }
 html body :where(.as-studio-tabs button) {

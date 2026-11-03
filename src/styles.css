@@ -550,11 +550,21 @@ html body :where(.as-studio-actions button, .as-studio-tabs button) {
   cursor: pointer;
 }
 
-/* 左半分を3つで埋める。中身の幅のままだと「新しく書く」の右に隙間が開き、
-   最後のボタンの罫線が宙に浮く。埋めると罫線がペイン間の罫線と一直線になる。
-   basis は auto のまま。余りだけを等分するので、文言の長さの差は保たれる */
+/*
+ * 左半分を3つで埋める。中身の幅のままだと「新しく書く」の右に隙間が開き、
+ * 最後のボタンの罫線が宙に浮く。埋めると罫線がペイン間の罫線と一直線になる。
+ * basis は auto のまま。余りだけを等分するので、文言の長さの差は保たれる。
+ *
+ * 影は折り返した行のあいだの罫線です。ボタンどうしの区切りは `border-right`
+ * で縦線しかなく、これが無いと「新しく書く」が2行目に落ちたときに1行目と
+ * 地続きに見えます。`border-bottom` にしないのは、最下行の線が帯の
+ * `border-bottom` と二重になり、帯の高さも 1px 動くからです。影は場所を
+ * 取らないので、ボタンが帯の高さまで伸びている（align-items は stretch）
+ * 最下行では、帯の罫線にぴったり重なって見えません。
+ */
 html body :where(.as-studio-actions button) {
   flex: 1 1 auto;
+  box-shadow: 0 1px 0 var(--as-color-border);
   /* 等分で詰まっても折り返さない。帯の高さが揺れる */
   white-space: nowrap;
 }

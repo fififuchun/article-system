@@ -237,6 +237,25 @@ describe("styles.css — 狭い画面で横にはみ出さない", () => {
   it("操作帯が折り返せる", () => {
     expect(block(".as-studio-actions")).toContain("flex-wrap: wrap");
   });
+
+  /*
+   * 折り返したとき、行のあいだに罫線が入らないと1行目と2行目が地続きに
+   * 見えます。ボタンどうしの区切りは `border-right` なので縦線しかない。
+   *
+   * `border-bottom` ではなく影で引きます。border だと最下行の線が帯の
+   * `border-bottom` と二重になり、帯の高さも 1px 動きます。影は場所を
+   * 取らないので、最下行では帯の罫線にぴったり重なって見えません。
+   */
+  it("折り返した行のあいだに罫線が入る", () => {
+    expect(block(".as-studio-actions button")).toContain(
+      "box-shadow: 0 1px 0 var(--as-color-border)"
+    );
+    // 帯の下端の罫線は帯が持ったまま。影はそこに重なる前提
+    const bar = css.slice(css.indexOf("html body :where(.as-studio-actions) {"));
+    expect(bar.slice(0, bar.indexOf("\n}"))).toContain(
+      "border-bottom: 1px solid var(--as-color-border)"
+    );
+  });
 });
 
 /*
