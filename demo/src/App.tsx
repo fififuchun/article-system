@@ -201,11 +201,17 @@ export default function App() {
         設置はこの1行だけ。#/studio のときだけ全画面で開き、それ以外では
         何も描画しない。<main> の幅制限の外に置く必要も無い（spec §9 設置方法）
       */}
+      {/*
+        本番と同じ classNames を詳細・一覧の両方に渡す。カスタムCSSのときだけ
+        渡すので、デフォルトとの差を切り替えて見比べられる
+      */}
       <ArticleStudioRoute
         articles={articles}
         storageKey="article-system-demo"
         imageBasePath="https://placehold.co/800x400/e8e8e8/999999?text="
         dateLabel="最終更新日時"
+        articleClassNames={useCustomCss ? detailClassNames : undefined}
+        articleListClassNames={useCustomCss ? listClassNames : undefined}
         github={repo ? { repo } : undefined}
       />
     </div>
