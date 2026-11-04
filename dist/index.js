@@ -379,8 +379,7 @@ function ArticleDetail({
     /* @__PURE__ */ jsxs("div", { className: cx("as-latest-update", classNames.latestUpdate), children: [
       /* @__PURE__ */ jsx2(ClockIcon, { className: cx("as-date-icon", classNames.dateIcon) }),
       /* @__PURE__ */ jsxs("span", { children: [
-        dateLabel,
-        "\xA0",
+        dateLabel ? `${dateLabel}\xA0` : "",
         latest.year,
         "\u5E74",
         latest.month,

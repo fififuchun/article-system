@@ -83,7 +83,13 @@ export function ArticleDetail({
 
       <div className={cx("as-latest-update", classNames.latestUpdate)}>
         <ClockIcon className={cx("as-date-icon", classNames.dateIcon)} />
-        <span>{dateLabel}&nbsp;{latest.year}年{latest.month}月{latest.day}日</span>
+        {/* ラベルと日付は &nbsp; で繋ぐ（改行で割れないように）。ラベルを
+            空にしたときは繋ぎも出さない。残すとアイコンとの間隔が1文字ぶん
+            広がり、利用側が余白で打ち消すことになる */}
+        <span>
+          {dateLabel ? `${dateLabel}\u00a0` : ""}
+          {latest.year}年{latest.month}月{latest.day}日
+        </span>
       </div>
 
       {article.thumbnail && (

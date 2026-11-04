@@ -304,6 +304,25 @@ describe("ArticleDetail — 日付の表示", () => {
     expect(container.querySelector(".as-latest-update")?.textContent).toContain("更新");
   });
 
+  // ラベルと日付のあいだは &nbsp; で繋いでいる。ラベルを空にしたとき、
+  // それが日付の先頭に残ると**時計アイコンとの間隔が1文字ぶん広がる**
+  it("dateLabel を空にすると日付の前に何も残らない", () => {
+    const { container } = render(<ArticleDetail article={article} dateLabel="" />);
+
+    expect(container.querySelector(".as-latest-update span")?.textContent).toBe(
+      "2026年8月24日"
+    );
+  });
+
+  it("dateLabel があるときは日付と地続きにしない", () => {
+    const { container } = render(<ArticleDetail article={article} dateLabel="更新" />);
+
+    // 改行で割れないよう、空白ではなく &nbsp;（\u00a0）で繋ぐ
+    expect(container.querySelector(".as-latest-update span")?.textContent).toBe(
+      "更新\u00a02026年8月24日"
+    );
+  });
+
   // spec §9: 形式違反はプレビューが壊れて見えることで気づく仕組みになっている
   it("不正な date は整形せず壊れた表示のままにする", () => {
     const { container } = render(
