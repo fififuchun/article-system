@@ -53,6 +53,8 @@ dist/{path}/{slug}/index.html   dist/index.html の <head> にタグを入れた
 
 Studio のプレビューは `ArticleDetail` / `ArticleList` を**そのまま**呼びます。プレビュー専用の描画を持たないため、片方だけ直して食い違う、ということが起こりえません。
 
+**ただし渡す props は同じではありません。** プレビューに渡すのは見た目の prop（`articleClassNames` / `articleListClassNames` / `dateLabel`）だけです。`openLinksInNewTab` のように**挙動**を変える prop は渡していません（spec §7 リンク）。揃えているのは見た目で、挙動まで揃えるとは言っていません。
+
 ### ルーターに依存しない
 
 `ArticleList` はリンク要素の生成を `renderLink` で利用側に委ねます。React Router でも Next.js の `Link` でも素の `<a>` でも動きます。Studio のプレビューでは遷移させたくないので `<div>` を返しています。

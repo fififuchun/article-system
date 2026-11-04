@@ -1296,12 +1296,17 @@ export default defineConfig({
 ### インストール方法
 
 ```bash
-# 推奨: タグで固定する
-npm i github:fififuchun/article-system#v0.6.0
+# 推奨: コミットで固定する
+npm i github:fififuchun/article-system#ff3763a
 
 # 非推奨: npm update で意図せず更新される
 npm i github:fififuchun/article-system
 ```
+
+**タグは打ちません。** 版の番号は `package.json` の `version` だけが持ち、利用側は都度
+最新のコミットを指します。タグを配ると「タグを押し忘れた版」が生まれ、README が案内する
+指定が存在しない状態になりました（実際に 0.6.0〜0.7.1 でそうなりました）。番号と配布物が
+ずれる経路を1本減らすほうを採ります。
 
 **`npm link` と `file:../` は使えません。** どちらもローカルのファイルシステム上のパスを指す仕組みで、Vercel や Netlify のビルド環境には存在しないためです。Studio を本番サイトに常設する以上、この方式では利用側プロジェクトをデプロイできません。
 
@@ -1322,7 +1327,7 @@ npm i github:fififuchun/article-system
 ## 13. README に記載する項目
 
 - `import.meta.glob` のパターンは `[!_]*.md` にすること（**必須**）
-- インストールはタグで固定すること
+- インストールはコミットで固定すること（タグは打たない。§12 インストール方法）
 - `styles.css` の import 方法と、読み込まない場合の挙動
 - 複数プロジェクトで使う場合は `storageKey` を指定すること
 - Studio を本番に置く場合、`github` を渡して GitHub トークンを必須にするか、ホスティング側で認証をかけること（§15）

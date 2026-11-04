@@ -524,3 +524,4 @@ Studio の一覧タブに渡す口が無く、本番と見た目が揃わない�
 - [x] 外部リンクを新しいタブで開く `openLinksInNewTab` を足す（テスト → 実装 → グリーン）
 - [x] README・spec §7・api.md に書き、0.7.2 に上げる
 - [ ] `.as-date` の `flex: none` — SC から具体例をもらってから判断する
+- [x] 版の固定方法をタグからコミットに変える（README・spec §12・§13・architecture・design-decisions）

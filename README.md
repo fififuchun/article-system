@@ -3,7 +3,7 @@
 マークダウンファイルを置くだけで記事データを自動生成し、一覧・詳細表示コンポーネントを提供するライブラリです。  
 デフォルトCSSを同梱しており、読み込むだけで記事の体裁が整います。見た目は `classNames` で全部差し替えられます。
 
-> **開発中のライブラリです（現在 0.7.2）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
+> **開発中のライブラリです（現在 0.7.2）。** 破壊的変更が入ることがあります。**バージョンはコミットで固定してください**（タグは打っていません）。 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
 > **この README は今日時点で実際に動く内容だけを説明しています。**
 
 <br>
@@ -29,17 +29,21 @@ GitHub から直接インストールします。ビルド済みの `dist/` を�
 npm i github:fififuchun/article-system
 ```
 
-**バージョンはタグかコミットで固定することを強く推奨します。**
+**コミットハッシュで固定することを強く推奨します。**
 
 ```bash
-# タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.7.2
-
-# コミットハッシュで固定する
-npm i github:fififuchun/article-system#b5e66ab
+npm i github:fififuchun/article-system#ff3763a   # ← 例。最新のコミットを指す
 ```
 
 固定しないと `npm update` を実行したときに意図せず最新が入り、破壊的変更を含んでいた場合に利用側が壊れます。
+
+> **タグは打っていません。** `#v0.7.2` のような指定は使えません。版の番号は `package.json` の `version` で表しているだけです。入れたあと `node_modules/@fififuchun/article-system/package.json` の `version` を見れば、どの版が入ったか分かります。
+
+最新のコミットハッシュは GitHub のコミット一覧か、クローンしてあれば次で分かります。
+
+```bash
+git -C path/to/article-system log -1 --format=%h
+```
 
 
 > **`npm link` は使わないでください。** ローカルのファイルシステム上のパスを指す仕組みのため、Vercel や Netlify のビルド環境には存在せず、**利用側プロジェクトをデプロイできなくなります**。`file:../` も同様です。
@@ -765,8 +769,10 @@ dist/
 ### ステップ1. ライブラリを更新する
 
 ```bash
-npm i github:fififuchun/article-system#v0.7.2
+npm i github:fififuchun/article-system#<最新のコミット>
 ```
+
+入ったあと `node_modules/@fififuchun/article-system/package.json` の `version` が **0.7.2 以上**であることを確認してください。
 
 OGタグは **0.4.0 で入った機能**です。それより古いものが入っていると**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
 
@@ -1338,7 +1344,7 @@ git add . && git commit
 
 ```bash
 cd your-project
-npm i github:fififuchun/article-system#<新しいタグ or コミット>
+npm i github:fififuchun/article-system#<新しいコミット>
 ```
 
 <br>
