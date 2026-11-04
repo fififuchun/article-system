@@ -521,3 +521,6 @@ Studio の一覧タブに渡す口が無く、本番と見た目が揃わない�
 | タイトルが長くても日付の列が縮まない（`.as-date` の `flex: none`） | **未再現。** `.as-date` の中身は改行機会の無い文字列（`2026` / `11/4`）で max-content == min-content のため、`flex: none` と `flex: 0 1 auto` は同じ幅になるはず。具体例を確認中 |
 
 - [x] `dateLabel` が空のとき繋ぎの `&nbsp;` を出さない（テスト → 実装 → グリーン）
+- [x] 外部リンクを新しいタブで開く `openLinksInNewTab` を足す（テスト → 実装 → グリーン）
+- [x] README・spec §7・api.md に書き、0.7.2 に上げる
+- [ ] `.as-date` の `flex: none` — SC から具体例をもらってから判断する

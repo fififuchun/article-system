@@ -3,7 +3,7 @@
 マークダウンファイルを置くだけで記事データを自動生成し、一覧・詳細表示コンポーネントを提供するライブラリです。  
 デフォルトCSSを同梱しており、読み込むだけで記事の体裁が整います。見た目は `classNames` で全部差し替えられます。
 
-> **開発中のライブラリです（現在 0.7.1）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
+> **開発中のライブラリです（現在 0.7.2）。** 破壊的変更が入ることがあります。**バージョンはタグで固定してください。** 設計の確定版は [docs/spec.md](./docs/spec.md)、進捗は [docs/tasks.md](./docs/tasks.md) にあります。  
 > **この README は今日時点で実際に動く内容だけを説明しています。**
 
 <br>
@@ -33,7 +33,7 @@ npm i github:fififuchun/article-system
 
 ```bash
 # タグで固定する（推奨）
-npm i github:fififuchun/article-system#v0.7.1
+npm i github:fififuchun/article-system#v0.7.2
 
 # コミットハッシュで固定する
 npm i github:fififuchun/article-system#b5e66ab
@@ -386,6 +386,7 @@ export default function BlogDetail() {
       article={article}
       imageBasePath="/article_imgs/"
       dateLabel="最終更新日時"
+      openLinksInNewTab                 // 任意。外部リンクを新しいタブで開く
       classNames={{
         wrapper: "article-wrapper",
         headerWrapper: "article-header",
@@ -409,6 +410,30 @@ export default function BlogDetail() {
 ```
 
 記事が見つからない場合のハンドリングはライブラリ側にありません。上記のように利用側でガードしてください。
+
+#### 外部リンクを新しいタブで開く
+
+```tsx
+<ArticleDetail article={article} openLinksInNewTab />
+```
+
+記事の中の `[文字](https://example.com)` が新しいタブで開きます。**既定は無効**です（同じタブで開きます）。
+
+**対象は外部リンクだけです。**
+
+| リンク | `openLinksInNewTab` を付けたとき |
+| --- | --- |
+| `https://example.com/a`（別のドメイン） | **新しいタブ** |
+| `/about`・`about`（サイト内） | 同じタブ |
+| `https://あなたのドメイン/about` | 同じタブ |
+| `#section`（ページ内） | 同じタブ |
+| `mailto:` `tel:` | 同じタブ |
+
+サイト内のリンクまで新しいタブにすると、サイト内を見て回るあいだにタブが増え続けるためです。判定は表示時に `location.origin` と比べています。
+
+新しいタブで開くリンクには `rel="noopener noreferrer"` が付きます。**`target="_blank"` だけを付けると、開いた先の JavaScript から元のページを操作できます**（タブナビング）。自分で `classNames` に書く必要はありません。
+
+> **執筆画面のプレビューには効きません。** プレビューで渡せるのは見た目（`articleClassNames`）だけです。リンクの開き方は見た目ではないため、プレビューは常に同じタブで開きます。
 
 #### マークダウンの対応状況
 
@@ -740,7 +765,7 @@ dist/
 ### ステップ1. ライブラリを更新する
 
 ```bash
-npm i github:fififuchun/article-system#v0.7.1
+npm i github:fififuchun/article-system#v0.7.2
 ```
 
 OGタグは **0.4.0 で入った機能**です。それより古いものが入っていると**プラグインが存在せず**、`./vite` が `exports` に無いというエラーになります。
@@ -1034,6 +1059,23 @@ src/articles/ に .md ファイルを追加するだけ
 `createArticles` が自動でソートするため、他のファイルを変更する必要はありません。
 
 > **`slug` は記事の身元です。** 古い日付の記事を後から追加しても、既存の記事の URL は変わりません。ファイル名を変えると（`slug:` を書いていない記事では）URL が変わるので、URL を保ちたいときはフロントマターに `slug:` を明示してください。
+
+<br>
+<br>
+
+## 0.7.1 から 0.7.2 への変更
+
+**追加1つと修正1つです。** 入れ替えるだけで動きます。
+
+### 追加：`openLinksInNewTab`（`<ArticleDetail>`）
+
+外部リンクを新しいタブで開けるようになりました。**既定は無効**なので、渡さなければ今までどおりです。詳しくは [`<ArticleDetail>`](#articledetail--記事詳細) の節を読んでください。
+
+### 直したこと：`dateLabel=""` のときに残っていた空白
+
+ラベルと日付は改行で割れないよう `&nbsp;` で繋いでいますが、**ラベルを空にしても繋ぎだけが残り**、時計アイコンとの間隔が1文字ぶん広がっていました。
+
+`dateLabel=""` にしていて、余白を自分で打ち消していた場合は**その打ち消しを外してください**。ラベルを渡している場合は1ピクセルも変わりません。
 
 <br>
 <br>

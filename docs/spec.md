@@ -379,6 +379,7 @@ function validateArticle(
   article={article}
   imageBasePath="/article_imgs/"    // 既定値
   dateLabel="最終更新日時"           // 既定値
+  openLinksInNewTab={false}         // 既定値
   classNames={{ ... }}              // 任意
 />
 ```
@@ -391,6 +392,7 @@ function validateArticle(
 | `imageBasePath` | `string` | | `"/article_imgs/"` |
 | `dateLabel` | `string` | | `"最終更新日時"` |
 | `classNames` | `ArticleDetailClassNames` | | `{}` |
+| `openLinksInNewTab` | `boolean` | | `false` |
 
 記事が見つからない場合のハンドリングはありません。利用側でガードします。
 
@@ -438,6 +440,27 @@ function validateArticle(
 | 生の HTML | 無効。文字列としてエスケープされる |
 
 `rehype-raw` を入れないため、**記事経由の XSS は構造的に防がれています**。
+
+### リンク
+
+`openLinksInNewTab` で**外部リンクだけ**を新しいタブで開きます（既定は `false`）。
+
+| href | 判定 |
+| --- | --- |
+| 別のドメインを指す `http(s)` | 外部。`target="_blank"` を付ける |
+| 同じドメイン（`/about`・相対・絶対URL）・`#section` | 外部でない |
+| `mailto:` `tel:` などほかのスキーム | 外部でない |
+
+判定は表示時に `new URL(href, location.href).origin` を `location.origin` と比べます。
+
+**サイト内のリンクを対象にしないのは**、サイト内を見て回るあいだにタブが増え続けるためです。
+**`mailto:` を対象にしないのは**、メーラーが立ち上がるだけで空のタブが残るためです。
+
+`target="_blank"` には必ず `rel="noopener noreferrer"` を対で付けます。`noopener` が無いと、
+開いた先の JavaScript から `window.opener` 経由で元のページを書き換えられます（タブナビング）。
+
+**執筆画面のプレビューには渡しません。** プレビューが揃えるのは見た目（§9）で、リンクの
+開き方は見た目ではありません。プレビューは常に同じタブで開きます。
 
 ### 現行実装から修正する点
 
@@ -1778,4 +1801,4 @@ $ curl -s http://localhost:4173/article/2026-10-12/ | grep og:
 
 ---
 
-記録日: 2026-08-23（§15 を 2026-09-21、§3 と §9 設置方法を 2026-10-10、投稿まわりと §18 を 2026-10-12、§10 の詳細度と Tailwind 対応を 2026-10-20、テーマを 2026-10-29、一覧タブの classNames を 2026-11-03 に追記） / 対象バージョン: 0.7.1
+記録日: 2026-08-23（§15 を 2026-09-21、§3 と §9 設置方法を 2026-10-10、投稿まわりと §18 を 2026-10-12、§10 の詳細度と Tailwind 対応を 2026-10-20、テーマを 2026-10-29、一覧タブの classNames を 2026-11-03、§7 リンクを 2026-11-04 に追記） / 対象バージョン: 0.7.2

@@ -26,11 +26,39 @@ const allowBlobImages: UrlTransform = (url, key, node) =>
     ? url
     : defaultUrlTransform(url);
 
+/**
+ * 別のドメインを指す http(s) のリンクだけを「外部」と見なします。
+ *
+ * `mailto:` や `tel:` を外すのは、新しいタブを開いてもメーラーが立ち上がる
+ * だけで、空のタブが残るためです。`#section` や `/about` は同じドメインに
+ * なるのでここで false になります。
+ */
+function isExternalHref(href: string | undefined): boolean {
+  if (!href || typeof window === "undefined") return false;
+
+  try {
+    const url = new URL(href, window.location.href);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+
+    return url.origin !== window.location.origin;
+  } catch {
+    // 解釈できない href は触らない
+    return false;
+  }
+}
+
 interface Props {
   article: Article;
   imageBasePath?: string;
   classNames?: ArticleDetailClassNames;
   dateLabel?: string;
+  /**
+   * 外部リンクを新しいタブで開く（spec §7 リンク）。既定は `false`。
+   *
+   * **サイト内のリンクは対象外です。** 同じドメインのリンクまで新しいタブに
+   * すると、サイト内を見て回るあいだにタブが増え続けます。
+   */
+  openLinksInNewTab?: boolean;
 }
 
 export function ArticleDetail({
@@ -38,6 +66,7 @@ export function ArticleDetail({
   imageBasePath = "/article_imgs/",
   classNames = {},
   dateLabel = "最終更新日時",
+  openLinksInNewTab = false,
 }: Props) {
   const { year, month, day } = formatDate(article.date);
   const latest = formatDate(article.latestUpdate);
@@ -69,6 +98,17 @@ export function ArticleDetail({
     img: ({ src, alt }) => (
       <img src={resolveImageSrc(src ?? "", imageBasePath)} alt={alt ?? ""} />
     ),
+    a: ({ href, children }) => {
+      // noopener が無いと、開いた先の JavaScript から window.opener 経由で
+      // 元のページを書き換えられます（タブナビング）。必ず対で付けます
+      const newTab = openLinksInNewTab && isExternalHref(href);
+
+      return (
+        <a href={href} {...(newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+          {children}
+        </a>
+      );
+    },
   };
 
   return (

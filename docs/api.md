@@ -176,6 +176,7 @@ buildArticleHead(article, {
 | `imageBasePath` | `string` | | `"/article_imgs/"` |
 | `dateLabel` | `string` | | `"最終更新日時"` |
 | `classNames` | `ArticleDetailClassNames` | | `{}` |
+| `openLinksInNewTab` | `boolean` | | `false`（外部リンクだけ新しいタブで開く） |
 
 見出しは `<h2>` / `<h3>` / `<h4>` で出力します。`thumbnail` が空なら描画しません。絶対URL・`blob:`・`data:` は `imageBasePath` を前置せず素通しします。
 

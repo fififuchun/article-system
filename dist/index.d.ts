@@ -148,8 +148,15 @@ interface Props$3 {
     imageBasePath?: string;
     classNames?: ArticleDetailClassNames;
     dateLabel?: string;
+    /**
+     * 外部リンクを新しいタブで開く（spec §7 リンク）。既定は `false`。
+     *
+     * **サイト内のリンクは対象外です。** 同じドメインのリンクまで新しいタブに
+     * すると、サイト内を見て回るあいだにタブが増え続けます。
+     */
+    openLinksInNewTab?: boolean;
 }
-declare function ArticleDetail({ article, imageBasePath, classNames, dateLabel, }: Props$3): react_jsx_runtime.JSX.Element;
+declare function ArticleDetail({ article, imageBasePath, classNames, dateLabel, openLinksInNewTab, }: Props$3): react_jsx_runtime.JSX.Element;
 
 interface Props$2 {
     articles: Article[];

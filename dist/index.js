@@ -340,11 +340,22 @@ function ClockIcon({ className }) {
 // src/components/ArticleDetail.tsx
 import { jsx as jsx2, jsxs } from "react/jsx-runtime";
 var allowBlobImages = (url, key, node) => key === "src" && node.tagName === "img" && url.startsWith("blob:") ? url : defaultUrlTransform(url);
+function isExternalHref(href) {
+  if (!href || typeof window === "undefined") return false;
+  try {
+    const url = new URL(href, window.location.href);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    return url.origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+}
 function ArticleDetail({
   article,
   imageBasePath = "/article_imgs/",
   classNames = {},
-  dateLabel = "\u6700\u7D42\u66F4\u65B0\u65E5\u6642"
+  dateLabel = "\u6700\u7D42\u66F4\u65B0\u65E5\u6642",
+  openLinksInNewTab = false
 }) {
   const { year, month, day } = formatDate(article.date);
   const latest = formatDate(article.latestUpdate);
@@ -362,7 +373,11 @@ function ArticleDetail({
       }
       return /* @__PURE__ */ jsx2("p", { className: cx("as-paragraph", classNames.paragraph), children });
     },
-    img: ({ src, alt }) => /* @__PURE__ */ jsx2("img", { src: resolveImageSrc(src ?? "", imageBasePath), alt: alt ?? "" })
+    img: ({ src, alt }) => /* @__PURE__ */ jsx2("img", { src: resolveImageSrc(src ?? "", imageBasePath), alt: alt ?? "" }),
+    a: ({ href, children }) => {
+      const newTab = openLinksInNewTab && isExternalHref(href);
+      return /* @__PURE__ */ jsx2("a", { href, ...newTab ? { target: "_blank", rel: "noopener noreferrer" } : {}, children });
+    }
   };
   return /* @__PURE__ */ jsxs("div", { className: cx("as-article", classNames.wrapper), children: [
     /* @__PURE__ */ jsxs("div", { className: cx("as-header", classNames.headerWrapper), children: [

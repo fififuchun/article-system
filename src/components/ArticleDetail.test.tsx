@@ -323,6 +323,54 @@ describe("ArticleDetail — 日付の表示", () => {
     );
   });
 
+  /*
+   * spec §7 リンク: `openLinksInNewTab` で**外部リンクだけ**を新しいタブで
+   * 開きます。サイト内のリンクまで新しいタブにすると、サイト内を見て回る
+   * あいだにタブが増え続けます。
+   *
+   * `target="_blank"` には必ず `rel="noopener"` を付けます。付けないと
+   * 開いた先の JavaScript から元のページを操作できます（タブナビング）。
+   */
+  describe("openLinksInNewTab", () => {
+    const withLink = (markdown: string) => ({ ...article, content: markdown });
+
+    function link(markdown: string, open?: boolean): HTMLAnchorElement | null {
+      const { container } = render(
+        <ArticleDetail article={withLink(markdown)} openLinksInNewTab={open} />
+      );
+
+      return container.querySelector(".as-article a");
+    }
+
+    it("既定では新しいタブで開かない", () => {
+      const a = link("[外部](https://example.com/a)");
+
+      expect(a?.getAttribute("href")).toBe("https://example.com/a");
+      expect(a?.getAttribute("target")).toBeNull();
+    });
+
+    it("外部リンクを新しいタブで開く", () => {
+      const a = link("[外部](https://example.com/a)", true);
+
+      expect(a?.getAttribute("target")).toBe("_blank");
+      // noopener が無いと開いた先から元のページを操作できる
+      expect(a?.getAttribute("rel")).toBe("noopener noreferrer");
+    });
+
+    it.each([
+      ["サイト内の絶対パス", "[中](/about)"],
+      ["相対パス", "[中](about)"],
+      ["同じドメインの絶対URL", `[中](${window.location.origin}/about)`],
+      ["ページ内リンク", "[中](#section)"],
+      ["メール", "[メール](mailto:a@example.com)"],
+    ])("%s は同じタブのまま", (_name, markdown) => {
+      const a = link(markdown, true);
+
+      expect(a?.getAttribute("target")).toBeNull();
+      expect(a?.getAttribute("rel")).toBeNull();
+    });
+  });
+
   // spec §9: 形式違反はプレビューが壊れて見えることで気づく仕組みになっている
   it("不正な date は整形せず壊れた表示のままにする", () => {
     const { container } = render(
